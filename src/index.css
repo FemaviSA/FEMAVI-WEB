@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/* FEMAVI brand tokens (extraídos de femavi.com.ar) */
+@theme {
+  --color-femavi-50: #e6f0f7;
+  --color-femavi-100: #cce0ee;
+  --color-femavi-200: #99c1dd;
+  --color-femavi-300: #66a2cc;
+  --color-femavi-400: #3383bb;
+  --color-femavi-500: #0067ac;
+  --color-femavi-600: #005a96;
+  --color-femavi-700: #004370;
+  --color-femavi-800: #003058;
+  --color-femavi-900: #001c33;
+
+  --color-femavi-pale-1: rgba(0, 103, 172, 0.07);
+  --color-femavi-pale-2: rgba(0, 103, 172, 0.13);
+  --color-femavi-border: rgba(0, 103, 172, 0.15);
+}
+
+/* Tailwind v4 ya incluye un reset (Preflight). NO usar `*` reset propio acá:
+   sobreescribe las clases p-*, m-*, etc. con specificity igual y orden posterior. */
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+html { scroll-behavior: smooth; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f6f8fa; }
+::-webkit-scrollbar-thumb { background: #cce0ee; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #99c1dd; }
+
+input::placeholder, textarea::placeholder { color: #8899a8; }
+
+/* Helpers usados por las páginas con estilos inline (Home/Catalog/Product) */
+@media (max-width: 900px) {
+  .grid-3 { grid-template-columns: 1fr !important; }
+  .grid-2 { grid-template-columns: 1fr !important; }
+  .hero-grid { grid-template-columns: 1fr !important; }
+  .vertical-grid { grid-template-columns: 1fr !important; }
+  .modal-grid { grid-template-columns: 1fr !important; }
+  .desktop-nav-links { display: none !important; }
+}

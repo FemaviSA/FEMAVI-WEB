@@ -79,7 +79,7 @@ export default function Login() {
           </div>
 
           <div className="text-xs text-slate-600">
-            FEMAVI S.A. · Ibarrola 7071, Liniers, CABA · +54 11 4644-2048
+            FEMAVI S.A. · Ibarrola 7071, Liniers, CABA · +54 9 116228-4649
           </div>
         </div>
       </div>

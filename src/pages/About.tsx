@@ -51,19 +51,31 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 function Nav({ scrolled }: { scrolled: boolean }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
-    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, padding: scrolled ? '12px 0' : '20px 0', background: scrolled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', borderBottom: scrolled ? `1px solid ${C.borderSubtle}` : '1px solid transparent', transition: 'all 0.3s ease', boxShadow: scrolled ? '0 1px 12px rgba(0,67,112,0.05)' : 'none' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: `linear-gradient(135deg, ${C.accent}, ${C.accentDark})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 17, color: C.white, boxShadow: '0 4px 14px rgba(0,103,172,0.25)' }}>F</div>
-          <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 20, color: C.dark, letterSpacing: '-0.02em' }}>FEMAVI</span>
+    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: scrolled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', borderBottom: scrolled ? `1px solid ${C.borderSubtle}` : '1px solid transparent', transition: 'all 0.3s ease', boxShadow: scrolled ? '0 1px 12px rgba(0,67,112,0.05)' : 'none' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: scrolled ? 60 : 72 }}>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <img src="/logo-femavi.png" alt="FEMAVI" style={{ height: 48, width: 'auto' }} />
         </Link>
         <div className="desktop-nav-links" style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
           <Link to="/catalogo" style={{ color: C.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Catálogo</Link>
           <span style={{ color: C.accent, fontSize: 14, fontWeight: 700 }}>Nosotros</span>
           <Link to="/#cotizar" style={{ padding: '10px 24px', background: C.accent, color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', boxShadow: '0 4px 14px rgba(0,103,172,0.2)' }}>Pedir Cotización</Link>
         </div>
+        <button className="mobile-menu-btn" onClick={() => setMenuOpen(o => !o)} style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 8, flexDirection: 'column', gap: 5 }}>
+          <span style={{ display: 'block', width: 24, height: 2, background: C.dark, borderRadius: 2, transition: 'all 0.3s', transform: menuOpen ? 'rotate(45deg) translateY(7px)' : 'none' }} />
+          <span style={{ display: 'block', width: 24, height: 2, background: C.dark, borderRadius: 2, opacity: menuOpen ? 0 : 1 }} />
+          <span style={{ display: 'block', width: 24, height: 2, background: C.dark, borderRadius: 2, transition: 'all 0.3s', transform: menuOpen ? 'rotate(-45deg) translateY(-7px)' : 'none' }} />
+        </button>
       </div>
+      {menuOpen && (
+        <div style={{ background: C.white, borderTop: `1px solid ${C.borderSubtle}`, padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Link to="/catalogo" onClick={() => setMenuOpen(false)} style={{ color: C.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Catálogo</Link>
+          <Link to="/nosotros" onClick={() => setMenuOpen(false)} style={{ color: C.accent, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>Nosotros</Link>
+          <Link to="/#cotizar" onClick={() => setMenuOpen(false)} style={{ padding: '12px 24px', background: C.accent, color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>Pedir Cotización</Link>
+        </div>
+      )}
     </nav>
   );
 }
@@ -290,7 +302,7 @@ function Footer() {
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.accentLight, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contacto</div>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, margin: 0 }}>
-              Ibarrola 7071<br />Liniers, CABA<br />+54 11 4644-2048<br />ventas@femavi.com.ar
+              Ibarrola 7071<br />Liniers, CABA<br />+54 9 116228-4649<br />ventas@femavi.com.ar
             </p>
           </div>
         </div>

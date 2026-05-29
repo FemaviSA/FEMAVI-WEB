@@ -43,4 +43,5 @@ input::placeholder, textarea::placeholder { color: #8899a8; }
   .vertical-grid { grid-template-columns: 1fr !important; }
   .modal-grid { grid-template-columns: 1fr !important; }
   .desktop-nav-links { display: none !important; }
+  .mobile-menu-btn { display: flex !important; }
 }

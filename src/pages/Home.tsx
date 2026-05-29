@@ -27,10 +27,16 @@ const COLORS = {
 };
 
 const verticals = [
-  { id: 'transporte', icon: '🚌', title: 'Transporte de Pasajeros', desc: 'Limpieza y mantenimiento para líneas de colectivo, trenes y flotas. Desengrasantes de alta potencia, limpiadores de tapizados y sanitizantes certificados.', products: 'Desengrasantes, Sanitizantes, Limpiadores multiuso' },
-  { id: 'gastronomia', icon: '🍳', title: 'Gastronomía e Industria Alimenticia', desc: 'Productos aptos para superficies en contacto con alimentos. Bactericidas, desengrasantes de cocina industrial y tratamientos para aguas.', products: 'Bactericidas, Aceites alimenticios, Desengrasantes' },
-  { id: 'edificios', icon: '🏢', title: 'Edificios y Oficinas', desc: 'Ceras acrílicas, limpiadores de pisos, aromatizantes y productos de higiene para espacios corporativos y consorcios.', products: 'Ceras, Detergentes, Inhibidores de olores' },
-  { id: 'industria', icon: '⚙️', title: 'Industria y Manufactura', desc: 'Lubricantes, anticorrosivos, aceites de corte, desmoldantes y solventes dieléctricos para líneas de producción.', products: 'Lubricantes, Anticorrosivos, Desmoldantes' },
+  { id: 'transporte', icon: '🚌', title: 'Transporte y Flotas', desc: 'Limpieza y mantenimiento para líneas de colectivo, trenes, flotas de camiones y vehículos de carga. Desengrasantes de alta potencia, limpiadores de tapizados, sanitizantes y productos para tren delantero.', products: 'Desengrasantes, Sanitizantes, Limpiadores multiuso, Ceras' },
+  { id: 'talleres', icon: '🔧', title: 'Talleres Mecánicos', desc: 'Todo lo que un taller necesita: desengrasantes para motores, limpiadores de frenos, lubricantes, aceites de corte y productos para lavado de piezas. Rendimiento industrial a precio accesible.', products: 'Desengrasantes, Lubricantes, Aceites de corte, Anticorrosivos' },
+  { id: 'rectificadoras', icon: '⚙️', title: 'Rectificadoras y Mecanizados', desc: 'Fluidos de corte, aceites solubles, desengrasantes para metales y anticorrosivos para la industria de rectificado y mecanizado de precisión. Compatibles con todos los metales.', products: 'Aceites de corte, Fluidos solubles, Anticorrosivos, Desengrasantes' },
+  { id: 'mineria', icon: '⛏️', title: 'Minería e Industria Pesada', desc: 'Lubricantes de alto rendimiento, grasas para maquinaria pesada, anticorrosivos y productos de limpieza para entornos exigentes. Formulados para resistir condiciones extremas.', products: 'Grasas industriales, Lubricantes, Anticorrosivos, Desengrasantes' },
+  { id: 'alimenticia', icon: '🍽️', title: 'Industria Alimenticia', desc: 'Bactericidas, desengrasantes y lubricantes aptos para superficies en contacto con alimentos. Cumplimos con los requerimientos SENASA para plantas procesadoras y frigoríficos.', products: 'Bactericidas, Aceites alimenticios, Sanitizantes, Desengrasantes' },
+  { id: 'gastronomia', icon: '🍳', title: 'Gastronomía y Hotelería', desc: 'Desengrasantes de cocina industrial, detergentes de alta dilución, bactericidas y limpiadores multiuso para restaurantes, hoteles y comedores industriales.', products: 'Desengrasantes, Bactericidas, Detergentes, Sanitizantes' },
+  { id: 'edificios', icon: '🏢', title: 'Edificios y Consorcios', desc: 'Ceras acrílicas, limpiadores de pisos, detergentes, aromatizantes y productos de higiene para espacios corporativos, consorcios y centros comerciales.', products: 'Ceras, Detergentes, Limpiadores, Aromatizantes' },
+  { id: 'salud', icon: '🏥', title: 'Salud y Sanidad', desc: 'Desinfectantes de superficies, bactericidas, sanitizantes y productos de higiene personal para clínicas, hospitales, geriátricos y laboratorios.', products: 'Desinfectantes, Bactericidas, Sanitizantes, Jabones' },
+  { id: 'manufactura', icon: '🏭', title: 'Manufactura e Industria en General', desc: 'Lubricantes, desmoldantes, solventes dieléctricos, anticorrosivos y desengrasantes para cualquier línea de producción. Si tu planta necesita limpiar o mantener, tenemos la fórmula.', products: 'Lubricantes, Desmoldantes, Anticorrosivos, Desengrasantes' },
+  { id: 'limpieza', icon: '🧹', title: 'Empresas de Limpieza', desc: 'Línea completa de productos de alto rendimiento y gran dilución para empresas de limpieza profesional. Comprá al por mayor y maximizá tu margen con fórmulas que rinden más.', products: 'Detergentes, Ceras, Desengrasantes, Desinfectantes' },
 ];
 
 const testimonials = [
@@ -80,21 +86,35 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 function Nav({ scrolled }: { scrolled: boolean }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
-    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, padding: scrolled ? '12px 0' : '20px 0', background: scrolled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', borderBottom: scrolled ? `1px solid ${COLORS.borderSubtle}` : '1px solid transparent', transition: 'all 0.3s ease', boxShadow: scrolled ? '0 1px 12px rgba(0,67,112,0.05)' : 'none' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: `linear-gradient(135deg, ${COLORS.accent}, ${COLORS.accentDark})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 17, color: COLORS.white, boxShadow: '0 4px 14px rgba(0,103,172,0.25)' }}>F</div>
-          <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 20, color: COLORS.dark, letterSpacing: '-0.02em' }}>FEMAVI</span>
+    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: scrolled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', borderBottom: scrolled ? `1px solid ${COLORS.borderSubtle}` : '1px solid transparent', transition: 'all 0.3s ease', boxShadow: scrolled ? '0 1px 12px rgba(0,67,112,0.05)' : 'none' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: scrolled ? 60 : 72 }}>
+        <Link to="/" onClick={() => window.scrollTo(0, 0)} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <img src="/logo-femavi.png" alt="FEMAVI" style={{ height: 48, width: 'auto' }} />
         </Link>
         <div className="desktop-nav-links" style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
-          <Link to="/catalogo" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none', cursor: 'pointer' }}>Catálogo</Link>
-          <a href="#soluciones" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none', cursor: 'pointer' }}>Soluciones</a>
-          <Link to="/nosotros" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none', cursor: 'pointer' }}>Nosotros</Link>
-          <a href="#cotizar" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none', cursor: 'pointer' }}>Contacto</a>
-          <a href="#cotizar" style={{ padding: '10px 24px', background: COLORS.accent, color: COLORS.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,103,172,0.2)' }}>Pedir Cotización</a>
+          <Link to="/catalogo" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Catálogo</Link>
+          <a href="#soluciones" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Soluciones</a>
+          <Link to="/nosotros" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Nosotros</Link>
+          <a href="#contacto" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Contacto</a>
+          <Link to="/cotizar" style={{ padding: '10px 24px', background: COLORS.accent, color: COLORS.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', boxShadow: '0 4px 14px rgba(0,103,172,0.2)' }}>Pedir Cotización</Link>
         </div>
+        <button className="mobile-menu-btn" onClick={() => setMenuOpen(o => !o)} style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 8, flexDirection: 'column', gap: 5 }}>
+          <span style={{ display: 'block', width: 24, height: 2, background: COLORS.dark, borderRadius: 2, transition: 'all 0.3s', transform: menuOpen ? 'rotate(45deg) translateY(7px)' : 'none' }} />
+          <span style={{ display: 'block', width: 24, height: 2, background: COLORS.dark, borderRadius: 2, opacity: menuOpen ? 0 : 1 }} />
+          <span style={{ display: 'block', width: 24, height: 2, background: COLORS.dark, borderRadius: 2, transition: 'all 0.3s', transform: menuOpen ? 'rotate(-45deg) translateY(-7px)' : 'none' }} />
+        </button>
       </div>
+      {menuOpen && (
+        <div style={{ background: COLORS.white, borderTop: `1px solid ${COLORS.borderSubtle}`, padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Link to="/catalogo" onClick={() => setMenuOpen(false)} style={{ color: COLORS.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Catálogo</Link>
+          <a href="#soluciones" onClick={() => setMenuOpen(false)} style={{ color: COLORS.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Soluciones</a>
+          <Link to="/nosotros" onClick={() => setMenuOpen(false)} style={{ color: COLORS.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Nosotros</Link>
+          <a href="#contacto" onClick={() => setMenuOpen(false)} style={{ color: COLORS.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Contacto</a>
+          <Link to="/cotizar" onClick={() => setMenuOpen(false)} style={{ padding: '12px 24px', background: COLORS.accent, color: COLORS.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>Pedir Cotización</Link>
+        </div>
+      )}
     </nav>
   );
 }
@@ -121,9 +141,9 @@ function Hero() {
           </FadeIn>
           <FadeIn delay={0.3}>
             <div style={{ display: 'flex', gap: 16, marginTop: 40 }}>
-              <a href="#cotizar" style={{ padding: '16px 36px', background: COLORS.accent, color: COLORS.white, fontSize: 16, fontWeight: 700, borderRadius: 10, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', boxShadow: '0 8px 24px rgba(0,103,172,0.25)' }}>
+              <Link to="/catalogo" style={{ padding: '16px 36px', background: COLORS.accent, color: COLORS.white, fontSize: 16, fontWeight: 700, borderRadius: 10, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', boxShadow: '0 8px 24px rgba(0,103,172,0.25)' }}>
                 Solicitar Cotización <span style={{ fontSize: 20 }}>→</span>
-              </a>
+              </Link>
               <Link to="/catalogo" style={{ padding: '16px 36px', border: `1.5px solid ${COLORS.border}`, color: COLORS.accent, fontSize: 16, fontWeight: 700, borderRadius: 10, textDecoration: 'none', cursor: 'pointer', background: COLORS.white }}>
                 Ver Catálogo
               </Link>
@@ -171,12 +191,12 @@ function Verticals() {
             <span style={{ color: COLORS.textMuted }}> Nosotros tenemos las fórmulas.</span>
           </h2>
         </FadeIn>
-        <div className="vertical-grid" style={{ marginTop: 64, display: 'grid', gridTemplateColumns: '280px 1fr', gap: 48 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div className="vertical-grid" style={{ marginTop: 64, display: 'grid', gridTemplateColumns: '300px 1fr', gap: 48 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {verticals.map((v, i) => (
-              <button key={v.id} onClick={() => setActive(i)} style={{ textAlign: 'left', padding: '20px 24px', borderRadius: 12, background: active === i ? COLORS.white : 'transparent', border: active === i ? `1px solid ${COLORS.border}` : '1px solid transparent', cursor: 'pointer', transition: 'all 0.3s', boxShadow: active === i ? '0 8px 24px rgba(0,67,112,0.06)' : 'none' }}>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>{v.icon}</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: active === i ? COLORS.accent : COLORS.textMuted, transition: 'color 0.3s' }}>{v.title}</div>
+              <button key={v.id} onClick={() => setActive(i)} style={{ textAlign: 'left', padding: '12px 16px', borderRadius: 10, background: active === i ? COLORS.white : 'transparent', border: active === i ? `1px solid ${COLORS.border}` : '1px solid transparent', cursor: 'pointer', transition: 'all 0.3s', boxShadow: active === i ? '0 8px 24px rgba(0,67,112,0.06)' : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 20, flexShrink: 0 }}>{v.icon}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: active === i ? COLORS.accent : COLORS.textMuted, transition: 'color 0.3s', lineHeight: 1.3 }}>{v.title}</span>
               </button>
             ))}
           </div>
@@ -189,9 +209,9 @@ function Verticals() {
                 <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Productos recomendados</div>
                 <div style={{ fontSize: 15, color: COLORS.dark, fontWeight: 600 }}>{verticals[active].products}</div>
               </div>
-              <a href="#cotizar" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: COLORS.accent, color: COLORS.white, fontSize: 15, fontWeight: 700, borderRadius: 10, textDecoration: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,103,172,0.2)' }}>
+              <Link to="/catalogo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: COLORS.accent, color: COLORS.white, fontSize: 15, fontWeight: 700, borderRadius: 10, textDecoration: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,103,172,0.2)' }}>
                 Cotizar para {verticals[active].title.split(' ')[0]} →
-              </a>
+              </Link>
             </div>
           </FadeIn>
         </div>
@@ -359,7 +379,7 @@ function QuoteForm() {
 
   if (submitted) {
     return (
-      <section id="cotizar" style={{ background: COLORS.bg, padding: '120px 24px' }}>
+      <section id="contacto" style={{ background: COLORS.bg, padding: '120px 24px' }}>
         <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 64, marginBottom: 24 }}>✅</div>
           <h2 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 36, fontWeight: 800, color: COLORS.dark }}>¡Recibimos tu consulta!</h2>
@@ -376,14 +396,14 @@ function QuoteForm() {
           <div>
             <SectionLabel>Contacto</SectionLabel>
             <h2 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 44, fontWeight: 800, color: COLORS.dark, letterSpacing: '-0.03em', margin: '0 0 20px' }}>
-              Pedí tu cotización
+              Realizá tu consulta
               <span style={{ color: COLORS.textMuted }}> sin compromiso</span>
             </h2>
             <p style={{ fontSize: 17, lineHeight: 1.7, color: COLORS.textMuted, margin: '0 0 48px' }}>
               Contanos qué productos necesitás y para qué rubro. Te respondemos en menos de 24 horas con una cotización adaptada a tu volumen.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-              {[['📍', 'Ibarrola 7071, Liniers, CABA'], ['📞', '+54 11 4644-2048'], ['✉️', 'ventas@femavi.com.ar'], ['🕐', 'Lunes a Viernes 8:00 a 17:00']].map(([icon, text]) => (
+              {[['📍', 'Ibarrola 7071, Liniers, CABA'], ['📞', '+54 9 116228-4649'], ['✉️', 'ventas@femavi.com.ar'], ['🕐', 'Lunes a Viernes 8:00 a 17:00']].map(([icon, text]) => (
                 <div key={text} style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                   <span style={{ fontSize: 20 }}>{icon}</span>
                   <span style={{ fontSize: 15, color: COLORS.text, fontWeight: 500 }}>{text}</span>
@@ -410,8 +430,8 @@ function QuoteForm() {
                 <input style={inputStyle} value={formData.telefono} onChange={handleChange('telefono')} placeholder="+54 11 ..." />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: COLORS.dark, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Empresa</label>
-                <input style={inputStyle} value={formData.empresa} onChange={handleChange('empresa')} placeholder="Nombre de tu empresa" />
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: COLORS.dark, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Razón social *</label>
+                <input required style={inputStyle} value={formData.empresa} onChange={handleChange('empresa')} placeholder="Nombre de tu empresa" />
               </div>
             </div>
             <div style={{ marginBottom: 16 }}>
@@ -473,7 +493,7 @@ function Footer() {
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.accentLight, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contacto</div>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, margin: 0 }}>
-              Ibarrola 7071<br />Liniers, CABA<br />+54 11 4644-2048<br />ventas@femavi.com.ar
+              Ibarrola 7071<br />Liniers, CABA<br />+54 9 116228-4649<br />ventas@femavi.com.ar
             </p>
           </div>
         </div>

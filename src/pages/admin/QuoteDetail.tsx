@@ -43,8 +43,11 @@ export default function QuoteDetail() {
 
   const requestedProducts = useMemo(() => {
     if (!quote) return [];
-    return quote.product_slugs
-      .map(slug => allProducts.find(p => p.slug === slug) ?? { slug, name: slug, category: '', image_url: null, is_active: false } as any);
+    return quote.product_slugs.map(slug => {
+      const product = allProducts.find(p => p.slug === slug) ?? { slug, name: slug, category: '', image_url: null, is_active: false } as any;
+      const detail = quote.product_details?.find(d => d.slug === slug);
+      return { ...product, presentation: detail?.presentation ?? null, quantity: detail?.quantity ?? null };
+    });
   }, [quote, allProducts]);
 
   const handleStatusChange = async (newStatus: QuoteStatus) => {
@@ -129,7 +132,13 @@ export default function QuoteDetail() {
     );
   }
 
-  const productListText = requestedProducts.map((p, i) => `${i + 1}. ${p.name}${p.category ? ` (${p.category})` : ''}`).join('\n');
+  const productListText = requestedProducts.map((p, i) => {
+    let line = `${i + 1}. ${p.name}`;
+    if (p.presentation) line += ` — ${p.presentation}`;
+    if (p.quantity) line += ` x ${p.quantity}`;
+    if (p.category) line += ` (${p.category})`;
+    return line;
+  }).join('\n');
   const replyText = `Hola ${quote.name},\n\nGracias por tu interés en FEMAVI. Recibimos tu solicitud de cotización por los siguientes productos:\n\n${productListText}\n\nTe envío la cotización adjunta. Quedo a disposición para cualquier consulta.\n\nSaludos,\nEquipo FEMAVI`;
   const waText = `Hola ${quote.name}, te escribo de FEMAVI por tu solicitud de cotización por ${requestedProducts.length} producto${requestedProducts.length !== 1 ? 's' : ''}.`;
   const waPhone = (quote.phone ?? '').replace(/\D/g, '');
@@ -231,6 +240,20 @@ export default function QuoteDetail() {
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-slate-900 text-sm">{p.name}</div>
                       {p.category && <div className="text-xs text-slate-500">{p.category}</div>}
+                      {(p.presentation || p.quantity) && (
+                        <div className="mt-1 inline-flex items-center gap-2">
+                          {p.presentation && (
+                            <span className="px-2 py-0.5 bg-femavi-50 text-femavi-700 text-[11px] font-semibold rounded-full ring-1 ring-femavi-200">
+                              {p.presentation}
+                            </span>
+                          )}
+                          {p.quantity && (
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[11px] font-semibold rounded-full">
+                              x {p.quantity}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       {!p.is_active && p.id && (
                         <div className="text-[11px] text-amber-600 mt-0.5">⚠ Producto actualmente oculto en el sitio</div>
                       )}

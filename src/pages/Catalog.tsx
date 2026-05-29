@@ -23,6 +23,7 @@ const INDUSTRIES = [
   { id: 'Comercios', label: 'Comercios', icon: '🏪', seoTitle: 'Productos de Limpieza Profesional para Comercios', seoDesc: 'Ceras, aromatizantes y detergentes para locales comerciales.' },
   { id: 'Salud', label: 'Salud', icon: '🏥', seoTitle: 'Productos de Desinfección para Salud', seoDesc: 'Bactericidas de amplio espectro para clínicas y centros de salud.' },
   { id: 'Empresas de limpieza', label: 'Empresas de limpieza', icon: '🧹', seoTitle: 'Productos Mayoristas para Empresas de Limpieza', seoDesc: 'Productos concentrados con máximo rendimiento para limpieza profesional.' },
+  { id: 'Hogar e Institucional', label: 'Hogar e Institucional', icon: '🏠', seoTitle: 'Línea Daurange — Productos para Hogar e Institucional', seoDesc: 'Limpiadores, desinfectantes, aromatizantes y productos de higiene para uso doméstico e institucional.' },
 ];
 
 const BENEFITS = [
@@ -98,6 +99,7 @@ function IndustryHero({ industry, products }: { industry: typeof INDUSTRIES[numb
     'Comercios': { sub: 'Ceras autobrillantes, aromatizantes de larga duración y detergentes concentrados de rendimiento profesional.', stats: [['10x', 'Rendimiento'], ['48hs', 'Entrega'], [`${count}`, 'Productos']] },
     'Salud': { sub: 'Bactericidas de amplio espectro con acción residual para clínicas y centros de salud. Protocolos de desinfección exigentes.', stats: [['99.9%', 'Eliminación'], ['Certificado', 'Espectro'], [`${count}`, 'Productos']] },
     'Empresas de limpieza': { sub: 'Línea completa de productos ultra concentrados. Precios mayoristas, entrega programada, máximo margen por metro cuadrado.', stats: [['40%', 'Ahorro'], ['Nacional', 'Envío'], [`${count}`, 'Productos']] },
+    'Hogar e Institucional': { sub: 'Línea Daurange: productos de limpieza, higiene y cuidado para uso doméstico e institucional. Fórmulas de calidad profesional accesibles para el consumidor final.', stats: [['Línea', 'Daurange'], ['Uso diario', 'Hogar'], [`${count}`, 'Productos']] },
   };
   const d = data[industry.id];
   if (!d) return null;
@@ -124,13 +126,27 @@ function IndustryHero({ industry, products }: { industry: typeof INDUSTRIES[numb
   );
 }
 
+const CATEGORIES = [
+  'Todos',
+  'Higiene Industrial',
+  'Producción',
+  'Aceites y Lubricantes',
+  'Grasas',
+  'Aerosoles',
+  'Tratamiento de Agua',
+  'Papel',
+  'Línea Daurange',
+];
+
 export default function Catalog() {
   const { products, loading } = useProducts();
   const [activeIndustry, setActiveIndustry] = useState('all');
+  const [activeCategory, setActiveCategory] = useState('Todos');
   const [activeBenefits, setActiveBenefits] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 50);
@@ -148,6 +164,7 @@ export default function Catalog() {
 
   const filtered = useMemo(() => {
     let r = products;
+    if (activeCategory !== 'Todos') r = r.filter(p => p.category === activeCategory);
     if (activeIndustry !== 'all') r = r.filter(p => p.industries.includes(activeIndustry));
     if (activeBenefits.length > 0) r = r.filter(p => activeBenefits.some(b => p.benefits.includes(b)));
     if (searchQuery.trim()) {
@@ -160,7 +177,7 @@ export default function Catalog() {
       );
     }
     return r;
-  }, [products, activeIndustry, activeBenefits, searchQuery]);
+  }, [products, activeCategory, activeIndustry, activeBenefits, searchQuery]);
 
   const catalogJsonLd = useMemo(() => {
     const list = products.slice(0, 20).map((p, i) => ({
@@ -203,19 +220,31 @@ export default function Catalog() {
         canonical={SITE_URL + '/catalogo'}
         jsonLd={catalogJsonLd}
       />
-      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, padding: scrolled ? '8px 0' : '14px 0', background: scrolled ? 'rgba(255,255,255,0.97)' : C.white, backdropFilter: 'blur(16px)', borderBottom: `1px solid ${C.borderLight}`, transition: 'all 0.3s', boxShadow: scrolled ? '0 1px 12px rgba(0,0,0,0.04)' : 'none' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: `linear-gradient(135deg, ${C.accent}, #0080d4)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: C.white }}>F</div>
-            <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 20, color: C.dark, letterSpacing: '-0.02em' }}>FEMAVI</span>
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: scrolled ? 'rgba(255,255,255,0.97)' : C.white, backdropFilter: 'blur(16px)', borderBottom: `1px solid ${C.borderLight}`, transition: 'all 0.3s', boxShadow: scrolled ? '0 1px 12px rgba(0,0,0,0.04)' : 'none' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: scrolled ? 56 : 68 }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <img src="/logo-femavi.png" alt="FEMAVI" style={{ height: 48, width: 'auto' }} />
           </Link>
           <div className="desktop-nav-links" style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
             <Link to="/" style={{ color: C.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Inicio</Link>
             <span style={{ color: C.accent, fontSize: 14, fontWeight: 700 }}>Productos</span>
             <Link to="/nosotros" style={{ color: C.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Nosotros</Link>
-            <Link to="/#cotizar" style={{ padding: '10px 22px', background: C.accent, color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', cursor: 'pointer' }}>Pedir Cotización</Link>
+            <Link to="/#cotizar" style={{ padding: '10px 22px', background: C.accent, color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none' }}>Pedir Cotización</Link>
           </div>
+          <button className="mobile-menu-btn" onClick={() => setMenuOpen((o: boolean) => !o)} style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 8, flexDirection: 'column', gap: 5 }}>
+            <span style={{ display: 'block', width: 24, height: 2, background: C.dark, borderRadius: 2, transition: 'all 0.3s', transform: menuOpen ? 'rotate(45deg) translateY(7px)' : 'none' }} />
+            <span style={{ display: 'block', width: 24, height: 2, background: C.dark, borderRadius: 2, opacity: menuOpen ? 0 : 1 }} />
+            <span style={{ display: 'block', width: 24, height: 2, background: C.dark, borderRadius: 2, transition: 'all 0.3s', transform: menuOpen ? 'rotate(-45deg) translateY(-7px)' : 'none' }} />
+          </button>
         </div>
+        {menuOpen && (
+          <div style={{ background: C.white, borderTop: `1px solid ${C.borderLight}`, padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <Link to="/" onClick={() => setMenuOpen(false)} style={{ color: C.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Inicio</Link>
+            <span style={{ color: C.accent, fontSize: 15, fontWeight: 700 }}>Productos</span>
+            <Link to="/nosotros" onClick={() => setMenuOpen(false)} style={{ color: C.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Nosotros</Link>
+            <Link to="/#cotizar" onClick={() => setMenuOpen(false)} style={{ padding: '12px 24px', background: C.accent, color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>Pedir Cotización</Link>
+          </div>
+        )}
       </nav>
 
       <section style={{ paddingTop: 120, paddingBottom: 48, background: `linear-gradient(170deg, ${C.white} 0%, ${C.bg} 100%)`, position: 'relative' }}>
@@ -247,10 +276,22 @@ export default function Catalog() {
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
           <FadeIn>
             <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Por categoría</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {CATEGORIES.map(cat => (
+                  <FilterBadge key={cat} active={activeCategory === cat} onClick={() => { setActiveCategory(cat); setActiveIndustry('all'); setActiveBenefits([]); }}>
+                    {cat}
+                  </FilterBadge>
+                ))}
+              </div>
+            </div>
+          </FadeIn>
+          <FadeIn>
+            <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Por industria</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {INDUSTRIES.map(ind => (
-                  <FilterBadge key={ind.id} active={activeIndustry === ind.id} onClick={() => { setActiveIndustry(ind.id); setActiveBenefits([]); }}>
+                  <FilterBadge key={ind.id} active={activeIndustry === ind.id} onClick={() => { setActiveIndustry(ind.id); setActiveBenefits([]); setActiveCategory('Todos'); }}>
                     <span>{ind.icon}</span> {ind.label}
                   </FilterBadge>
                 ))}
@@ -279,9 +320,9 @@ export default function Catalog() {
                   ? `Todos los productos (${filtered.length})`
                   : `${filtered.length} producto${filtered.length !== 1 ? 's' : ''}`}
             </span>
-            {(activeIndustry !== 'all' || activeBenefits.length > 0 || searchQuery) && (
+            {(activeCategory !== 'Todos' || activeIndustry !== 'all' || activeBenefits.length > 0 || searchQuery) && (
               <button
-                onClick={() => { setActiveIndustry('all'); setActiveBenefits([]); setSearchQuery(''); }}
+                onClick={() => { setActiveCategory('Todos'); setActiveIndustry('all'); setActiveBenefits([]); setSearchQuery(''); }}
                 style={{ padding: '6px 14px', background: C.white, border: `1px solid ${C.borderLight}`, borderRadius: 8, color: C.textMuted, fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
               >
                 Limpiar filtros ✕
@@ -301,7 +342,7 @@ export default function Catalog() {
               <h3 style={{ fontSize: 20, fontWeight: 700, color: C.dark, marginBottom: 6 }}>Sin resultados para esos filtros</h3>
               <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 20 }}>Probá con otra combinación o buscá por nombre.</p>
               <button
-                onClick={() => { setActiveIndustry('all'); setActiveBenefits([]); setSearchQuery(''); }}
+                onClick={() => { setActiveCategory('Todos'); setActiveIndustry('all'); setActiveBenefits([]); setSearchQuery(''); }}
                 style={{ padding: '11px 24px', background: C.accent, color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
               >
                 Ver todos
@@ -310,7 +351,28 @@ export default function Catalog() {
           )}
 
           <FadeIn>
-            <div id="cotizar" style={{ marginTop: 64, background: `linear-gradient(135deg, ${C.dark}, ${C.accent})`, borderRadius: 20, padding: '48px 52px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 36, color: C.white }}>
+            <div style={{ marginTop: 40, background: C.white, border: `1px solid ${C.borderLight}`, borderRadius: 16, padding: '28px 36px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: C.accentPale, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 3 }}>Distribuidores oficiales de productos OKS</div>
+                  <div style={{ fontSize: 13, color: C.textMuted, maxWidth: 480 }}>Contamos con toda la línea OKS de lubricantes y productos especiales. Consultanos por disponibilidad y precios.</div>
+                </div>
+              </div>
+              <a
+                href="https://wa.me/5491162284649?text=Hola%2C%20quiero%20consultar%20por%20productos%20OKS"
+                target="_blank" rel="noopener"
+                style={{ padding: '11px 22px', background: '#25D366', color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 10, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
+                💬 Consultar por WhatsApp
+              </a>
+            </div>
+          </FadeIn>
+
+          <FadeIn>
+            <div id="cotizar" style={{ marginTop: 24, background: `linear-gradient(135deg, ${C.dark}, ${C.accent})`, borderRadius: 20, padding: '48px 52px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 36, color: C.white }}>
               <div>
                 <h3 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 24, fontWeight: 800, margin: '0 0 8px' }}>¿No encontrás lo que buscás?</h3>
                 <p style={{ fontSize: 15, lineHeight: 1.7, opacity: 0.85, margin: 0, maxWidth: 440 }}>Fabricamos productos a medida. Contanos qué problema querés resolver y nuestros ingenieros desarrollan la fórmula.</p>

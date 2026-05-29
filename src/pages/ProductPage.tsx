@@ -116,9 +116,8 @@ export default function ProductPage() {
 
       <nav style={{ position: 'sticky', top: 0, zIndex: 1000, background: C.white, borderBottom: `1px solid ${C.borderLight}` }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: `linear-gradient(135deg, ${C.accent}, #0080d4)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: C.white }}>F</div>
-            <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 20, color: C.dark }}>FEMAVI</span>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <img src="/logo-femavi.png" alt="FEMAVI" style={{ height: 64, width: 'auto' }} />
           </Link>
           <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
             <Link to="/catalogo" style={{ color: C.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>← Catálogo</Link>

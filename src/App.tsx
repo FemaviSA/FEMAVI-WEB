@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Toaster } from 'sonner';
 import Home from './pages/Home';
 import About from './pages/About';
@@ -13,9 +14,14 @@ import QuoteDetail from './pages/admin/QuoteDetail';
 import { RequireAuth } from './components/RequireAuth';
 import { QuoteCartPill } from './components/QuoteCartPill';
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+
 function PublicCartPill() {
   const location = useLocation();
-  // No mostrar pill en rutas admin
   if (location.pathname.startsWith('/admin')) return null;
   return <QuoteCartPill />;
 }
@@ -23,6 +29,7 @@ function PublicCartPill() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Toaster
         position="bottom-right"
         richColors

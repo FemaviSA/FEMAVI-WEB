@@ -4,6 +4,7 @@ import { Trash2, ShoppingCart, ArrowLeft, CheckCircle2, Loader2 } from 'lucide-r
 import { useQuoteCart } from '../hooks/useQuoteCart';
 import { useProducts } from '../hooks/useProducts';
 import { createQuote } from '../lib/quotes';
+import { sendQuoteNotification } from '../lib/email';
 import { SEO, SITE_URL } from '../components/SEO';
 
 const C = {
@@ -39,6 +40,18 @@ const inputStyle: React.CSSProperties = {
   boxSizing: 'border-box',
 };
 
+const smallInputStyle: React.CSSProperties = {
+  padding: '7px 10px',
+  background: C.white,
+  border: `1px solid ${C.borderLight}`,
+  borderRadius: 7,
+  color: C.text,
+  fontSize: 13,
+  fontFamily: "'DM Sans', sans-serif",
+  outline: 'none',
+  boxSizing: 'border-box',
+};
+
 function Nav() {
   return (
     <nav style={{ background: C.white, borderBottom: `1px solid ${C.borderLight}` }}>
@@ -55,6 +68,11 @@ function Nav() {
   );
 }
 
+interface ProductDetail {
+  presentation: string;
+  quantity: number;
+}
+
 export default function Quote() {
   const { slugs, remove, clear } = useQuoteCart();
   const { products, loading: loadingProducts } = useProducts();
@@ -62,6 +80,7 @@ export default function Quote() {
   const [form, setForm] = useState({
     nombre: '', email: '', telefono: '', empresa: '', rubro: '', mensaje: '',
   });
+  const [productDetails, setProductDetails] = useState<Record<string, ProductDetail>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +94,23 @@ export default function Quote() {
     () => products.filter(p => slugs.includes(p.slug)),
     [products, slugs]
   );
+
+  // Inicializa productDetails cuando se cargan los productos del carrito
+  useEffect(() => {
+    if (cartProducts.length === 0) return;
+    setProductDetails(prev => {
+      const next = { ...prev };
+      for (const p of cartProducts) {
+        if (!next[p.slug]) {
+          next[p.slug] = {
+            presentation: p.presentations?.[0] ?? '',
+            quantity: 1,
+          };
+        }
+      }
+      return next;
+    });
+  }, [cartProducts]);
 
   // Limpia slugs huérfanos (productos borrados/desactivados después de agregar)
   useEffect(() => {
@@ -90,6 +126,14 @@ export default function Quote() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => setForm(prev => ({ ...prev, [field]: e.target.value }));
 
+  const setProductPresentation = (slug: string, presentation: string) => {
+    setProductDetails(prev => ({ ...prev, [slug]: { ...prev[slug], presentation } }));
+  };
+
+  const setProductQuantity = (slug: string, quantity: number) => {
+    setProductDetails(prev => ({ ...prev, [slug]: { ...prev[slug], quantity: Math.max(1, quantity) } }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -103,7 +147,30 @@ export default function Quote() {
         industry: form.rubro || null,
         message: form.mensaje || null,
         product_slugs: slugs,
+        product_details: cartProducts.map(p => ({
+          slug: p.slug,
+          presentation: productDetails[p.slug]?.presentation ?? p.presentations?.[0] ?? '',
+          quantity: productDetails[p.slug]?.quantity ?? 1,
+        })),
       });
+
+      // Dispara email con planilla Excel (fire-and-forget)
+      sendQuoteNotification({
+        name: form.nombre,
+        email: form.email,
+        phone: form.telefono || null,
+        company: form.empresa || null,
+        industry: form.rubro || null,
+        message: form.mensaje || null,
+        productNames: cartProducts.map(p => p.name),
+        productDetails: cartProducts.map(p => ({
+          name: p.name,
+          slug: p.slug,
+          presentation: productDetails[p.slug]?.presentation ?? p.presentations?.[0] ?? '',
+          quantity: productDetails[p.slug]?.quantity ?? 1,
+        })),
+      });
+
       setSubmitted(true);
       clear();
     } catch (err: any) {
@@ -282,30 +349,73 @@ export default function Quote() {
                   </button>
                 )}
               </div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: 480, overflowY: 'auto' }}>
-                {cartProducts.map(p => (
-                  <li key={p.slug} style={{ padding: '14px 20px', borderBottom: `1px solid ${C.borderLight}`, display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 8, background: C.bg, border: `1px solid ${C.borderLight}`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                      {p.image_url && <img src={p.image_url} alt={p.name} style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{p.category}</div>
-                      <Link to={`/catalogo/${p.slug}`} style={{ fontSize: 14, fontWeight: 700, color: C.dark, textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {p.name}
-                      </Link>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => remove(p.slug)}
-                      aria-label={`Quitar ${p.name}`}
-                      style={{ width: 32, height: 32, borderRadius: 8, background: C.bg, border: `1px solid ${C.borderLight}`, color: C.textLight, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}
-                      onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#dc2626'; e.currentTarget.style.borderColor = '#fecaca'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = C.bg; e.currentTarget.style.color = C.textLight; e.currentTarget.style.borderColor = C.borderLight; }}
-                    >
-                      <Trash2 style={{ width: 14, height: 14 }} />
-                    </button>
-                  </li>
-                ))}
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: 540, overflowY: 'auto' }}>
+                {cartProducts.map(p => {
+                  const detail = productDetails[p.slug] ?? { presentation: p.presentations?.[0] ?? '', quantity: 1 };
+                  return (
+                    <li key={p.slug} style={{ padding: '14px 20px', borderBottom: `1px solid ${C.borderLight}` }}>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                        <div style={{ width: 48, height: 48, borderRadius: 8, background: C.bg, border: `1px solid ${C.borderLight}`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                          {p.image_url && <img src={p.image_url} alt={p.name} style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{p.category}</div>
+                          <Link to={`/catalogo/${p.slug}`} style={{ fontSize: 13, fontWeight: 700, color: C.dark, textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {p.name}
+                          </Link>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => remove(p.slug)}
+                          aria-label={`Quitar ${p.name}`}
+                          style={{ width: 28, height: 28, borderRadius: 7, background: C.bg, border: `1px solid ${C.borderLight}`, color: C.textLight, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#dc2626'; e.currentTarget.style.borderColor = '#fecaca'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = C.bg; e.currentTarget.style.color = C.textLight; e.currentTarget.style.borderColor = C.borderLight; }}
+                        >
+                          <Trash2 style={{ width: 12, height: 12 }} />
+                        </button>
+                      </div>
+
+                      {/* Presentación y cantidad */}
+                      <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center' }}>
+                        {p.presentations && p.presentations.length > 1 ? (
+                          <select
+                            value={detail.presentation}
+                            onChange={e => setProductPresentation(p.slug, e.target.value)}
+                            style={{ ...smallInputStyle, flex: 1, cursor: 'pointer' }}
+                          >
+                            {p.presentations.map(pres => (
+                              <option key={pres} value={pres}>{pres}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span style={{ flex: 1, fontSize: 12, color: C.textMuted, padding: '7px 0' }}>
+                            {detail.presentation || '—'}
+                          </span>
+                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                          <button
+                            type="button"
+                            onClick={() => setProductQuantity(p.slug, detail.quantity - 1)}
+                            style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${C.borderLight}`, background: C.bg, color: C.text, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Sans', sans-serif" }}
+                          >−</button>
+                          <input
+                            type="number"
+                            min={1}
+                            value={detail.quantity}
+                            onChange={e => setProductQuantity(p.slug, parseInt(e.target.value) || 1)}
+                            style={{ ...smallInputStyle, width: 46, textAlign: 'center', padding: '7px 4px' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setProductQuantity(p.slug, detail.quantity + 1)}
+                            style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${C.borderLight}`, background: C.bg, color: C.text, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Sans', sans-serif" }}
+                          >+</button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
               <div style={{ padding: '16px 20px', background: C.bg, fontSize: 13, color: C.textMuted }}>
                 ¿Falta algún producto?{' '}
@@ -329,6 +439,9 @@ export default function Quote() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
       `}</style>
     </>
   );

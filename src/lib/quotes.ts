@@ -15,6 +15,7 @@ export async function createQuote(input: QuoteRequestInput): Promise<{ id: numbe
       industry: input.industry?.trim() || null,
       message: input.message?.trim() || null,
       product_slugs: input.product_slugs,
+      product_details: input.product_details ?? null,
     })
     .select('id')
     .maybeSingle();

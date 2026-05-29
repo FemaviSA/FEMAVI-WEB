@@ -26,6 +26,12 @@ export type ProductInput = Omit<Product, 'id' | 'created_at' | 'updated_at'> & {
 
 export type QuoteStatus = 'new' | 'contacted' | 'closed';
 
+export type QuoteProductDetail = {
+  slug: string;
+  presentation: string;
+  quantity: number;
+};
+
 export type QuoteRequest = {
   id: number;
   name: string;
@@ -35,6 +41,7 @@ export type QuoteRequest = {
   industry: string | null;
   message: string | null;
   product_slugs: string[];
+  product_details: QuoteProductDetail[] | null;
   status: QuoteStatus;
   notes: string | null;
   deleted_at: string | null;
@@ -45,4 +52,6 @@ export type QuoteRequest = {
 export type QuoteRequestInput = Pick<
   QuoteRequest,
   'name' | 'email' | 'phone' | 'company' | 'industry' | 'message' | 'product_slugs'
->;
+> & {
+  product_details?: QuoteProductDetail[];
+};

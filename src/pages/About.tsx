@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { setCartMode } from '../lib/cartMode';
 import { SEO, SITE_URL } from '../components/SEO';
 
 const C = {
@@ -60,8 +61,11 @@ function Nav({ scrolled }: { scrolled: boolean }) {
         </Link>
         <div className="desktop-nav-links" style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
           <Link to="/catalogo" style={{ color: C.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Catálogo</Link>
+          <Link to="/#soluciones" style={{ color: C.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Soluciones</Link>
           <span style={{ color: C.accent, fontSize: 14, fontWeight: 700 }}>Nosotros</span>
-          <Link to="/#cotizar" style={{ padding: '10px 24px', background: C.accent, color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', boxShadow: '0 4px 14px rgba(0,103,172,0.2)' }}>Pedir Cotización</Link>
+          <Link to="/#cotizar" style={{ color: C.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Contacto</Link>
+          <Link to="/catalogo" onClick={() => setCartMode('pedido')} style={{ padding: '10px 22px', background: 'transparent', color: C.accent, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', border: `1.5px solid ${C.border}` }}>Hacer mi pedido</Link>
+          <Link to="/catalogo" onClick={() => setCartMode('cotizacion')} style={{ padding: '10px 24px', background: C.accent, color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', boxShadow: '0 4px 14px rgba(0,103,172,0.2)' }}>Pedir Cotización</Link>
         </div>
         <button className="mobile-menu-btn" onClick={() => setMenuOpen(o => !o)} style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 8, flexDirection: 'column', gap: 5 }}>
           <span style={{ display: 'block', width: 24, height: 2, background: C.dark, borderRadius: 2, transition: 'all 0.3s', transform: menuOpen ? 'rotate(45deg) translateY(7px)' : 'none' }} />
@@ -72,8 +76,11 @@ function Nav({ scrolled }: { scrolled: boolean }) {
       {menuOpen && (
         <div style={{ background: C.white, borderTop: `1px solid ${C.borderSubtle}`, padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Link to="/catalogo" onClick={() => setMenuOpen(false)} style={{ color: C.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Catálogo</Link>
+          <Link to="/#soluciones" onClick={() => setMenuOpen(false)} style={{ color: C.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Soluciones</Link>
           <Link to="/nosotros" onClick={() => setMenuOpen(false)} style={{ color: C.accent, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>Nosotros</Link>
-          <Link to="/#cotizar" onClick={() => setMenuOpen(false)} style={{ padding: '12px 24px', background: C.accent, color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>Pedir Cotización</Link>
+          <Link to="/#cotizar" onClick={() => setMenuOpen(false)} style={{ color: C.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Contacto</Link>
+          <Link to="/catalogo" onClick={() => { setCartMode('pedido'); setMenuOpen(false); }} style={{ padding: '12px 24px', border: `1.5px solid ${C.border}`, color: C.accent, fontSize: 14, fontWeight: 700, borderRadius: 8, background: 'transparent', textDecoration: 'none', textAlign: 'center' }}>Hacer mi pedido</Link>
+          <Link to="/catalogo" onClick={() => { setCartMode('cotizacion'); setMenuOpen(false); }} style={{ padding: '12px 24px', background: C.accent, color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>Pedir Cotización</Link>
         </div>
       )}
     </nav>
@@ -258,7 +265,7 @@ function CTA() {
               Pedí tu cotización sin compromiso. Te respondemos en menos de 24 horas hábiles con una propuesta adaptada a tu volumen.
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link to="/#cotizar" style={{ padding: '16px 32px', background: C.accent, color: C.white, fontSize: 15, fontWeight: 700, borderRadius: 10, textDecoration: 'none', boxShadow: '0 8px 24px rgba(0,103,172,0.25)' }}>
+              <Link to="/catalogo" onClick={() => setCartMode('cotizacion')} style={{ padding: '16px 32px', background: C.accent, color: C.white, fontSize: 15, fontWeight: 700, borderRadius: 10, textDecoration: 'none', boxShadow: '0 8px 24px rgba(0,103,172,0.25)' }}>
                 Pedir Cotización →
               </Link>
               <Link to="/catalogo" style={{ padding: '16px 32px', border: `1.5px solid ${C.border}`, color: C.accent, fontSize: 15, fontWeight: 700, borderRadius: 10, textDecoration: 'none', background: C.white }}>
@@ -281,9 +288,8 @@ function Footer() {
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 48, marginBottom: 48 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: `linear-gradient(135deg, ${C.accentLight}, ${C.accent})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: C.white }}>F</div>
-              <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 18, color: C.white }}>FEMAVI</span>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+              <img src="/logo-femavi.png" alt="FEMAVI" style={{ height: 32, width: 'auto', borderRadius: 6 }} />
             </div>
             <p style={{ fontSize: 14, lineHeight: 1.7, color: 'rgba(255,255,255,0.6)', maxWidth: 300 }}>Fabricantes de productos químicos industriales desde 1970. Fórmulas de desarrollo propio con entrega en todo el país.</p>
           </div>
@@ -295,14 +301,23 @@ function Footer() {
           </div>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.accentLight, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Industrias</div>
-            {['Transporte', 'Gastronomía', 'Edificios', 'Manufactura', 'Empresas de limpieza', 'Automotor'].map(l => (
-              <Link key={l} to="/catalogo" style={{ display: 'block', fontSize: 14, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', marginBottom: 10 }}>{l}</Link>
+            {[
+              { label: 'Transporte', ind: 'Transporte' },
+              { label: 'Gastronomía', ind: 'Gastronomía' },
+              { label: 'Edificios', ind: 'Edificios' },
+              { label: 'Industria', ind: 'Industria' },
+              { label: 'Empresas de limpieza', ind: 'Empresas de limpieza' },
+              { label: 'Automotor', ind: 'Automotor' },
+            ].map(({ label, ind }) => (
+              <Link key={label} to={`/catalogo?industria=${encodeURIComponent(ind)}`} style={{ display: 'block', fontSize: 14, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', marginBottom: 10 }}>{label}</Link>
             ))}
           </div>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.accentLight, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contacto</div>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, margin: 0 }}>
-              Ibarrola 7071<br />Liniers, CABA<br />+54 9 116228-4649<br />ventas@femavi.com.ar
+              Ibarrola 7071<br />Liniers, CABA<br />
+              <a href="tel:+5491162284649" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>+54 9 116228-4649</a><br />
+              <a href="mailto:ventas@femavi.com.ar" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>ventas@femavi.com.ar</a>
             </p>
           </div>
         </div>

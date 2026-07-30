@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import type { Product } from '../types/product';
 import { AddToQuoteButton } from './AddToQuoteButton';
+import { ProductLabel } from './ProductLabel';
 
 const C = {
   bg: '#f6f8fa', white: '#FFFFFF', accent: '#0067ac',
@@ -61,7 +62,7 @@ export function ProductModal({ product: p, onClose }: Props) {
             background: `linear-gradient(160deg, ${C.accentPale}, ${C.bg})`,
             borderRight: `1px solid ${C.borderLight}`,
           }}>
-            {p.image_url && <img src={p.image_url} alt={p.name} style={{ width: 190, height: 190, objectFit: 'contain' }} />}
+            <ProductLabel name={p.name} category={p.category} size={190} />
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 24, justifyContent: 'center' }}>
               {p.benefits.map(b => (
                 <span key={b} style={{ padding: '4px 11px', background: C.accent, borderRadius: 100, fontSize: 10, color: C.white, fontWeight: 600 }}>{b}</span>
@@ -69,9 +70,18 @@ export function ProductModal({ product: p, onClose }: Props) {
             </div>
           </div>
           <div style={{ padding: '40px 36px' }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{p.category}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{p.category}</span>
+              {p.tags.includes('Nuevo') && (
+                <span style={{ padding: '2px 8px', background: '#f59e0b', color: C.white, fontSize: 10, fontWeight: 700, borderRadius: 6, textTransform: 'uppercase' }}>
+                  Nuevo
+                </span>
+              )}
+            </div>
             <h2 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 28, fontWeight: 800, color: C.dark, margin: '6px 0 4px', letterSpacing: '-0.02em' }}>{p.name}</h2>
-            <p style={{ fontSize: 15, color: C.textMuted, fontStyle: 'italic', margin: '0 0 18px', lineHeight: 1.6 }}>{p.headline}</p>
+            {p.headline && (
+              <p style={{ fontSize: 15, color: C.textMuted, fontStyle: 'italic', margin: '0 0 18px', lineHeight: 1.6 }}>{p.headline}</p>
+            )}
             <p style={{ fontSize: 14, lineHeight: 1.8, color: C.text, margin: '0 0 20px' }}>{p.description}</p>
             {p.story && (
               <div style={{ padding: '16px 20px', background: C.accentPale, borderRadius: 12, borderLeft: `3px solid ${C.accent}`, marginBottom: 22 }}>

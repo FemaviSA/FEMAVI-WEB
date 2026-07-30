@@ -7,13 +7,46 @@ import type { ProductInput } from '../../types/product';
 import { AdminLayout } from '../../components/AdminLayout';
 
 const EMPTY: ProductInput = {
-  slug: '', name: '', category: '', headline: '', description: '', story: '',
+  slug: '', name: '', category: '', subcategory: '', headline: '', description: '', story: '',
   industries: [], benefits: [], presentations: [], tags: [],
   dilution: '', ph: '', image_url: '',
   featured: false, display_order: 0, is_active: true,
 };
 
-const INDUSTRY_OPTIONS = ['Transporte', 'Gastronomía', 'Edificios', 'Industria', 'Automotor', 'Comercios', 'Salud', 'Empresas de limpieza'];
+const CATEGORY_OPTIONS = [
+  'Higiene Industrial',
+  'Producción',
+  'Aceites y Lubricantes',
+  'Grasas',
+  'Aerosoles',
+  'Tratamiento de Agua',
+  'Papel',
+  'Línea Daurange',
+];
+
+const SUBCATEGORY_OPTIONS = [
+  'Aceites y Aditivos',
+  'Aerosoles',
+  'Anticorrosivos',
+  'Ceras',
+  'Desengrasantes',
+  'Desinfectantes',
+  'Desmoldantes',
+  'Detergentes',
+  'Grasas',
+  'Higiene Industrial',
+  'Insecticida',
+  'Lavamanos',
+  'Limpiadores',
+  'Línea Automotor',
+  'Lubricantes',
+  'Tratamiento para Aguas',
+];
+
+const INDUSTRY_OPTIONS = [
+  'Transporte', 'Gastronomía', 'Edificios', 'Industria',
+  'Automotor', 'Comercios', 'Salud', 'Empresas de limpieza', 'Hogar e Institucional',
+];
 const BENEFIT_OPTIONS = ['Alto rendimiento', 'Biodegradable', 'Alta concentración', 'Apto alimenticio', 'Larga duración', 'Seguridad industrial', 'Multiuso', 'Ultra concentrado', 'Económico por rendimiento'];
 
 export default function ProductForm() {
@@ -47,6 +80,14 @@ export default function ProductForm() {
 
   const set = <K extends keyof ProductInput>(key: K, value: ProductInput[K]) => {
     setForm(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleNameChange = (name: string) => {
+    setForm(prev => {
+      const autoSlug = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const slugIsAuto = !prev.id && (prev.slug === '' || prev.slug === prev.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+      return { ...prev, name, slug: slugIsAuto ? autoSlug : prev.slug };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -133,12 +174,21 @@ export default function ProductForm() {
           <Section title="Información básica" desc="Datos principales que aparecen en el catálogo y la ficha de producto.">
             <div className="grid md:grid-cols-2 gap-4">
               <Field label="Nombre" required>
-                <input required type="text" value={form.name} onChange={e => set('name', e.target.value)} className={inputCls} placeholder="FIN-GRASS PLUS" />
+                <input required type="text" value={form.name} onChange={e => handleNameChange(e.target.value)} className={inputCls} placeholder="FIN-GRASS PLUS" />
               </Field>
-              <Field label="Categoría" required>
-                <input required type="text" value={form.category} onChange={e => set('category', e.target.value)} className={inputCls} placeholder="Desengrasante" />
+              <Field label="Categoría" required hint="Categoría principal visible en el catálogo.">
+                <select required value={form.category} onChange={e => set('category', e.target.value)} className={inputCls}>
+                  <option value="">— Seleccioná una categoría —</option>
+                  {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
               </Field>
             </div>
+            <Field label="Tipo de producto (subcategoría)" hint="Filtra los productos en el catálogo por tipo. Debe coincidir exactamente con las opciones del catálogo.">
+              <select value={form.subcategory ?? ''} onChange={e => set('subcategory', e.target.value || null)} className={inputCls}>
+                <option value="">— Sin subcategoría —</option>
+                {SUBCATEGORY_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </Field>
             <Field label="Slug" hint="URL del producto. Se genera del nombre si lo dejás vacío.">
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 focus-within:border-femavi-500 focus-within:ring-2 focus-within:ring-femavi-100 transition">
                 <span className="text-slate-400 text-sm font-mono">/catalogo/</span>

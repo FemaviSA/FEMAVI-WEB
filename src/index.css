@@ -45,3 +45,77 @@ input::placeholder, textarea::placeholder { color: #8899a8; }
   .desktop-nav-links { display: none !important; }
   .mobile-menu-btn { display: flex !important; }
 }
+
+/* Estilos para el contenido markdown del blog */
+.article-content h2 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #004370;
+  margin: 2.5rem 0 1rem;
+  line-height: 1.25;
+}
+.article-content h3 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1a2b3c;
+  margin: 2rem 0 0.75rem;
+}
+.article-content p {
+  margin: 0 0 1.25rem;
+  color: #1a2b3c;
+}
+.article-content strong {
+  font-weight: 700;
+  color: #004370;
+}
+.article-content ul, .article-content ol {
+  margin: 0 0 1.25rem 1.5rem;
+}
+.article-content li {
+  margin-bottom: 0.4rem;
+  line-height: 1.7;
+}
+.article-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.article-content th {
+  background: #004370;
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.article-content td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #e2e8ee;
+  color: #1a2b3c;
+}
+.article-content tr:nth-child(even) td {
+  background: #f6f8fa;
+}
+.article-content blockquote {
+  border-left: 3px solid #0067ac;
+  padding: 12px 20px;
+  background: rgba(0,103,172,0.07);
+  border-radius: 0 10px 10px 0;
+  margin: 1.5rem 0;
+  font-style: italic;
+  color: #5a6f80;
+}
+.article-content code {
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.875em;
+  color: #004370;
+}

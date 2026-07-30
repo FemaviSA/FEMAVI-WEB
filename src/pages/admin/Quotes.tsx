@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Mail, Building2, Package, Clock, ChevronRight, Wifi, Trash2, RotateCcw } from 'lucide-react';
+import { Search, Mail, Building2, Package, Clock, ChevronRight, Wifi, Trash2, RotateCcw, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { listQuotes, listDeletedQuotes, softDeleteQuote, restoreQuote } from '../../lib/quotes';
 import { useQuotesRealtime } from '../../hooks/useQuotesRealtime';
@@ -17,9 +17,12 @@ export default function Quotes() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
+    setSelected(new Set());
     try {
       const [active, deleted] = await Promise.all([listQuotes(), listDeletedQuotes()]);
       setQuotes(active);
@@ -59,6 +62,53 @@ export default function Quotes() {
       toast.error(`No se pudo restaurar: ${e?.message ?? 'error'}`);
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = [...selected];
+    if (!confirm(`¿Ocultar ${ids.length} cotización${ids.length !== 1 ? 'es' : ''}? Quedan guardadas y podés restaurarlas desde "Eliminadas".`)) return;
+    setBulkBusy(true);
+    try {
+      await Promise.all(ids.map(id => softDeleteQuote(id)));
+      setQuotes(prev => prev.filter(q => !ids.includes(q.id)));
+      setDeletedQuotes(prev => {
+        const toMove = quotes.filter(q => ids.includes(q.id)).map(q => ({ ...q, deleted_at: new Date().toISOString() }));
+        return [...toMove, ...prev];
+      });
+      setSelected(new Set());
+      toast.success(`${ids.length} cotización${ids.length !== 1 ? 'es' : ''} ocultada${ids.length !== 1 ? 's' : ''}`);
+    } catch (e: any) {
+      toast.error(`Error al ocultar: ${e?.message ?? 'error'}`);
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const handleBulkRestore = async () => {
+    const ids = [...selected];
+    setBulkBusy(true);
+    try {
+      await Promise.all(ids.map(id => restoreQuote(id)));
+      setDeletedQuotes(prev => prev.filter(q => !ids.includes(q.id)));
+      setQuotes(prev => {
+        const toMove = deletedQuotes.filter(q => ids.includes(q.id)).map(q => ({ ...q, deleted_at: null }));
+        return [...toMove, ...prev];
+      });
+      setSelected(new Set());
+      toast.success(`${ids.length} cotización${ids.length !== 1 ? 'es' : ''} restaurada${ids.length !== 1 ? 's' : ''}`);
+    } catch (e: any) {
+      toast.error(`Error al restaurar: ${e?.message ?? 'error'}`);
+    } finally {
+      setBulkBusy(false);
     }
   };
 
@@ -124,6 +174,13 @@ export default function Quotes() {
     return r;
   }, [quotes, deletedQuotes, query, filter]);
 
+  const someSelected = selected.size > 0;
+  const allSelected = filtered.length > 0 && filtered.every(q => selected.has(q.id));
+  const toggleSelectAll = () => {
+    if (allSelected) setSelected(new Set());
+    else setSelected(new Set(filtered.map(q => q.id)));
+  };
+
   return (
     <AdminLayout crumbs={[{ label: 'Cotizaciones' }]}>
       <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
@@ -176,7 +233,7 @@ export default function Quotes() {
             ] as const).map(([key, label, count]) => (
               <button
                 key={key}
-                onClick={() => setFilter(key)}
+                onClick={() => { setFilter(key); setSelected(new Set()); }}
                 className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 ${
                   filter === key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
                 }`}
@@ -189,6 +246,41 @@ export default function Quotes() {
             ))}
           </div>
         </div>
+
+        {/* Bulk action bar */}
+        {someSelected && (
+          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-3 flex-wrap">
+            <span className="text-xs font-semibold text-slate-600">
+              {selected.size} seleccionada{selected.size !== 1 ? 's' : ''}
+            </span>
+            {filter !== 'deleted' && (
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkBusy}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-red-50 text-red-700 hover:bg-red-100 transition disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Ocultar seleccionadas
+              </button>
+            )}
+            {filter === 'deleted' && (
+              <button
+                onClick={handleBulkRestore}
+                disabled={bulkBusy}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-femavi-50 text-femavi-700 hover:bg-femavi-100 transition disabled:opacity-50"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Restaurar seleccionadas
+              </button>
+            )}
+            <button
+              onClick={() => setSelected(new Set())}
+              className="text-xs text-slate-400 hover:text-slate-600 transition ml-auto"
+            >
+              Cancelar selección
+            </button>
+          </div>
+        )}
       </div>
 
       {error && (
@@ -215,12 +307,38 @@ export default function Quotes() {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          {/* Select-all header */}
+          <div className="flex items-center gap-3 px-5 py-2.5 border-b border-slate-100 bg-slate-50/60">
+            <button
+              onClick={toggleSelectAll}
+              className="flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition"
+              title={allSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}
+            >
+              <span className={`w-4 h-4 rounded border-2 flex items-center justify-center transition ${allSelected ? 'border-femavi-500 bg-femavi-500' : someSelected ? 'border-femavi-400 bg-femavi-100' : 'border-slate-300 bg-white'}`}>
+                {allSelected && <CheckSquare className="w-3 h-3 text-white" style={{ strokeWidth: 3 }} />}
+                {!allSelected && someSelected && <span className="w-1.5 h-0.5 bg-femavi-500 rounded" />}
+              </span>
+              {allSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}
+            </button>
+            <span className="text-xs text-slate-400">{filtered.length} cotización{filtered.length !== 1 ? 'es' : ''}</span>
+          </div>
           <ul className="divide-y divide-slate-100">
             {filtered.map(q => {
               const isDeleted = !!q.deleted_at;
+              const isSelected = selected.has(q.id);
               return (
-                <li key={q.id} className="flex items-stretch">
-                  <Link to={`/admin/cotizaciones/${q.id}`} className="flex-1 flex items-center gap-4 px-5 py-4 hover:bg-slate-50/70 transition group min-w-0">
+                <li key={q.id} className={`flex items-stretch transition-colors ${isSelected ? 'bg-femavi-50/40' : ''}`}>
+                  {/* Checkbox */}
+                  <button
+                    onClick={e => { e.stopPropagation(); toggleSelect(q.id); }}
+                    className="pl-5 pr-3 flex items-center shrink-0"
+                    aria-label={isSelected ? 'Deseleccionar' : 'Seleccionar'}
+                  >
+                    <span className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${isSelected ? 'border-femavi-500 bg-femavi-500' : 'border-slate-300 bg-white hover:border-femavi-400'}`}>
+                      {isSelected && <CheckSquare className="w-3 h-3 text-white" style={{ strokeWidth: 3 }} />}
+                    </span>
+                  </button>
+                  <Link to={`/admin/cotizaciones/${q.id}`} className="flex-1 flex items-center gap-4 px-3 py-4 hover:bg-slate-50/70 transition group min-w-0">
                     <div className="flex-shrink-0">
                       {isDeleted ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold ring-1 ring-slate-200/60">

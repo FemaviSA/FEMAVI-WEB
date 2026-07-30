@@ -335,18 +335,14 @@ function StatCard({
 }
 
 const CATEGORY_TONES: Record<string, string> = {
-  Desengrasante: 'bg-orange-50 text-orange-700 ring-orange-200',
-  Desinfectante: 'bg-blue-50 text-blue-700 ring-blue-200',
-  Cera: 'bg-amber-50 text-amber-700 ring-amber-200',
-  Aromatizante: 'bg-pink-50 text-pink-700 ring-pink-200',
-  Limpiador: 'bg-cyan-50 text-cyan-700 ring-cyan-200',
-  Aceite: 'bg-yellow-50 text-yellow-700 ring-yellow-200',
-  Anticorrosivo: 'bg-zinc-100 text-zinc-700 ring-zinc-200',
-  Absorbente: 'bg-stone-100 text-stone-700 ring-stone-200',
-  Higiene: 'bg-violet-50 text-violet-700 ring-violet-200',
-  Detergente: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
-  Solvente: 'bg-rose-50 text-rose-700 ring-rose-200',
-  Tratamiento: 'bg-teal-50 text-teal-700 ring-teal-200',
+  'Higiene Industrial': 'bg-blue-50 text-blue-700 ring-blue-200',
+  'Producción': 'bg-orange-50 text-orange-700 ring-orange-200',
+  'Aceites y Lubricantes': 'bg-yellow-50 text-yellow-700 ring-yellow-200',
+  'Grasas': 'bg-amber-50 text-amber-700 ring-amber-200',
+  'Aerosoles': 'bg-sky-50 text-sky-700 ring-sky-200',
+  'Tratamiento de Agua': 'bg-teal-50 text-teal-700 ring-teal-200',
+  'Papel': 'bg-stone-100 text-stone-700 ring-stone-200',
+  'Línea Daurange': 'bg-violet-50 text-violet-700 ring-violet-200',
 };
 
 function CategoryPill({ category }: { category: string }) {

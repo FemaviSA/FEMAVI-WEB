@@ -3,9 +3,8 @@ import type { QuoteRequest, QuoteRequestInput, QuoteStatus } from '../types/prod
 
 const TABLE = 'quote_requests';
 
-export async function createQuote(input: QuoteRequestInput): Promise<{ id: number } | null> {
-  // Insert público (anon). No usamos .select() porque el rol anon no tiene SELECT.
-  const { data, error } = await supabase
+export async function createQuote(input: QuoteRequestInput): Promise<void> {
+  const { error } = await supabase
     .from(TABLE)
     .insert({
       name: input.name.trim(),
@@ -16,17 +15,9 @@ export async function createQuote(input: QuoteRequestInput): Promise<{ id: numbe
       message: input.message?.trim() || null,
       product_slugs: input.product_slugs,
       product_details: input.product_details ?? null,
-    })
-    .select('id')
-    .maybeSingle();
+    });
 
-  if (error) {
-    // RLS no permite SELECT después del insert al anon — el insert pudo igualmente haber pasado.
-    // Solo logueamos warn; no bloqueamos al usuario.
-    console.warn('[quotes] insert returned error (post-insert SELECT may be blocked by RLS):', error.message);
-    return null;
-  }
-  return data;
+  if (error) throw error;
 }
 
 export async function listQuotes(opts?: { status?: QuoteStatus | 'all'; includeDeleted?: boolean }): Promise<QuoteRequest[]> {

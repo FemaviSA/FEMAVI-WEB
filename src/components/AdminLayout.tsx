@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Package, ExternalLink, LogOut, Menu, X, ChevronRight, Mail } from 'lucide-react';
+import { Package, ExternalLink, LogOut, Menu, X, ChevronRight, Mail, BookOpen } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { getQuoteCounts } from '../lib/quotes';
 import { useQuotesRealtime } from '../hooks/useQuotesRealtime';
@@ -81,13 +81,8 @@ export function AdminLayout({
       >
         <div className="px-6 py-5 flex items-center justify-between border-b border-white/5">
           <Link to="/admin" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-femavi-400 to-femavi-600 flex items-center justify-center font-black text-slate-950 text-base shadow-lg shadow-femavi-500/20">
-              F
-            </div>
-            <div>
-              <div className="font-bold text-sm tracking-tight">FEMAVI</div>
-              <div className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Admin Panel</div>
-            </div>
+            <img src="/logo-femavi.png" alt="FEMAVI" className="h-8 w-auto rounded" />
+            <div className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Admin Panel</div>
           </Link>
           <button
             onClick={() => setMobileOpen(false)}
@@ -114,6 +109,10 @@ export function AdminLayout({
                 {newQuotes}
               </span>
             )}
+          </NavLink>
+          <NavLink to="/admin/blog" className={navItem}>
+            <BookOpen className="w-4 h-4" />
+            <span className="flex-1">Blog</span>
           </NavLink>
         </nav>
 

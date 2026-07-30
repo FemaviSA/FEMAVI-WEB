@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { setCartMode } from '../lib/cartMode';
 import { useProducts } from '../hooks/useProducts';
 import { useQuoteCart } from '../hooks/useQuoteCart';
 import { createQuote } from '../lib/quotes';
 import { SEO, SITE_URL } from '../components/SEO';
+import { ProductLabel } from '../components/ProductLabel';
 import type { Product } from '../types/product';
 
 const COLORS = {
@@ -40,9 +42,9 @@ const verticals = [
 ];
 
 const testimonials = [
-  { name: 'Carlos M.', role: 'Gerente de Mantenimiento', company: 'Línea de colectivos — AMBA', text: 'Hace 8 años que usamos Femavi para toda la flota. Probamos otros proveedores y siempre volvimos. El rendimiento no se compara y la entrega nunca falla.' },
-  { name: 'Patricia L.', role: 'Facility Manager', company: 'Edificio corporativo — Microcentro', text: 'La cera acrílica rinde el doble que lo que usábamos antes. Pero lo que más valoro es el seguimiento postventa, siempre están encima.' },
-  { name: 'Roberto D.', role: 'Dueño', company: 'Empresa de limpieza — Zona Sur', text: 'Arrancamos con un par de productos y hoy les compramos toda la línea. Los precios son justos y la calidad es consistente lote a lote.' },
+  { name: 'Carlos M.', role: 'Transporte', text: 'Hace años que les compro para toda la flota. Probé otros proveedores y siempre volví. Nunca me fallaron con la entrega.' },
+  { name: 'Patricia L.', role: 'Edificios', text: 'La cera rinde mucho más que la que usaba antes. Y cuando tuve un problema con un pedido, lo resolvieron rápido.' },
+  { name: 'Roberto D.', role: 'Limpieza', text: 'Arranqué comprando un par de productos sueltos. Hoy les compro casi toda la línea para mi empresa.' },
 ];
 
 const categories = [
@@ -87,6 +89,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function Nav({ scrolled }: { scrolled: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
   return (
     <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: scrolled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', borderBottom: scrolled ? `1px solid ${COLORS.borderSubtle}` : '1px solid transparent', transition: 'all 0.3s ease', boxShadow: scrolled ? '0 1px 12px rgba(0,67,112,0.05)' : 'none' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: scrolled ? 60 : 72 }}>
@@ -97,8 +100,9 @@ function Nav({ scrolled }: { scrolled: boolean }) {
           <Link to="/catalogo" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Catálogo</Link>
           <a href="#soluciones" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Soluciones</a>
           <Link to="/nosotros" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Nosotros</Link>
-          <a href="#contacto" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Contacto</a>
-          <Link to="/cotizar" style={{ padding: '10px 24px', background: COLORS.accent, color: COLORS.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', boxShadow: '0 4px 14px rgba(0,103,172,0.2)' }}>Pedir Cotización</Link>
+          <a href="#cotizar" style={{ color: COLORS.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Contacto</a>
+          <button onClick={() => { setCartMode('pedido'); navigate('/catalogo'); }} style={{ padding: '10px 22px', background: 'transparent', color: COLORS.accent, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', border: `1.5px solid ${COLORS.border}`, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Hacer mi pedido</button>
+          <button onClick={() => { setCartMode('cotizacion'); navigate('/catalogo'); }} style={{ padding: '10px 24px', background: COLORS.accent, color: COLORS.white, fontSize: 14, fontWeight: 700, borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: '0 4px 14px rgba(0,103,172,0.2)' }}>Pedir Cotización</button>
         </div>
         <button className="mobile-menu-btn" onClick={() => setMenuOpen(o => !o)} style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 8, flexDirection: 'column', gap: 5 }}>
           <span style={{ display: 'block', width: 24, height: 2, background: COLORS.dark, borderRadius: 2, transition: 'all 0.3s', transform: menuOpen ? 'rotate(45deg) translateY(7px)' : 'none' }} />
@@ -111,8 +115,9 @@ function Nav({ scrolled }: { scrolled: boolean }) {
           <Link to="/catalogo" onClick={() => setMenuOpen(false)} style={{ color: COLORS.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Catálogo</Link>
           <a href="#soluciones" onClick={() => setMenuOpen(false)} style={{ color: COLORS.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Soluciones</a>
           <Link to="/nosotros" onClick={() => setMenuOpen(false)} style={{ color: COLORS.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Nosotros</Link>
-          <a href="#contacto" onClick={() => setMenuOpen(false)} style={{ color: COLORS.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Contacto</a>
-          <Link to="/cotizar" onClick={() => setMenuOpen(false)} style={{ padding: '12px 24px', background: COLORS.accent, color: COLORS.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>Pedir Cotización</Link>
+          <a href="#cotizar" onClick={() => setMenuOpen(false)} style={{ color: COLORS.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Contacto</a>
+          <button onClick={() => { setCartMode('pedido'); setMenuOpen(false); navigate('/catalogo'); }} style={{ padding: '12px 24px', border: `1.5px solid ${COLORS.border}`, color: COLORS.accent, fontSize: 14, fontWeight: 700, borderRadius: 8, background: 'transparent', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textAlign: 'center' }}>Hacer mi pedido</button>
+          <button onClick={() => { setCartMode('cotizacion'); setMenuOpen(false); navigate('/catalogo'); }} style={{ padding: '12px 24px', background: COLORS.accent, color: COLORS.white, fontSize: 14, fontWeight: 700, borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textAlign: 'center' }}>Pedir Cotización</button>
         </div>
       )}
     </nav>
@@ -165,7 +170,15 @@ function Hero() {
             <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Categorías principales</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {categories.map(c => (
-                <span key={c} style={{ padding: '7px 14px', background: COLORS.accentMuted, borderRadius: 100, fontSize: 13, color: COLORS.accent, fontWeight: 600, border: `1px solid ${COLORS.border}` }}>{c}</span>
+                <Link
+                  key={c}
+                  to={`/catalogo?tipo=${encodeURIComponent(c)}`}
+                  style={{ padding: '7px 14px', background: COLORS.accentMuted, borderRadius: 100, fontSize: 13, color: COLORS.accent, fontWeight: 600, border: `1px solid ${COLORS.border}`, textDecoration: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = COLORS.accent; e.currentTarget.style.color = COLORS.white; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = COLORS.accentMuted; e.currentTarget.style.color = COLORS.accent; }}
+                >
+                  {c}
+                </Link>
               ))}
             </div>
             <div style={{ marginTop: 8, padding: 20, background: COLORS.accentMuted, borderRadius: 12, border: `1px solid ${COLORS.border}` }}>
@@ -222,43 +235,47 @@ function Verticals() {
 
 function ProductsSection({ products, loading }: { products: Product[]; loading: boolean }) {
   const featured = products.filter(p => p.featured).slice(0, 6);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const scrollBy = (dir: 1 | -1) => {
+    scrollerRef.current?.scrollBy({ left: dir * 280, behavior: 'smooth' });
+  };
   return (
     <section id="productos" style={{ background: COLORS.white, padding: '120px 24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <FadeIn>
           <SectionLabel>Catálogo</SectionLabel>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 56 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
             <h2 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 44, fontWeight: 800, color: COLORS.dark, letterSpacing: '-0.03em', margin: 0 }}>
               Productos destacados
             </h2>
-            <Link to="/catalogo" style={{ color: COLORS.accent, fontSize: 15, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-              Ver catálogo completo →
-            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <Link to="/catalogo" style={{ color: COLORS.accent, fontSize: 15, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                Ver catálogo completo →
+              </Link>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => scrollBy(-1)} aria-label="Anterior" style={{ width: 36, height: 36, borderRadius: 100, border: `1px solid ${COLORS.border}`, background: COLORS.white, color: COLORS.accent, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>←</button>
+                <button onClick={() => scrollBy(1)} aria-label="Siguiente" style={{ width: 36, height: 36, borderRadius: 100, border: `1px solid ${COLORS.border}`, background: COLORS.white, color: COLORS.accent, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>→</button>
+              </div>
+            </div>
           </div>
         </FadeIn>
         {loading ? (
           <div style={{ textAlign: 'center', padding: 80, color: COLORS.textMuted }}>Cargando productos…</div>
         ) : (
-          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+          <div ref={scrollerRef} style={{ display: 'flex', gap: 16, overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: 8 }}>
             {featured.map((p, i) => (
-              <FadeIn key={p.id} delay={i * 0.08}>
-                <Link to={`/catalogo/${p.slug}`} style={{ textDecoration: 'none', display: 'block', background: COLORS.white, borderRadius: 16, border: `1px solid ${COLORS.borderSubtle}`, overflow: 'hidden', transition: 'all 0.3s', cursor: 'pointer' }}
+              <FadeIn key={p.id} delay={i * 0.06}>
+                <Link to={`/catalogo/${p.slug}`} style={{ textDecoration: 'none', display: 'block', width: 240, flexShrink: 0, scrollSnapAlign: 'start', background: COLORS.white, borderRadius: 16, border: `1px solid ${COLORS.borderSubtle}`, overflow: 'hidden', transition: 'all 0.3s', cursor: 'pointer' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = COLORS.accent; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 20px 48px rgba(0,103,172,0.12)'; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = COLORS.borderSubtle; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
-                  <div style={{ padding: 32, display: 'flex', justifyContent: 'center', background: COLORS.bg }}>
-                    {p.image_url && <img src={p.image_url} alt={p.name} style={{ width: 140, height: 140, objectFit: 'contain' }} />}
+                  <div style={{ padding: 24, display: 'flex', justifyContent: 'center', background: COLORS.bg }}>
+                    <ProductLabel name={p.name} category={p.category} size={100} />
                   </div>
-                  <div style={{ padding: '24px 28px 28px' }}>
+                  <div style={{ padding: '18px 18px 20px' }}>
                     <Badge>{p.category}</Badge>
-                    <h3 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 18, fontWeight: 700, color: COLORS.dark, margin: '12px 0 8px' }}>{p.name}</h3>
-                    <p style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.textMuted, margin: '0 0 16px' }}>{p.description}</p>
-                    <div style={{ fontSize: 12, color: COLORS.textDark }}>
-                      <span style={{ color: COLORS.accent, fontWeight: 700 }}>Uso:</span> {p.industries.join(', ')}
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
-                      <span style={{ flex: 1, padding: '12px 0', background: COLORS.accent, color: COLORS.white, fontSize: 13, fontWeight: 700, borderRadius: 8, textAlign: 'center' }}>Cotizar</span>
-                      <span style={{ flex: 1, padding: '12px 0', border: `1px solid ${COLORS.border}`, color: COLORS.accent, fontSize: 13, fontWeight: 600, borderRadius: 8, textAlign: 'center', background: 'transparent' }}>Ficha técnica</span>
-                    </div>
+                    <h3 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 700, color: COLORS.dark, margin: '10px 0 6px' }}>{p.name}</h3>
+                    <p style={{ fontSize: 13, lineHeight: 1.5, color: COLORS.textMuted, margin: '0 0 14px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</p>
+                    <span style={{ display: 'block', padding: '10px 0', background: COLORS.accent, color: COLORS.white, fontSize: 13, fontWeight: 700, borderRadius: 8, textAlign: 'center' }}>Cotizar</span>
                   </div>
                 </Link>
               </FadeIn>
@@ -318,14 +335,11 @@ function Testimonials() {
           {testimonials.map((t, i) => (
             <FadeIn key={i} delay={i * 0.1}>
               <div style={{ padding: 36, background: COLORS.bg, borderRadius: 20, border: `1px solid ${COLORS.borderSubtle}`, height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
-                  {[1, 2, 3, 4, 5].map(s => <span key={s} style={{ color: COLORS.accent, fontSize: 18 }}>★</span>)}
-                </div>
-                <p style={{ fontSize: 16, lineHeight: 1.75, color: COLORS.text, margin: '0 0 28px', flex: 1, fontStyle: 'italic' }}>"{t.text}"</p>
-                <div>
+                <p style={{ fontSize: 16, lineHeight: 1.75, color: COLORS.text, margin: '0 0 28px', flex: 1 }}>"{t.text}"</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.dark }}>{t.name}</div>
+                  <span style={{ fontSize: 13, color: COLORS.textMuted }}>·</span>
                   <div style={{ fontSize: 13, color: COLORS.textMuted }}>{t.role}</div>
-                  <div style={{ fontSize: 13, color: COLORS.accent, marginTop: 2, fontWeight: 600 }}>{t.company}</div>
                 </div>
               </div>
             </FadeIn>
@@ -336,7 +350,7 @@ function Testimonials() {
   );
 }
 
-function QuoteForm() {
+function QuoteForm({ products }: { products: Product[] }) {
   const { slugs, clear } = useQuoteCart();
   const [formData, setFormData] = useState({ nombre: '', email: '', telefono: '', empresa: '', rubro: '', mensaje: '' });
   const [submitted, setSubmitted] = useState(false);
@@ -367,6 +381,10 @@ function QuoteForm() {
         industry: formData.rubro || null,
         message: formData.mensaje || null,
         product_slugs: slugs,
+        product_details: slugs.map(slug => {
+          const p = products.find(p => p.slug === slug);
+          return { slug, presentation: p?.presentations?.[0] ?? '', quantity: 1 };
+        }),
       });
       setSubmitted(true);
       if (slugs.length > 0) clear();
@@ -472,28 +490,43 @@ function Footer() {
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 48, marginBottom: 48 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: `linear-gradient(135deg, ${COLORS.accentLight}, ${COLORS.accent})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: COLORS.white }}>F</div>
-              <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 18, color: COLORS.white }}>FEMAVI</span>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+              <img src="/logo-femavi.png" alt="FEMAVI" style={{ height: 32, width: 'auto', borderRadius: 6 }} />
             </div>
             <p style={{ fontSize: 14, lineHeight: 1.7, color: 'rgba(255,255,255,0.6)', maxWidth: 300 }}>Fabricantes de productos químicos industriales desde 1970. Fórmulas de desarrollo propio con entrega en todo el país.</p>
           </div>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.accentLight, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Productos</div>
-            {['Desengrasantes', 'Lubricantes', 'Desinfectantes', 'Ceras', 'Aerosoles', 'Aceites'].map(l => (
-              <Link key={l} to="/catalogo" style={{ display: 'block', fontSize: 14, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', marginBottom: 10, cursor: 'pointer' }}>{l}</Link>
+            {[
+              { label: 'Desengrasantes', cat: 'Desengrasantes' },
+              { label: 'Lubricantes', cat: 'Lubricantes' },
+              { label: 'Desinfectantes', cat: 'Desinfectantes' },
+              { label: 'Ceras', cat: 'Ceras' },
+              { label: 'Aerosoles', cat: 'Aerosoles' },
+              { label: 'Aceites y Aditivos', cat: 'Aceites y Aditivos' },
+            ].map(({ label, cat }) => (
+              <Link key={label} to={`/catalogo?tipo=${encodeURIComponent(cat)}`} style={{ display: 'block', fontSize: 14, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', marginBottom: 10, cursor: 'pointer' }}>{label}</Link>
             ))}
           </div>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.accentLight, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Industrias</div>
-            {['Transporte', 'Gastronomía', 'Edificios', 'Manufactura', 'Empresas de limpieza', 'Automotor'].map(l => (
-              <Link key={l} to="/catalogo" style={{ display: 'block', fontSize: 14, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', marginBottom: 10, cursor: 'pointer' }}>{l}</Link>
+            {[
+              { label: 'Transporte', ind: 'Transporte' },
+              { label: 'Gastronomía', ind: 'Gastronomía' },
+              { label: 'Edificios', ind: 'Edificios' },
+              { label: 'Industria', ind: 'Industria' },
+              { label: 'Empresas de limpieza', ind: 'Empresas de limpieza' },
+              { label: 'Automotor', ind: 'Automotor' },
+            ].map(({ label, ind }) => (
+              <Link key={label} to={`/catalogo?industria=${encodeURIComponent(ind)}`} style={{ display: 'block', fontSize: 14, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', marginBottom: 10, cursor: 'pointer' }}>{label}</Link>
             ))}
           </div>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.accentLight, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contacto</div>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, margin: 0 }}>
-              Ibarrola 7071<br />Liniers, CABA<br />+54 9 116228-4649<br />ventas@femavi.com.ar
+              Ibarrola 7071<br />Liniers, CABA<br />
+              <a href="tel:+5491162284649" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>+54 9 116228-4649</a><br />
+              <a href="mailto:ventas@femavi.com.ar" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>ventas@femavi.com.ar</a>
             </p>
           </div>
         </div>
@@ -503,6 +536,49 @@ function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+function ClientOrderSection() {
+  const navigate = useNavigate();
+  const [ref, visible] = useInView(0.1);
+  return (
+    <section ref={ref} style={{ background: COLORS.accentDark, padding: '80px 24px' }}>
+      <div style={{
+        maxWidth: 1100, margin: '0 auto',
+        opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(28px)',
+        transition: 'all 0.7s ease',
+        display: 'grid', gridTemplateColumns: '1fr auto', gap: 48, alignItems: 'center',
+      }}>
+        <div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 14px', background: 'rgba(255,255,255,0.1)', borderRadius: 100, border: '1px solid rgba(255,255,255,0.2)', marginBottom: 18 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Zona de clientes</span>
+          </div>
+          <h2 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 36, fontWeight: 800, color: COLORS.white, margin: '0 0 14px', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
+            ¿Ya sos cliente?<br />Hacé tu pedido directo.
+          </h2>
+          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, margin: '0 0 0', maxWidth: 500 }}>
+            Sin llamadas, sin esperas. Completá los productos que necesitás y nuestro equipo lo procesa y te confirma en el día.
+          </p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 220 }}>
+          <button
+            onClick={() => { setCartMode('pedido'); navigate('/catalogo'); }}
+            style={{ display: 'block', width: '100%', padding: '18px 36px', background: COLORS.white, color: COLORS.accentDark, fontSize: 16, fontWeight: 800, borderRadius: 12, textDecoration: 'none', textAlign: 'center', boxShadow: '0 8px 28px rgba(0,0,0,0.2)', whiteSpace: 'nowrap', border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+          >
+            Hacer mi pedido →
+          </button>
+          <a
+            href="https://wa.me/5491162284649"
+            target="_blank"
+            rel="noopener"
+            style={{ display: 'block', padding: '14px 36px', background: COLORS.whatsapp, color: COLORS.white, fontSize: 14, fontWeight: 700, borderRadius: 12, textDecoration: 'none', textAlign: 'center', whiteSpace: 'nowrap' }}
+          >
+            💬 Pedir por WhatsApp
+          </a>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -563,7 +639,8 @@ export default function Home() {
       <ProductsSection products={products} loading={loading} />
       <Process />
       <Testimonials />
-      <QuoteForm />
+      <ClientOrderSection />
+      <QuoteForm products={products} />
       <Footer />
       <WhatsAppButton />
     </>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { setCartMode } from '../lib/cartMode';
 import { useProducts } from '../hooks/useProducts';
 import { ProductCard } from '../components/ProductCard';
 import { ProductModal } from '../components/ProductModal';
@@ -26,17 +27,17 @@ const INDUSTRIES = [
   { id: 'Hogar e Institucional', label: 'Hogar e Institucional', icon: '🏠', seoTitle: 'Línea Daurange — Productos para Hogar e Institucional', seoDesc: 'Limpiadores, desinfectantes, aromatizantes y productos de higiene para uso doméstico e institucional.' },
 ];
 
-const BENEFITS = [
-  { id: 'Alto rendimiento', label: 'Alto rendimiento', icon: '⚡' },
-  { id: 'Biodegradable', label: 'Biodegradable', icon: '🌿' },
-  { id: 'Alta concentración', label: 'Alta concentración', icon: '🧪' },
-  { id: 'Apto alimenticio', label: 'Apto alimenticio', icon: '✅' },
-  { id: 'Larga duración', label: 'Larga duración', icon: '⏱' },
-  { id: 'Seguridad industrial', label: 'Seguridad industrial', icon: '🛡' },
-  { id: 'Multiuso', label: 'Multiuso', icon: '🔄' },
-  { id: 'Ultra concentrado', label: 'Ultra concentrado', icon: '🎯' },
-  { id: 'Económico por rendimiento', label: 'Económico', icon: '💰' },
-];
+const INDUSTRY_KEYWORDS: Record<string, string[]> = {
+  Transporte: ['transporte'],
+  Gastronomía: ['gastronomía', 'hotelería'],
+  Edificios: ['edificios', 'consorcios'],
+  Industria: ['industria', 'industrial', 'metalúrgica', 'manufactura', 'minería', 'minera', 'construcción', 'química', 'eléctrica', 'electrónica', 'energía', 'maquinaria', 'naval', 'textil', 'vidrio', 'gráfica', 'farmacéutica', 'plástico', 'bebidas', 'aeronáutica', 'maderera'],
+  Automotor: ['automotriz', 'automotor', 'mecánicos', 'mecanizados', 'rectificadoras'],
+  Comercios: ['institucional', 'entretenimiento', 'comercio'],
+  Salud: ['salud', 'sanidad'],
+  'Empresas de limpieza': ['limpieza'],
+  'Hogar e Institucional': ['hogar'],
+};
 
 function useInView(t = 0.1): [React.RefObject<HTMLDivElement | null>, boolean] {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -138,10 +139,40 @@ const CATEGORIES = [
   'Línea Daurange',
 ];
 
+const SUBCATEGORIES = [
+  'Aceites y Aditivos',
+  'Aerosoles',
+  'Anticorrosivos',
+  'Ceras',
+  'Desengrasantes',
+  'Desinfectantes',
+  'Desmoldantes',
+  'Detergentes',
+  'Grasas',
+  'Higiene Industrial',
+  'Insecticida',
+  'Lavamanos',
+  'Limpiadores',
+  'Línea Automotor',
+  'Lubricantes',
+  'Tratamiento para Aguas',
+];
+
 export default function Catalog() {
   const { products, loading } = useProducts();
-  const [activeIndustry, setActiveIndustry] = useState('all');
-  const [activeCategory, setActiveCategory] = useState('Todos');
+  const [searchParams] = useSearchParams();
+  const [activeIndustry, setActiveIndustry] = useState(() => {
+    const ind = searchParams.get('industria');
+    return ind && INDUSTRIES.some(i => i.id === ind) ? ind : 'all';
+  });
+  const [activeCategory, setActiveCategory] = useState(() => {
+    const cat = searchParams.get('categoria');
+    return cat && CATEGORIES.includes(cat) ? cat : 'Todos';
+  });
+  const [activeSubcategory, setActiveSubcategory] = useState(() => {
+    const sub = searchParams.get('tipo');
+    return sub && SUBCATEGORIES.includes(sub) ? sub : 'Todos';
+  });
   const [activeBenefits, setActiveBenefits] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -159,13 +190,14 @@ export default function Catalog() {
     return () => { document.body.style.background = ''; };
   }, []);
 
-  const toggleBenefit = (b: string) =>
-    setActiveBenefits(p => p.includes(b) ? p.filter(x => x !== b) : [...p, b]);
-
   const filtered = useMemo(() => {
     let r = products;
     if (activeCategory !== 'Todos') r = r.filter(p => p.category === activeCategory);
-    if (activeIndustry !== 'all') r = r.filter(p => p.industries.includes(activeIndustry));
+    if (activeSubcategory !== 'Todos') r = r.filter(p => p.subcategory === activeSubcategory);
+    if (activeIndustry !== 'all') {
+      const keywords = INDUSTRY_KEYWORDS[activeIndustry] ?? [];
+      r = r.filter(p => p.industries.some(ind => keywords.some(kw => ind.toLowerCase().includes(kw))));
+    }
     if (activeBenefits.length > 0) r = r.filter(p => activeBenefits.some(b => p.benefits.includes(b)));
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -177,7 +209,7 @@ export default function Catalog() {
       );
     }
     return r;
-  }, [products, activeCategory, activeIndustry, activeBenefits, searchQuery]);
+  }, [products, activeCategory, activeSubcategory, activeIndustry, activeBenefits, searchQuery]);
 
   const catalogJsonLd = useMemo(() => {
     const list = products.slice(0, 20).map((p, i) => ({
@@ -226,10 +258,12 @@ export default function Catalog() {
             <img src="/logo-femavi.png" alt="FEMAVI" style={{ height: 48, width: 'auto' }} />
           </Link>
           <div className="desktop-nav-links" style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
-            <Link to="/" style={{ color: C.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Inicio</Link>
-            <span style={{ color: C.accent, fontSize: 14, fontWeight: 700 }}>Productos</span>
+            <span style={{ color: C.accent, fontSize: 14, fontWeight: 700 }}>Catálogo</span>
+            <Link to="/#soluciones" style={{ color: C.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Soluciones</Link>
             <Link to="/nosotros" style={{ color: C.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Nosotros</Link>
-            <Link to="/#cotizar" style={{ padding: '10px 22px', background: C.accent, color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none' }}>Pedir Cotización</Link>
+            <Link to="/#cotizar" style={{ color: C.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Contacto</Link>
+            <button onClick={() => { setCartMode('pedido'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '10px 22px', background: 'transparent', color: C.accent, fontSize: 14, fontWeight: 700, borderRadius: 8, border: `1.5px solid ${C.borderLight}`, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Hacer mi pedido</button>
+            <button onClick={() => { setCartMode('cotizacion'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '10px 22px', background: C.accent, color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Pedir Cotización</button>
           </div>
           <button className="mobile-menu-btn" onClick={() => setMenuOpen((o: boolean) => !o)} style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 8, flexDirection: 'column', gap: 5 }}>
             <span style={{ display: 'block', width: 24, height: 2, background: C.dark, borderRadius: 2, transition: 'all 0.3s', transform: menuOpen ? 'rotate(45deg) translateY(7px)' : 'none' }} />
@@ -239,10 +273,12 @@ export default function Catalog() {
         </div>
         {menuOpen && (
           <div style={{ background: C.white, borderTop: `1px solid ${C.borderLight}`, padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <Link to="/" onClick={() => setMenuOpen(false)} style={{ color: C.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Inicio</Link>
-            <span style={{ color: C.accent, fontSize: 15, fontWeight: 700 }}>Productos</span>
+            <span style={{ color: C.accent, fontSize: 15, fontWeight: 700 }}>Catálogo</span>
+            <Link to="/#soluciones" onClick={() => setMenuOpen(false)} style={{ color: C.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Soluciones</Link>
             <Link to="/nosotros" onClick={() => setMenuOpen(false)} style={{ color: C.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Nosotros</Link>
-            <Link to="/#cotizar" onClick={() => setMenuOpen(false)} style={{ padding: '12px 24px', background: C.accent, color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>Pedir Cotización</Link>
+            <Link to="/#cotizar" onClick={() => setMenuOpen(false)} style={{ color: C.text, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>Contacto</Link>
+            <button onClick={() => { setCartMode('pedido'); setMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '12px 24px', border: `1.5px solid ${C.borderLight}`, color: C.accent, fontSize: 14, fontWeight: 700, borderRadius: 8, background: 'transparent', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textAlign: 'center' }}>Hacer mi pedido</button>
+            <button onClick={() => { setCartMode('cotizacion'); setMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '12px 24px', background: C.accent, color: C.white, fontSize: 14, fontWeight: 700, borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textAlign: 'center' }}>Pedir Cotización</button>
           </div>
         )}
       </nav>
@@ -255,7 +291,7 @@ export default function Catalog() {
               Más de 100 fórmulas<br /><span style={{ color: C.accent }}>de desarrollo propio.</span>
             </h1>
             <p style={{ fontSize: 17, lineHeight: 1.7, color: C.textMuted, maxWidth: 520, margin: '0 0 28px' }}>
-              Filtrá por industria, beneficio o nombre. Cada producto tiene ficha técnica, historia de origen y cotización directa.
+              Filtrá por categoría, tipo de producto, industria o nombre. Cada producto tiene ficha técnica y cotización directa.
             </p>
           </FadeIn>
           <FadeIn delay={0.1}>
@@ -279,8 +315,23 @@ export default function Catalog() {
               <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Por categoría</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {CATEGORIES.map(cat => (
-                  <FilterBadge key={cat} active={activeCategory === cat} onClick={() => { setActiveCategory(cat); setActiveIndustry('all'); setActiveBenefits([]); }}>
+                  <FilterBadge key={cat} active={activeCategory === cat} onClick={() => { setActiveCategory(cat); setActiveSubcategory('Todos'); setActiveIndustry('all'); setActiveBenefits([]); }}>
                     {cat}
+                  </FilterBadge>
+                ))}
+              </div>
+            </div>
+          </FadeIn>
+          <FadeIn>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Por tipo de producto</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <FilterBadge active={activeSubcategory === 'Todos'} onClick={() => setActiveSubcategory('Todos')}>
+                  Todos
+                </FilterBadge>
+                {SUBCATEGORIES.map(sub => (
+                  <FilterBadge key={sub} active={activeSubcategory === sub} onClick={() => setActiveSubcategory(sub)}>
+                    {sub}
                   </FilterBadge>
                 ))}
               </div>
@@ -298,19 +349,6 @@ export default function Catalog() {
               </div>
             </div>
           </FadeIn>
-          <FadeIn delay={0.05}>
-            <div style={{ marginBottom: 40 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Por beneficio</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {BENEFITS.map(b => (
-                  <FilterBadge key={b.id} size="sm" active={activeBenefits.includes(b.id)} onClick={() => toggleBenefit(b.id)}>
-                    {b.icon} {b.label}
-                  </FilterBadge>
-                ))}
-              </div>
-            </div>
-          </FadeIn>
-
           <IndustryHero industry={INDUSTRIES.find(i => i.id === activeIndustry)} products={products} />
 
           <div style={{ marginBottom: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -320,9 +358,9 @@ export default function Catalog() {
                   ? `Todos los productos (${filtered.length})`
                   : `${filtered.length} producto${filtered.length !== 1 ? 's' : ''}`}
             </span>
-            {(activeCategory !== 'Todos' || activeIndustry !== 'all' || activeBenefits.length > 0 || searchQuery) && (
+            {(activeCategory !== 'Todos' || activeSubcategory !== 'Todos' || activeIndustry !== 'all' || activeBenefits.length > 0 || searchQuery) && (
               <button
-                onClick={() => { setActiveCategory('Todos'); setActiveIndustry('all'); setActiveBenefits([]); setSearchQuery(''); }}
+                onClick={() => { setActiveCategory('Todos'); setActiveSubcategory('Todos'); setActiveIndustry('all'); setActiveBenefits([]); setSearchQuery(''); }}
                 style={{ padding: '6px 14px', background: C.white, border: `1px solid ${C.borderLight}`, borderRadius: 8, color: C.textMuted, fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
               >
                 Limpiar filtros ✕

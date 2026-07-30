@@ -69,7 +69,6 @@ Deno.serve(async (req: Request) => {
       String(d.getMonth() + 1).padStart(2, "0") + "/" +
       d.getFullYear();
     const fecha = fmt(now);
-    const validoHasta = fmt(new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000));
 
     // Build products list
     const products: { name: string; qtyDisplay: string; totalUnits: number; price: number }[] = [];
@@ -110,7 +109,9 @@ Deno.serve(async (req: Request) => {
       const logoBytes = Uint8Array.from(atob(LOGO_B64), (ch) => ch.charCodeAt(0));
       const logoId = wb.addImage({ buffer: logoBytes.buffer as ArrayBuffer, extension: "png" });
       ws.addImage(logoId, { tl: { col: 1, row: 1 }, br: { col: 4.2, row: 3 }, editAs: "oneCell" });
-    } catch (_) {}
+    } catch {
+      // logo opcional: si falla la decodificación no debe bloquear el resto de la planilla
+    }
 
     // Dirección texto
     ws.mergeCells("F2:G3");
@@ -235,7 +236,7 @@ Deno.serve(async (req: Request) => {
     r++;
 
     // ── TOTALES ──
-    const subRow = r, ivaRow = r + 1, totRow = r + 2;
+    const subRow = r, ivaRow = r + 1;
 
     const totDefs: [string, string, boolean, string, string, number][] = [
       ["Subtotal",  `SUM(G${firstProductRow}:G${lastProductRow})`, false, AZUL_CLARO,  NEGRO,       16],

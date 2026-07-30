@@ -3,6 +3,7 @@ export type Product = {
   slug: string;
   name: string;
   category: string;
+  subcategory?: string | null;
   headline: string | null;
   description: string;
   story: string | null;

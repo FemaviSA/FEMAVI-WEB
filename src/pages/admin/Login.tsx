@@ -41,13 +41,8 @@ export default function Login() {
 
         <div className="relative z-10 flex flex-col justify-between p-12 lg:p-16 w-full">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-femavi-400 to-femavi-600 flex items-center justify-center font-black text-slate-950 text-lg shadow-xl shadow-femavi-500/20">
-              F
-            </div>
-            <div>
-              <div className="font-bold tracking-tight">FEMAVI</div>
-              <div className="text-[10px] text-femavi-400 uppercase tracking-widest font-semibold">Admin Panel</div>
-            </div>
+            <img src="/logo-femavi.png" alt="FEMAVI" className="h-10 w-auto rounded" />
+            <div className="text-[10px] text-femavi-400 uppercase tracking-widest font-semibold">Admin Panel</div>
           </div>
 
           <div>
@@ -89,11 +84,8 @@ export default function Login() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="md:hidden flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-femavi-400 to-femavi-600 flex items-center justify-center font-black text-slate-950">
-              F
-            </div>
+            <img src="/logo-femavi.png" alt="FEMAVI" className="h-9 w-auto rounded" />
             <div>
-              <div className="font-bold text-slate-900">FEMAVI</div>
               <div className="text-[10px] text-femavi-600 uppercase tracking-widest font-semibold">Admin</div>
             </div>
           </div>

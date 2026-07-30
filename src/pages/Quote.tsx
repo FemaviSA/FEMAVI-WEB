@@ -56,9 +56,8 @@ function Nav() {
   return (
     <nav style={{ background: C.white, borderBottom: `1px solid ${C.borderLight}` }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: `linear-gradient(135deg, ${C.accent}, ${C.accentDark})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: C.white }}>F</div>
-          <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 20, color: C.dark, letterSpacing: '-0.02em' }}>FEMAVI</span>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <img src="/logo-femavi.png" alt="FEMAVI" style={{ height: 40, width: 'auto' }} />
         </Link>
         <Link to="/catalogo" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: C.textMuted, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
           <ArrowLeft style={{ width: 14, height: 14 }} /> Volver al catálogo

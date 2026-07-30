@@ -26,6 +26,7 @@
     <link rel="preconnect" href="https://lhqawwjszwjzxxsonvwa.supabase.co" />
     <link rel="dns-prefetch" href="https://lhqawwjszwjzxxsonvwa.supabase.co" />
     <link rel="preconnect" href="https://femavi.com.ar" />
+    <link rel="canonical" href="https://femavi.com.ar/" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
@@ -33,17 +34,48 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
 
     <!-- Structured Data global: Organization + LocalBusiness + WebSite -->
+    <!-- ====================================================
+         TRACKING: reemplazá los IDs cuando los tengas
+         GA4:       G-XXXXXXXXXX  → analytics.google.com
+         Meta Pixel: XXXXXXXXXXXXXXX → business.facebook.com
+         ==================================================== -->
+
+    <!-- Google tag (gtag.js) — GA4 -->
+    <!-- REEMPLAZAR G-XXXXXXXXXX con tu Measurement ID real -->
+    <!--
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    -->
+
+    <!-- Meta Pixel — REEMPLAZAR XXXXXXXXXXXXXXX con tu Pixel ID real -->
+    <!--
+    <script>
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+      document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', 'XXXXXXXXXXXXXXX');
+      fbq('track', 'PageView');
+    </script>
+    -->
+
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@graph": [
         {
           "@type": "Organization",
-          "@id": "https://femavi-web.vercel.app/#organization",
+          "@id": "https://femavi.com.ar/#organization",
           "name": "FEMAVI S.A.",
           "alternateName": "FEMAVI",
-          "url": "https://femavi-web.vercel.app/",
-          "logo": "https://femavi-web.vercel.app/favicon.svg",
+          "url": "https://femavi.com.ar/",
+          "logo": "https://femavi.com.ar/favicon.svg",
           "foundingDate": "1970",
           "description": "Fabricantes argentinos de productos químicos industriales con más de 50 años de desarrollo propio.",
           "sameAs": [],
@@ -57,10 +89,10 @@
         },
         {
           "@type": "LocalBusiness",
-          "@id": "https://femavi-web.vercel.app/#localbusiness",
+          "@id": "https://femavi.com.ar/#localbusiness",
           "name": "FEMAVI S.A.",
-          "image": "https://femavi-web.vercel.app/favicon.svg",
-          "url": "https://femavi-web.vercel.app/",
+          "image": "https://femavi.com.ar/favicon.svg",
+          "url": "https://femavi.com.ar/",
           "telephone": "+54-9-116228-4649",
           "email": "ventas@femavi.com.ar",
           "priceRange": "$$",
@@ -90,10 +122,10 @@
         },
         {
           "@type": "WebSite",
-          "@id": "https://femavi-web.vercel.app/#website",
-          "url": "https://femavi-web.vercel.app/",
+          "@id": "https://femavi.com.ar/#website",
+          "url": "https://femavi.com.ar/",
           "name": "FEMAVI",
-          "publisher": { "@id": "https://femavi-web.vercel.app/#organization" },
+          "publisher": { "@id": "https://femavi.com.ar/#organization" },
           "inLanguage": "es-AR"
         }
       ]

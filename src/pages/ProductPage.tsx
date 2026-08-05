@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { getProductBySlug, listProducts } from '../lib/products';
 import { SEO, SITE_URL } from '../components/SEO';
 import { AddToQuoteButton } from '../components/AddToQuoteButton';
+import { ProductLabel } from '../components/ProductLabel';
 import { findCategoryConfigBySubcategory } from '../data/categoryConfigs';
 import { buildProductTitle, buildProductDescription } from '../lib/productSeo';
 import type { Product } from '../types/product';
@@ -165,7 +166,7 @@ export default function ProductPage() {
       <article style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 80px' }}>
         <div className="modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'start' }}>
           <div style={{ background: `linear-gradient(160deg, ${C.accentPale}, ${C.bg})`, borderRadius: 24, padding: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
-            {product.image_url && <img src={product.image_url} alt={`${product.name} — ${product.headline ?? `${product.subcategory ?? product.category} industrial`} FEMAVI`} style={{ maxWidth: '100%', maxHeight: 360, objectFit: 'contain' }} />}
+            <ProductLabel name={product.name} category={product.category} size={280} />
           </div>
 
           <div>

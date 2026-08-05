@@ -29,6 +29,7 @@ export function ProductLabel({ name, category, size = 130 }: Props) {
   // label body is from y=62 to y=97 → height 35
   const textStartY = 62 + (35 - lineCount * lineSpacing) / 2 + 8;
   const fontSize = name.length > 22 ? 6.5 : name.length > 15 ? 7.5 : 8.5;
+  const isAerosol = category?.toLowerCase() === 'aerosoles';
 
   return (
     <svg
@@ -53,32 +54,52 @@ export function ProductLabel({ name, category, size = 130 }: Props) {
           <stop offset="0%" stopColor="#d0e2ee" />
           <stop offset="100%" stopColor="#b8cdd9" />
         </linearGradient>
+        <linearGradient id={`cap-${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#f0f5f9" />
+          <stop offset="100%" stopColor="#c3d5e0" />
+        </linearGradient>
       </defs>
 
-      {/* ── TOP PANEL ── */}
-      <rect x="4" y="16" width="104" height="12" rx="4"
-        fill={`url(#top-${uid})`} stroke="#b0c8d8" strokeWidth="0.8" />
+      {isAerosol ? (
+        <>
+          {/* ── NOZZLE ACTUATOR ── */}
+          <rect x="50" y="0" width="12" height="8" rx="2.5" fill="#4a5a63" />
+          <rect x="47" y="6" width="6" height="5" fill="#5c6d76" />
+          {/* ── DOME CAP ── */}
+          <rect x="30" y="6" width="52" height="20" rx="9"
+            fill={`url(#cap-${uid})`} stroke="#a9c0cd" strokeWidth="0.8" />
+          <rect x="35" y="9" width="14" height="5" rx="2.5" fill="#ffffff" opacity="0.6" />
+          {/* ── CRIMP RIM ── */}
+          <rect x="26" y="24" width="60" height="5" rx="2" fill="#9db3bf" />
+        </>
+      ) : (
+        <>
+          {/* ── TOP PANEL ── */}
+          <rect x="4" y="16" width="104" height="12" rx="4"
+            fill={`url(#top-${uid})`} stroke="#b0c8d8" strokeWidth="0.8" />
 
-      {/* ── HANDLE (top-right recess) ── */}
-      <rect x="66" y="4" width="40" height="26" rx="6"
-        fill={`url(#handle-${uid})`} stroke="#b0c8d8" strokeWidth="0.8" />
-      {/* Handle inner cutout */}
-      <rect x="70" y="8" width="32" height="14" rx="4" fill="#a8bfcc" />
-      {/* Handle inner highlight */}
-      <rect x="70" y="8" width="32" height="5" rx="3" fill="#b8cedb" />
+          {/* ── HANDLE (top-right recess) ── */}
+          <rect x="66" y="4" width="40" height="26" rx="6"
+            fill={`url(#handle-${uid})`} stroke="#b0c8d8" strokeWidth="0.8" />
+          {/* Handle inner cutout */}
+          <rect x="70" y="8" width="32" height="14" rx="4" fill="#a8bfcc" />
+          {/* Handle inner highlight */}
+          <rect x="70" y="8" width="32" height="5" rx="3" fill="#b8cedb" />
 
-      {/* ── CAP (top-left) ── */}
-      {/* Yellow safety ring */}
-      <rect x="9" y="14" width="26" height="5" rx="2" fill="#e8c840" />
-      {/* Black screw cap */}
-      <rect x="9" y="3" width="26" height="14" rx="5" fill="#1a1a1a" />
-      {/* Cap ridges */}
-      {[14, 18, 22, 26, 30].map(cx => (
-        <line key={cx} x1={cx} y1="4" x2={cx} y2="15"
-          stroke="#333" strokeWidth="1.2" />
-      ))}
-      {/* Cap highlight */}
-      <rect x="11" y="4" width="8" height="4" rx="2" fill="#444" opacity="0.6" />
+          {/* ── CAP (top-left) ── */}
+          {/* Yellow safety ring */}
+          <rect x="9" y="14" width="26" height="5" rx="2" fill="#e8c840" />
+          {/* Black screw cap */}
+          <rect x="9" y="3" width="26" height="14" rx="5" fill="#1a1a1a" />
+          {/* Cap ridges */}
+          {[14, 18, 22, 26, 30].map(cx => (
+            <line key={cx} x1={cx} y1="4" x2={cx} y2="15"
+              stroke="#333" strokeWidth="1.2" />
+          ))}
+          {/* Cap highlight */}
+          <rect x="11" y="4" width="8" height="4" rx="2" fill="#444" opacity="0.6" />
+        </>
+      )}
 
       {/* ── MAIN BODY ── */}
       <rect x="4" y="24" width="104" height="78" rx="7"

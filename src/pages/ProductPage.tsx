@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getProductBySlug } from '../lib/products';
+import { getProductBySlug, listProducts } from '../lib/products';
 import { SEO, SITE_URL } from '../components/SEO';
 import { AddToQuoteButton } from '../components/AddToQuoteButton';
+import { findCategoryConfigBySubcategory } from '../data/categoryConfigs';
+import { buildProductTitle, buildProductDescription } from '../lib/productSeo';
 import type { Product } from '../types/product';
 
 const C = {
@@ -15,6 +17,7 @@ const C = {
 export default function ProductPage() {
   const { slug = '' } = useParams();
   const [product, setProduct] = useState<Product | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -33,6 +36,22 @@ export default function ProductPage() {
       })
       .finally(() => setLoading(false));
   }, [slug]);
+
+  useEffect(() => {
+    listProducts().then(setAllProducts).catch(() => setAllProducts([]));
+  }, []);
+
+  const relatedProducts = useMemo(() => {
+    if (!product) return [];
+    const others = allProducts.filter(p => p.slug !== product.slug);
+    const sameSubcategory = product.subcategory
+      ? others.filter(p => p.subcategory === product.subcategory)
+      : [];
+    const sameCategory = others.filter(
+      p => p.category === product.category && !sameSubcategory.includes(p)
+    );
+    return [...sameSubcategory, ...sameCategory].slice(0, 3);
+  }, [product, allProducts]);
 
   if (loading) {
     return (
@@ -63,6 +82,8 @@ export default function ProductPage() {
   }
 
   const url = `${SITE_URL}/catalogo/${product.slug}`;
+  const categoryConfig = findCategoryConfigBySubcategory(product.subcategory);
+  const categoryUrl = categoryConfig ? `${SITE_URL}/catalogo/categoria/${categoryConfig.slug}` : `${SITE_URL}/catalogo`;
   const productJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -94,14 +115,17 @@ export default function ProductPage() {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Inicio', item: SITE_URL },
       { '@type': 'ListItem', position: 2, name: 'Catálogo', item: `${SITE_URL}/catalogo` },
-      { '@type': 'ListItem', position: 3, name: product.name, item: url },
+      ...(categoryConfig ? [{ '@type': 'ListItem', position: 3, name: categoryConfig.name, item: categoryUrl }] : []),
+      { '@type': 'ListItem', position: categoryConfig ? 4 : 3, name: product.name, item: url },
     ],
   };
 
-  const seoTitle = `${product.name} — ${product.category} industrial argentino | FEMAVI`;
-  const seoDescription = product.headline
-    ? `${product.headline}. ${product.description.slice(0, 120)}`
-    : product.description.slice(0, 160);
+  // El título lleva adelante la FUNCIÓN del producto (headline), no solo la marca:
+  // la gente busca "desengrasante con base cítrica", no "CITRIF".
+  // Si cambiás esta lógica, actualizá también scripts/prerender.mjs para que el HTML
+  // prerenderizado y el que pinta React coincidan.
+  const seoTitle = buildProductTitle(product);
+  const seoDescription = buildProductDescription(product);
 
   return (
     <>
@@ -132,24 +156,30 @@ export default function ProductPage() {
         <span style={{ margin: '0 8px' }}>›</span>
         <Link to="/catalogo" style={{ color: C.textMuted, textDecoration: 'none' }}>Catálogo</Link>
         <span style={{ margin: '0 8px' }}>›</span>
-        <span style={{ color: C.text }}>{product.category}</span>
+        {categoryConfig ? (
+          <Link to={`/catalogo/categoria/${categoryConfig.slug}`} style={{ color: C.textMuted, textDecoration: 'none' }}>{categoryConfig.name}</Link>
+        ) : (
+          <span style={{ color: C.text }}>{product.category}</span>
+        )}
       </nav>
 
       <article style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 80px' }}>
         <div className="modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'start' }}>
           <div style={{ background: `linear-gradient(160deg, ${C.accentPale}, ${C.bg})`, borderRadius: 24, padding: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
-            {product.image_url && <img src={product.image_url} alt={`${product.name} — ${product.category} FEMAVI`} style={{ maxWidth: '100%', maxHeight: 360, objectFit: 'contain' }} />}
+            {product.image_url && <img src={product.image_url} alt={`${product.name} — ${product.headline ?? `${product.subcategory ?? product.category} industrial`} FEMAVI`} style={{ maxWidth: '100%', maxHeight: 360, objectFit: 'contain' }} />}
           </div>
 
           <div>
-            <span style={{ fontSize: 12, fontWeight: 700, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{product.category}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{product.subcategory ?? product.category}</span>
             <h1 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 40, fontWeight: 800, color: C.dark, margin: '8px 0 12px', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
               {product.name}
             </h1>
+            {/* h2 (no <p>): el headline es la función del producto — "Limpiador Desengrasante
+                a Base Cítrica" — y es lo que la gente busca. Como heading pesa mucho más. */}
             {product.headline && (
-              <p style={{ fontSize: 18, color: C.textMuted, fontStyle: 'italic', margin: '0 0 24px', lineHeight: 1.5 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 400, color: C.textMuted, fontStyle: 'italic', margin: '0 0 24px', lineHeight: 1.5 }}>
                 {product.headline}
-              </p>
+              </h2>
             )}
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 28 }}>
@@ -203,6 +233,34 @@ export default function ProductPage() {
             </div>
           </div>
         </div>
+
+        {relatedProducts.length > 0 && (
+          <section style={{ marginTop: 80, padding: '48px 0 0', borderTop: `1px solid ${C.borderLight}` }}>
+            <h2 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 24, fontWeight: 800, color: C.dark, marginBottom: 8 }}>
+              Productos relacionados
+            </h2>
+            <p style={{ fontSize: 15, color: C.textMuted, marginBottom: 24 }}>
+              Otros productos {categoryConfig ? categoryConfig.name.toLowerCase() : product.category.toLowerCase()} de nuestro catálogo.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+              {relatedProducts.map(rp => (
+                <Link
+                  key={rp.slug}
+                  to={`/catalogo/${rp.slug}`}
+                  style={{ display: 'block', padding: '22px 24px', background: C.white, border: `1px solid ${C.borderLight}`, borderRadius: 14, textDecoration: 'none' }}
+                >
+                  <span style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    {rp.subcategory ?? rp.category}
+                  </span>
+                  <h3 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 700, color: C.dark, margin: '6px 0 6px' }}>{rp.name}</h3>
+                  <p style={{ fontSize: 13, lineHeight: 1.6, color: C.textMuted, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {rp.headline || rp.description}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section style={{ marginTop: 80, padding: '48px 0', borderTop: `1px solid ${C.borderLight}` }}>
           <h2 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 24, fontWeight: 800, color: C.dark, marginBottom: 16 }}>

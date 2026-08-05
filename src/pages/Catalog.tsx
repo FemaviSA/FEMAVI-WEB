@@ -5,6 +5,7 @@ import { useProducts } from '../hooks/useProducts';
 import { ProductCard } from '../components/ProductCard';
 import { ProductModal } from '../components/ProductModal';
 import { SEO, SITE_URL } from '../components/SEO';
+import { CATEGORY_CONFIGS } from '../data/categoryConfigs';
 import type { Product } from '../types/product';
 
 const C = {
@@ -350,6 +351,23 @@ export default function Catalog() {
             </div>
           </FadeIn>
           <IndustryHero industry={INDUSTRIES.find(i => i.id === activeIndustry)} products={products} />
+
+          {(() => {
+            const activeCategoryConfig = activeSubcategory !== 'Todos'
+              ? CATEGORY_CONFIGS.find(c => c.subcategories.includes(activeSubcategory))
+              : undefined;
+            if (!activeCategoryConfig) return null;
+            return (
+              <div style={{ marginBottom: 16 }}>
+                <Link
+                  to={`/catalogo/categoria/${activeCategoryConfig.slug}`}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: C.accentPale, color: C.accent, borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}
+                >
+                  Ver página completa de {activeCategoryConfig.name} →
+                </Link>
+              </div>
+            );
+          })()}
 
           <div style={{ marginBottom: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 14, color: C.textMuted, fontWeight: 500 }}>

@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 type Props = {
   title: string;
   description: string;
@@ -8,7 +10,7 @@ type Props = {
   noindex?: boolean;
 };
 
-const DEFAULT_OG_IMAGE = 'https://femavi-web.vercel.app/og-image.png';
+const DEFAULT_OG_IMAGE = 'https://femavi.com.ar/og-image.png';
 
 /**
  * React 19 hoistea automáticamente los <title>, <meta>, <link> y <script> que
@@ -26,6 +28,14 @@ export function SEO({
 }: Props) {
   const fullTitle = title.includes('FEMAVI') ? title : `${title} | FEMAVI`;
   const ldArray = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [];
+
+  // React 19 hoistea los tags de abajo apendeándolos al <head>, sin tocar los que ya
+  // venían en index.html. Eso dejaba dos <link rel="canonical"> y dos meta description
+  // por página, con el genérico primero — o sea, cada ficha declaraba canonical = home.
+  // Acá borramos los defaults estáticos una vez que tenemos los reales de la ruta.
+  useEffect(() => {
+    document.head.querySelectorAll('[data-default]').forEach(el => el.remove());
+  }, []);
 
   return (
     <>
@@ -58,4 +68,4 @@ export function SEO({
   );
 }
 
-export const SITE_URL = 'https://femavi-web.vercel.app';
+export const SITE_URL = 'https://femavi.com.ar';

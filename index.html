@@ -5,9 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0067ac" />
 
-    <!-- Default title/description: React 19 sobreescribe estos por ruta -->
+    <!-- Defaults para la home y para el instante previo a que monte React.
+         OJO: React 19 hoistea sus propios <title>/<meta>/<link> APENDEÁNDOLOS al head,
+         no reemplazando estos. Eso dejaba dos canonical y dos description por página, y
+         el primero (el de acá) ganaba: cada ficha de producto declaraba canonical = home,
+         que le dice a Google "indexá la home en lugar de esta página".
+         Por eso van marcados con data-default: el componente SEO los elimina al montar. -->
     <title>FEMAVI — Productos Químicos Industriales en Argentina | +50 años fabricando</title>
-    <meta name="description" content="Fabricantes argentinos de productos químicos industriales: desengrasantes, bactericidas, ceras, lubricantes, anticorrosivos. Fórmulas de desarrollo propio, entrega en 48 hs. +20.000 clientes." />
+    <meta data-default name="description" content="Fabricantes argentinos de productos químicos industriales: desengrasantes, bactericidas, ceras, lubricantes, anticorrosivos. Fórmulas de desarrollo propio, entrega en 48 hs. +20.000 clientes." />
     <meta name="keywords" content="productos químicos industriales argentina, desengrasante industrial, bactericida industrial, cera acrílica, limpieza industrial, productos para flotas, productos para gastronomía, fabricante argentino, FEMAVI, Liniers" />
     <meta name="author" content="FEMAVI S.A." />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
@@ -26,7 +31,7 @@
     <link rel="preconnect" href="https://lhqawwjszwjzxxsonvwa.supabase.co" />
     <link rel="dns-prefetch" href="https://lhqawwjszwjzxxsonvwa.supabase.co" />
     <link rel="preconnect" href="https://femavi.com.ar" />
-    <link rel="canonical" href="https://femavi.com.ar/" />
+    <link data-default rel="canonical" href="https://femavi.com.ar/" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 

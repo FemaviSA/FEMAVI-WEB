@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /admin/*
 
-Sitemap: https://femavi-web.vercel.app/sitemap.xml
+Sitemap: https://femavi.com.ar/sitemap.xml

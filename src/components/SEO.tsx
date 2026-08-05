@@ -10,7 +10,7 @@ type Props = {
   noindex?: boolean;
 };
 
-const DEFAULT_OG_IMAGE = 'https://femavi.com.ar/og-image.png';
+const DEFAULT_OG_IMAGE = 'https://www.femavi.com.ar/og-image.png';
 
 /**
  * React 19 hoistea automáticamente los <title>, <meta>, <link> y <script> que
@@ -68,4 +68,4 @@ export function SEO({
   );
 }
 
-export const SITE_URL = 'https://femavi.com.ar';
+export const SITE_URL = 'https://www.femavi.com.ar';

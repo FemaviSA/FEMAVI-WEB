@@ -18,7 +18,7 @@
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-const SITE_URL = process.env.SITE_URL || 'https://femavi.com.ar';
+const SITE_URL = process.env.SITE_URL || 'https://www.femavi.com.ar';
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 const OUT_DIR = process.env.PRERENDER_OUT || 'dist';

@@ -51,6 +51,57 @@ const CATEGORIES = [
     heroTitle: 'Lubricantes industriales especiales de desarrollo propio' },
 ];
 
+// Espejo de los configs de src/pages/industrias/*.tsx (solo lo que importa para SEO;
+// los productos se traen de Supabase por industria, así que no hay que duplicarlos).
+// Mantener en sync con esos archivos.
+const VERTICALS = [
+  { slug: 'transporte', name: 'Transporte y Flotas', industryKeywords: ['transporte'],
+    heroTitle: 'Productos de limpieza y mantenimiento para flotas de transporte',
+    heroDesc: 'Desengrasantes industriales, sanitizantes, ceras y lubricantes desarrollados para líneas de colectivos, flotas de camiones, trenes y vehículos de carga. Entrega en base. Rendimiento comprobado por las empresas de transporte más grandes del AMBA.',
+    seoTitle: 'Productos de limpieza para transporte y flotas | FEMAVI',
+    seoDesc: 'Desengrasantes, sanitizantes y lubricantes para flotas de colectivos, camiones y transporte de pasajeros. Entrega en 48hs en AMBA. +50 años fabricando en Argentina.' },
+  { slug: 'gastronomia', name: 'Gastronomía y Alimenticia', industryKeywords: ['gastronomía', 'hotelería', 'alimenticia'],
+    heroTitle: 'Productos de limpieza para gastronomía, restaurantes y cocinas industriales',
+    heroDesc: 'Bactericidas de grado alimentario, desengrasantes alcalinos para cocinas, desincrustantes y detergentes lavavajillas para restaurantes, hoteles y plantas de alimentos.',
+    seoTitle: 'Productos de limpieza para gastronomía y cocinas industriales | FEMAVI',
+    seoDesc: 'Bactericidas, desengrasantes y sanitizantes para restaurantes, hoteles y cocinas industriales. Grado alimentario, cumplimiento SENASA. Entrega en 48hs en AMBA.' },
+  { slug: 'edificios', name: 'Edificios y Consorcios', industryKeywords: ['edificios', 'consorcios'],
+    heroTitle: 'Productos de limpieza para edificios, consorcios y espacios corporativos',
+    heroDesc: 'Ceras acrílicas, detergentes concentrados, desinfectantes y aromatizantes para edificios, consorcios y facility management. Menor costo por metro cuadrado sin resignar resultado.',
+    seoTitle: 'Productos de limpieza para edificios y consorcios | FEMAVI',
+    seoDesc: 'Ceras acrílicas, detergentes y desinfectantes para edificios, consorcios y facility management. Precios mayoristas, entrega 48hs en AMBA. Fabricación propia argentina.' },
+  { slug: 'industria', name: 'Industria y Manufactura', industryKeywords: ['industria', 'industrial', 'metalúrgica', 'manufactura', 'minería', 'minera', 'química', 'eléctrica', 'maquinaria', 'automotriz'],
+    heroTitle: 'Productos químicos industriales para manufactura, plantas y procesos productivos',
+    heroDesc: 'Lubricantes, anticorrosivos, desengrasantes, desmoldantes, solventes dieléctricos y tratamiento de agua para plantas industriales y líneas de producción. Un solo proveedor para todas las necesidades de tu planta, con fórmulas de desarrollo propio.',
+    seoTitle: 'Productos químicos industriales para manufactura y plantas | FEMAVI',
+    seoDesc: 'Lubricantes, anticorrosivos, desengrasantes y desmoldantes para industria y manufactura. Fórmulas propias, fichas técnicas completas. Entrega 48hs. +50 años fabricando en Argentina.' },
+  { slug: 'limpieza', name: 'Empresas de Limpieza', industryKeywords: ['limpieza'],
+    heroTitle: 'Productos para empresas de limpieza profesional: alta concentración, máximo margen',
+    heroDesc: 'Línea completa de productos de limpieza y desinfección de alta concentración para empresas de limpieza profesional, facility management y distribuidores. Precios mayoristas, entrega en 48 hs y fórmulas que rinden más.',
+    seoTitle: 'Productos mayoristas para empresas de limpieza profesional | FEMAVI',
+    seoDesc: 'Productos de limpieza de alta concentración para empresas de limpieza y facility management. Precios mayoristas, alta dilución, fichas técnicas. Entrega 48hs en AMBA.' },
+];
+
+// Espejo del <SEO> de Home.tsx, About.tsx y Blog.tsx — mantener en sync.
+const STATIC_PAGES = {
+  home: {
+    title: 'Productos Químicos Industriales en Argentina — FEMAVI',
+    desc: 'Fabricantes argentinos de productos químicos industriales con +50 años: desengrasantes, bactericidas, ceras acrílicas, lubricantes y aerosoles. Fórmulas de desarrollo propio, entrega en 48 hs en todo el país. +20.000 clientes.',
+  },
+  nosotros: {
+    title: 'Nosotros — FEMAVI fabricantes argentinos desde 1970',
+    desc: 'Más de 50 años fabricando productos químicos industriales en Argentina. Fórmulas de desarrollo propio diseñadas por ingenieros, representantes comerciales capacitados y servicio post-venta personalizado. +20.000 clientes en 24 provincias.',
+  },
+  catalogo: {
+    title: 'Catálogo de productos químicos industriales — FEMAVI',
+    desc: 'Catálogo completo: desengrasantes, bactericidas, ceras acrílicas, lubricantes, aerosoles, anticorrosivos. Fórmulas de desarrollo propio FEMAVI con ficha técnica y pedidos en 48 hs.',
+  },
+  blog: {
+    title: 'Blog FEMAVI — Guías y recursos sobre productos industriales',
+    desc: 'Artículos técnicos sobre desengrasantes, lubricantes, desinfectantes y limpieza industrial. Guías prácticas para elegir el producto correcto.',
+  },
+};
+
 // Espejo de src/lib/productSeo.ts — mantener en sync.
 const MAX_TITLE_LEAD = 62;
 
@@ -193,6 +244,122 @@ function productBody(p, related, category) {
 </div>`;
 }
 
+/** Lista de productos con nombre + función. Es el grueso de la superficie de keywords. */
+function productList(products) {
+  return `<ul style="${S.ul}">${products
+    .map(p => `<li><a style="${S.link}" href="/catalogo/${esc(p.slug)}">${esc(p.name)}</a>${p.headline ? ` — ${esc(p.headline)}` : ''}${p.subcategory ? ` <span>(${esc(p.subcategory)})</span>` : ''}</li>`)
+    .join('')}</ul>`;
+}
+
+function categoryLinks() {
+  return `<h2 style="${S.h2}">Categorías de producto</h2><ul style="${S.ul}">${CATEGORIES
+    .map(c => `<li><a style="${S.link}" href="/catalogo/categoria/${c.slug}">${esc(c.name)}</a> — ${esc(c.heroTitle)}</li>`)
+    .join('')}</ul>`;
+}
+
+function verticalLinks() {
+  return `<h2 style="${S.h2}">Soluciones por industria</h2><ul style="${S.ul}">${VERTICALS
+    .map(v => `<li><a style="${S.link}" href="/industrias/${v.slug}">${esc(v.name)}</a> — ${esc(v.heroTitle)}</li>`)
+    .join('')}</ul>`;
+}
+
+function homeBody(products) {
+  const destacados = products.filter(p => p.featured).slice(0, 12);
+  return `<div style="${S.wrap}">
+<article>
+  <h1 style="${S.h1}">Productos químicos industriales de fabricación argentina</h1>
+  <h2 style="${S.lead}">Más de 50 años desarrollando fórmulas propias. +20.000 clientes, entrega en 48 hs.</h2>
+  <p style="${S.p}">FEMAVI fabrica desengrasantes industriales, bactericidas, ceras acrílicas, anticorrosivos, lubricantes especiales, aerosoles y productos de higiene industrial. Desarrollamos cada fórmula internamente en nuestra planta de Ibarrola 7071, Liniers, CABA, y podemos adaptarla al proceso de cada cliente.</p>
+  ${categoryLinks()}
+  ${verticalLinks()}
+  ${destacados.length ? `<h2 style="${S.h2}">Productos destacados</h2>${productList(destacados)}` : ''}
+  <a style="${S.cta}" href="/catalogo">Ver el catálogo completo</a>
+</article>
+</div>`;
+}
+
+function catalogBody(products) {
+  return `<div style="${S.wrap}">
+<nav aria-label="breadcrumb" style="${S.crumb}"><a style="${S.crumbLink}" href="/">Inicio</a> › <span>Catálogo</span></nav>
+<article>
+  <h1 style="${S.h1}">Catálogo de productos químicos industriales</h1>
+  <h2 style="${S.lead}">${products.length} productos de desarrollo propio, con ficha técnica y cotización directa.</h2>
+  <p style="${S.p}">Desengrasantes, bactericidas y desinfectantes, ceras acrílicas, anticorrosivos, lubricantes, grasas, aerosoles, desmoldantes, detergentes, lavamanos, insecticidas y tratamiento de aguas. Fabricación argentina con entrega en 48 hs en AMBA.</p>
+  ${categoryLinks()}
+  <h2 style="${S.h2}">Todos los productos (${products.length})</h2>
+  ${productList(products)}
+  <a style="${S.cta}" href="/cotizar">Solicitar cotización</a>
+</article>
+</div>`;
+}
+
+function aboutBody() {
+  return `<div style="${S.wrap}">
+<nav aria-label="breadcrumb" style="${S.crumb}"><a style="${S.crumbLink}" href="/">Inicio</a> › <span>Nosotros</span></nav>
+<article>
+  <h1 style="${S.h1}">FEMAVI: fabricantes argentinos de productos químicos industriales desde 1970</h1>
+  <p style="${S.p}">Más de 50 años fabricando productos químicos industriales en Argentina. Nuestras fórmulas son de desarrollo propio, diseñadas por ingenieros en nuestra planta de Liniers, CABA, y ajustadas al proceso real de cada cliente.</p>
+  <p style="${S.p}">Atendemos a más de 20.000 clientes en 24 provincias: plantas industriales, flotas de transporte, cocinas y establecimientos gastronómicos, edificios y consorcios, talleres mecánicos, empresas de limpieza profesional y comercios. Cada producto se entrega con ficha técnica y hoja de seguridad, y contamos con representantes comerciales capacitados y servicio post-venta.</p>
+  ${categoryLinks()}
+  ${verticalLinks()}
+  <a style="${S.cta}" href="/catalogo">Ver el catálogo completo</a>
+</article>
+</div>`;
+}
+
+function verticalBody(v, products) {
+  return `<div style="${S.wrap}">
+<nav aria-label="breadcrumb" style="${S.crumb}"><a style="${S.crumbLink}" href="/">Inicio</a> › <span>${esc(v.name)}</span></nav>
+<article>
+  <h1 style="${S.h1}">${esc(v.heroTitle)}</h1>
+  <p style="${S.p}">${esc(v.heroDesc)}</p>
+  ${products.length ? `<h2 style="${S.h2}">Productos recomendados para ${esc(v.name)} (${products.length})</h2>${productList(products)}` : ''}
+  <a style="${S.cta}" href="/cotizar">Solicitar cotización</a>
+</article>
+</div>`;
+}
+
+function blogListBody(articles) {
+  return `<div style="${S.wrap}">
+<nav aria-label="breadcrumb" style="${S.crumb}"><a style="${S.crumbLink}" href="/">Inicio</a> › <span>Blog</span></nav>
+<article>
+  <h1 style="${S.h1}">Blog técnico FEMAVI</h1>
+  <p style="${S.p}">Guías prácticas sobre desengrasantes, lubricantes, desinfectantes, ceras y limpieza industrial: cómo elegir el producto correcto para cada aplicación.</p>
+  ${articles.length ? `<ul style="${S.ul}">${articles
+    .map(a => `<li><a style="${S.link}" href="/blog/${esc(a.slug)}">${esc(a.title)}</a>${a.excerpt ? ` — ${esc(a.excerpt)}` : ''}</li>`)
+    .join('')}</ul>` : '<p>Próximamente.</p>'}
+</article>
+</div>`;
+}
+
+/** Markdown → HTML mínimo. Solo headings, párrafos y links: alcanza para que el crawler
+ *  lea el texto sin sumar una dependencia de markdown al build. */
+function miniMarkdown(md) {
+  return String(md ?? '')
+    .split(/\n{2,}/)
+    .map(block => {
+      const b = block.trim();
+      if (!b) return '';
+      const h = b.match(/^(#{2,4})\s+(.*)$/s);
+      if (h) return `<h2 style="${S.h2}">${esc(h[2].replace(/\n[\s\S]*$/, ''))}</h2>`;
+      const text = esc(b).replace(/\[([^\]]+)\]\(([^)]+)\)/g, `<a style="${S.link}" href="$2">$1</a>`);
+      return `<p style="${S.p}">${text}</p>`;
+    })
+    .join('');
+}
+
+function blogPostBody(a) {
+  return `<div style="${S.wrap}">
+<nav aria-label="breadcrumb" style="${S.crumb}"><a style="${S.crumbLink}" href="/">Inicio</a> › <a style="${S.crumbLink}" href="/blog">Blog</a> › <span>${esc(a.title)}</span></nav>
+<article>
+  <h1 style="${S.h1}">${esc(a.title)}</h1>
+  ${a.excerpt ? `<h2 style="${S.lead}">${esc(a.excerpt)}</h2>` : ''}
+  ${miniMarkdown(a.content)}
+  <a style="${S.cta}" href="/cotizar">Consultar por estos productos</a>
+</article>
+</div>`;
+}
+
 function categoryBody(cat, products) {
   return `<div style="${S.wrap}">
 <nav aria-label="breadcrumb" style="${S.crumb}"><a style="${S.crumbLink}" href="/">Inicio</a> › <a style="${S.crumbLink}" href="/catalogo">Catálogo</a> › <span>${esc(cat.name)}</span></nav>
@@ -238,11 +405,14 @@ if (!existsSync(templatePath)) {
 }
 const template = readFileSync(templatePath, 'utf8');
 
-const products = await fetchTable(
-  'products',
-  'slug,name,category,subcategory,headline,description,story,industries,benefits,presentations,dilution,ph,image_url',
-  'is_active=eq.true&order=display_order.asc'
-);
+const [products, articles] = await Promise.all([
+  fetchTable(
+    'products',
+    'slug,name,category,subcategory,headline,description,story,industries,benefits,presentations,dilution,ph,image_url,featured',
+    'is_active=eq.true&order=display_order.asc'
+  ),
+  fetchTable('articles', 'slug,title,excerpt,content', 'published=eq.true&order=published_at.desc'),
+]);
 
 if (products.length === 0) {
   console.warn('[prerender] sin productos (¿faltan env vars de Supabase?) — no se prerenderiza nada.');
@@ -250,6 +420,14 @@ if (products.length === 0) {
 }
 
 let count = 0;
+
+const breadcrumb = items => ({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((it, i) => ({
+    '@type': 'ListItem', position: i + 1, name: it.name, item: it.url,
+  })),
+});
 
 for (const p of products) {
   const category = CATEGORIES.find(c => p.subcategory && c.subcategories.includes(p.subcategory));
@@ -348,4 +526,153 @@ for (const cat of CATEGORIES) {
   count++;
 }
 
-console.log(`[prerender] ✓ ${count} páginas HTML estáticas (${products.length} productos + ${CATEGORIES.length} categorías) → ${OUT_DIR}/`);
+// ── Catálogo completo: es la página con más superficie de keywords del sitio,
+//    porque lista los ~200 nombres de producto junto a su función. ──
+writePage('catalogo', renderPage(template, {
+  title: STATIC_PAGES.catalogo.title,
+  description: STATIC_PAGES.catalogo.desc,
+  canonical: `${SITE_URL}/catalogo`,
+  jsonLd: [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      '@id': `${SITE_URL}/catalogo#webpage`,
+      url: `${SITE_URL}/catalogo`,
+      name: STATIC_PAGES.catalogo.title,
+      description: STATIC_PAGES.catalogo.desc,
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: 'Productos químicos industriales FEMAVI',
+      numberOfItems: products.length,
+      itemListElement: products.map((p, i) => ({
+        '@type': 'ListItem', position: i + 1, url: `${SITE_URL}/catalogo/${p.slug}`, name: p.name,
+      })),
+    },
+    breadcrumb([
+      { name: 'Inicio', url: SITE_URL },
+      { name: 'Catálogo', url: `${SITE_URL}/catalogo` },
+    ]),
+  ],
+  bodyHtml: catalogBody(products),
+}));
+count++;
+
+// ── Shell neutro para el fallback del SPA ──
+// dist/index.html se usa para DOS cosas distintas: es la home, y es el destino del rewrite
+// de vercel.json para toda ruta sin archivo propio (/cotizar, /pedidos, /admin/*, slugs
+// inexistentes). Si prerenderizamos la home ahí, esas rutas pasan a servir el contenido y
+// el canonical de la home — exactamente el bug de "todo es duplicado de la home" que este
+// trabajo vino a arreglar.
+// Solución: el fallback apunta a app.html (shell neutro, sin canonical propio: lo pone
+// React según la ruta) y dist/index.html queda libre para ser la home de verdad.
+writeFileSync(
+  join(OUT_DIR, 'app.html'),
+  template
+    .replace(/<link data-default rel="canonical" href="[\s\S]*?" \/>/, '')
+    .replace(/<meta data-default name="description" content="[\s\S]*?" \/>/, ''),
+  'utf8'
+);
+
+// ── Home (dist/index.html) ──
+writeFileSync(
+  join(OUT_DIR, 'index.html'),
+  renderPage(template, {
+    title: STATIC_PAGES.home.title,
+    description: STATIC_PAGES.home.desc,
+    canonical: `${SITE_URL}/`,
+    jsonLd: breadcrumb([{ name: 'Inicio', url: SITE_URL }]),
+    bodyHtml: homeBody(products),
+  }),
+  'utf8'
+);
+count++;
+
+// ── Nosotros ──
+writePage('nosotros', renderPage(template, {
+  title: STATIC_PAGES.nosotros.title,
+  description: STATIC_PAGES.nosotros.desc,
+  canonical: `${SITE_URL}/nosotros`,
+  jsonLd: breadcrumb([
+    { name: 'Inicio', url: SITE_URL },
+    { name: 'Nosotros', url: `${SITE_URL}/nosotros` },
+  ]),
+  bodyHtml: aboutBody(),
+}));
+count++;
+
+// ── Landings por industria ──
+for (const v of VERTICALS) {
+  const vProducts = products.filter(p =>
+    (p.industries ?? []).some(ind => v.industryKeywords.some(kw => ind.toLowerCase().includes(kw)))
+  );
+  const canonical = `${SITE_URL}/industrias/${v.slug}`;
+  writePage(`industrias/${v.slug}`, renderPage(template, {
+    title: v.seoTitle,
+    description: v.seoDesc,
+    canonical,
+    jsonLd: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        '@id': `${canonical}#webpage`,
+        url: canonical,
+        name: v.seoTitle,
+        description: v.seoDesc,
+      },
+      breadcrumb([
+        { name: 'Inicio', url: SITE_URL },
+        { name: v.name, url: canonical },
+      ]),
+    ],
+    bodyHtml: verticalBody(v, vProducts.slice(0, 40)),
+  }));
+  count++;
+}
+
+// ── Blog ──
+writePage('blog', renderPage(template, {
+  title: STATIC_PAGES.blog.title,
+  description: STATIC_PAGES.blog.desc,
+  canonical: `${SITE_URL}/blog`,
+  jsonLd: breadcrumb([
+    { name: 'Inicio', url: SITE_URL },
+    { name: 'Blog', url: `${SITE_URL}/blog` },
+  ]),
+  bodyHtml: blogListBody(articles),
+}));
+count++;
+
+for (const a of articles) {
+  const canonical = `${SITE_URL}/blog/${a.slug}`;
+  writePage(`blog/${a.slug}`, renderPage(template, {
+    title: `${a.title} — FEMAVI`,
+    description: (a.excerpt || '').slice(0, 158),
+    canonical,
+    jsonLd: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        '@id': `${canonical}#article`,
+        headline: a.title,
+        description: a.excerpt,
+        mainEntityOfPage: canonical,
+        publisher: { '@id': `${SITE_URL}/#organization` },
+      },
+      breadcrumb([
+        { name: 'Inicio', url: SITE_URL },
+        { name: 'Blog', url: `${SITE_URL}/blog` },
+        { name: a.title, url: canonical },
+      ]),
+    ],
+    bodyHtml: blogPostBody(a),
+  }));
+  count++;
+}
+
+console.log(
+  `[prerender] ✓ ${count} páginas HTML estáticas → ${OUT_DIR}/\n` +
+  `             ${products.length} productos · ${CATEGORIES.length} categorías · ${VERTICALS.length} industrias · ` +
+  `${articles.length} posts · home · catálogo · nosotros · blog`
+);

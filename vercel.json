@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/((?!assets/|favicon|robots\\.txt|sitemap\\.xml|og-image).*)",
-      "destination": "/index.html"
+      "destination": "/app.html"
     }
   ],
   "headers": [

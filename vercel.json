@@ -1,5 +1,4 @@
 {
-  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/((?!assets/|favicon|robots\\.txt|sitemap\\.xml|og-image).*)",

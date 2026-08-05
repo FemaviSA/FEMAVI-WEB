@@ -92,7 +92,7 @@ export default function ProductPage() {
     description: product.description,
     image: product.image_url ? [product.image_url] : undefined,
     sku: product.slug,
-    category: product.category,
+    category: product.subcategory ?? product.category,
     brand: { '@type': 'Brand', name: 'FEMAVI' },
     manufacturer: { '@id': `${SITE_URL}/#organization` },
     additionalProperty: [
@@ -100,13 +100,12 @@ export default function ProductPage() {
       product.ph && { '@type': 'PropertyValue', name: 'pH', value: product.ph },
       product.presentations.length > 0 && { '@type': 'PropertyValue', name: 'Presentaciones', value: product.presentations.join(', ') },
     ].filter(Boolean),
-    offers: {
-      '@type': 'Offer',
-      priceCurrency: 'ARS',
-      availability: 'https://schema.org/InStock',
-      url,
-      seller: { '@id': `${SITE_URL}/#organization` },
-    },
+    // Sin bloque `offers` a propósito: Google exige `price` dentro de Offer, y FEMAVI
+    // vende por cotización, no publica precios. Declarar un Offer sin precio hacía que
+    // Search Console marcara la ficha como "elemento no válido" en Fragmentos de
+    // productos y Fichas de comerciantes. Sin offers el Product sigue siendo válido;
+    // solo no califica para el snippet de precio, que igual no tendríamos.
+    // Mantener en sync con scripts/prerender.mjs.
   };
 
   const breadcrumbJsonLd = {

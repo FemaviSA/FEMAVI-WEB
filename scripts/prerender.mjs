@@ -456,10 +456,11 @@ for (const p of products) {
         p.ph && { '@type': 'PropertyValue', name: 'pH', value: p.ph },
         p.presentations?.length && { '@type': 'PropertyValue', name: 'Presentaciones', value: p.presentations.join(', ') },
       ].filter(Boolean),
-      offers: {
-        '@type': 'Offer', priceCurrency: 'ARS', availability: 'https://schema.org/InStock',
-        url: canonical, seller: { '@id': `${SITE_URL}/#organization` },
-      },
+      // Sin bloque `offers` a propósito: Google exige `price` dentro de Offer, y FEMAVI
+      // vende por cotización, no publica precios. Declarar un Offer sin precio hacía que
+      // Search Console marcara la ficha como "elemento no válido" en Fragmentos de
+      // productos y Fichas de comerciantes. Sin offers el Product sigue siendo válido;
+      // solo no califica para el snippet de precio, que igual no tendríamos.
     },
     {
       '@context': 'https://schema.org',

@@ -209,21 +209,25 @@ function categoryBody(cat, products) {
 }
 
 /**
- * Escribe la página como archivo .html plano (ej. dist/catalogo/citrif.html), NO como
- * dist/catalogo/citrif/index.html.
+ * Escribe la página como dist/<ruta>/index.html (ej. dist/catalogo/citrif/index.html).
  *
- * Por qué: la variante con directorio solo se resuelve si la URL trae barra final
- * (/catalogo/citrif/). Sin la barra, el server no encuentra el índice del directorio y la
- * request cae al fallback del SPA — o sea, el prerender no serviría para nada justo en la
- * URL que usa todo el mundo. Con archivo plano + "cleanUrls": true en vercel.json,
- * /catalogo/citrif sirve catalogo/citrif.html de forma explícita y determinística.
+ * HISTORIA DE ESTE ARCHIVO — no volver a cambiarlo sin probar en producción:
+ * 1. Primer intento: dist/catalogo/citrif/index.html. En `vite preview` local solo
+ *    resolvía con barra final (/catalogo/citrif/), así que parecía roto.
+ * 2. Segundo intento: archivo plano dist/catalogo/citrif.html + "cleanUrls": true.
+ *    Andaba local, pero en producción cleanUrls rompió el rewrite de fallback del SPA
+ *    y /catalogo, /nosotros, /blog y /industrias/* pasaron a devolver 404.
+ * 3. Al quitar cleanUrls los 404 se arreglaron, pero Vercel dejó de resolver los .html
+ *    planos y las fichas volvieron a servir el shell vacío.
+ * 4. Actual: directorio + index.html SIN cleanUrls. Vercel resuelve /catalogo/citrif
+ *    contra catalogo/citrif/index.html de forma nativa (es como sirve cualquier SSG),
+ *    y el rewrite de fallback sigue funcionando para las rutas sin archivo.
+ * La lección: `vite preview` no reproduce el routing de Vercel. Verificar en producción.
  */
 function writePage(routePath, html) {
-  const parts = routePath.split('/');
-  const file = parts.pop();
-  const dir = join(OUT_DIR, ...parts);
+  const dir = join(OUT_DIR, ...routePath.split('/'));
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, `${file}.html`), html, 'utf8');
+  writeFileSync(join(dir, 'index.html'), html, 'utf8');
 }
 
 // ─── main ───

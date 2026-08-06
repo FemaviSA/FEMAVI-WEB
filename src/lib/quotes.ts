@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { track } from './analytics';
 import type { QuoteRequest, QuoteRequestInput, QuoteStatus } from '../types/product';
 
 const TABLE = 'quote_requests';
@@ -18,6 +19,16 @@ export async function createQuote(input: QuoteRequestInput): Promise<void> {
     });
 
   if (error) throw error;
+
+  // Punto único por donde pasan todas las cotizaciones del sitio (Home y /cotizar),
+  // así que es el mejor lugar para medir la conversión. Solo se dispara si la
+  // cotización se guardó bien: no queremos contar intentos fallidos como conversión.
+  // No mandamos nombre, email ni teléfono a Analytics — solo datos agregados.
+  track('quote_submitted', {
+    product_count: input.product_slugs.length,
+    products: input.product_slugs.slice(0, 10).join(','),
+    industry: input.industry?.trim() || 'sin_especificar',
+  });
 }
 
 export async function listQuotes(opts?: { status?: QuoteStatus | 'all'; includeDeleted?: boolean }): Promise<QuoteRequest[]> {

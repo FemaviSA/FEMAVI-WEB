@@ -44,38 +44,13 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" />
 
+    <!-- Analytics: ya no va acá. El snippet que había estaba comentado y con un ID de
+         ejemplo en vez del real, o sea que no medía nada. Ahora lo maneja
+         src/lib/analytics.ts, que además de las visitas mide los eventos que importan
+         (clicks a WhatsApp y cotizaciones enviadas).
+         Para activarlo: definir VITE_GA4_ID en las variables de entorno de Vercel. -->
+
     <!-- Structured Data global: Organization + LocalBusiness + WebSite -->
-    <!-- ====================================================
-         TRACKING: reemplazá los IDs cuando los tengas
-         GA4:       G-XXXXXXXXXX  → analytics.google.com
-         Meta Pixel: XXXXXXXXXXXXXXX → business.facebook.com
-         ==================================================== -->
-
-    <!-- Google tag (gtag.js) — GA4 -->
-    <!-- REEMPLAZAR G-XXXXXXXXXX con tu Measurement ID real -->
-    <!--
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-XXXXXXXXXX');
-    </script>
-    -->
-
-    <!-- Meta Pixel — REEMPLAZAR XXXXXXXXXXXXXXX con tu Pixel ID real -->
-    <!--
-    <script>
-      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
-      document,'script','https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', 'XXXXXXXXXXXXXXX');
-      fbq('track', 'PageView');
-    </script>
-    -->
-
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",

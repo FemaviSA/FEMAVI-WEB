@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
 import { Toaster } from 'sonner';
 import { RequireAuth } from './components/RequireAuth';
+import { initAnalytics, trackPageView } from './lib/analytics';
 import { QuoteCartPill } from './components/QuoteCartPill';
 import { WhatsAppButton } from './components/WhatsAppButton';
 
@@ -34,6 +35,18 @@ function ScrollToTop() {
   return null;
 }
 
+/**
+ * Un SPA no dispara page_view al navegar (no hay recarga), así que las mandamos nosotros
+ * en cada cambio de ruta. Sin esto Analytics registraría solo la primera página de cada
+ * visita y parecería que nadie navega el catálogo.
+ */
+function AnalyticsTracker() {
+  const { pathname } = useLocation();
+  useEffect(() => { initAnalytics(); }, []);
+  useEffect(() => { trackPageView(pathname); }, [pathname]);
+  return null;
+}
+
 function PublicCartPill() {
   const location = useLocation();
   if (location.pathname.startsWith('/admin')) return null;
@@ -50,6 +63,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <AnalyticsTracker />
       <Toaster
         position="bottom-right"
         richColors

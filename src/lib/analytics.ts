@@ -77,9 +77,12 @@ export function initAnalytics(): void {
   document.head.appendChild(s);
 
   window.dataLayer = window.dataLayer || [];
-  window.gtag = function gtag(...args: unknown[]) {
-    window.dataLayer!.push(args);
-  };
+  // OJO: tiene que pushear el objeto `arguments`, NO un array. Es lo que hace el snippet
+  // oficial de Google y la librería de gtag depende de esa forma exacta. Con parámetros
+  // rest (`...args`) se pushea un array de verdad, que se ve igual pero GA4 no procesa:
+  // los eventos se encolan y nunca llegan. Por eso está el eslint-disable.
+  // eslint-disable-next-line prefer-rest-params
+  window.gtag = function gtag() { window.dataLayer!.push(arguments); };
   window.gtag('js', new Date());
   // send_page_view en false: las páginas las mandamos nosotros en cada cambio de ruta,
   // si no la primera se contaría dos veces.

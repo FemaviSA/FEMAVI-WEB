@@ -8,9 +8,14 @@
  * probablemente el canal de conversión principal y no dejaba ningún rastro.
  *
  * CÓMO SE ACTIVA
- * Definiendo VITE_GA4_ID (formato G-XXXXXXXXXX) en las variables de entorno de Vercel.
- * Sin esa variable, todo esto es no-op: no carga scripts de terceros ni rompe nada. Eso
- * mantiene el entorno local y los previews limpios de datos falsos.
+ * La propiedad de GA4 ya existía en la cuenta de FEMAVI (femavi.com.ar - GA4), sin recibir
+ * datos porque el sitio nunca estuvo etiquetado. Su ID de medición va como default acá.
+ * No es un secreto: los IDs de GA4 son públicos y viajan en el HTML de cualquier página
+ * que los use, así que no hay problema en tenerlo en el repo.
+ *
+ * Solo mide en el dominio de producción. Esa condición es intencional: sin ella, cada
+ * `npm run dev` y cada preview de Vercel inyectaría visitas falsas en las métricas del
+ * negocio. VITE_GA4_ID permite pisar el ID si alguna vez se quiere una propiedad distinta.
  *
  * QUÉ MIDE
  * - page_view por ruta (un SPA no las dispara solo al navegar)
@@ -20,7 +25,18 @@
  * - add_to_quote / view_product: intención de compra por producto
  */
 
-const GA_ID = import.meta.env.VITE_GA4_ID as string | undefined;
+const GA_ID = (import.meta.env.VITE_GA4_ID as string | undefined) || 'G-VZ39Z6MVLY';
+
+/** Único host donde se mide. Ver el comentario de arriba sobre por qué. */
+const PROD_HOST = 'www.femavi.com.ar';
+
+function shouldTrack(): boolean {
+  return (
+    Boolean(GA_ID) &&
+    typeof window !== 'undefined' &&
+    window.location.hostname === PROD_HOST
+  );
+}
 
 type Params = Record<string, unknown>;
 
@@ -32,16 +48,16 @@ declare global {
 }
 
 export function isAnalyticsEnabled(): boolean {
-  return Boolean(GA_ID);
+  return shouldTrack();
 }
 
 export function track(event: string, params: Params = {}): void {
-  if (!GA_ID || typeof window.gtag !== 'function') return;
+  if (!shouldTrack() || typeof window.gtag !== 'function') return;
   window.gtag('event', event, params);
 }
 
 export function trackPageView(path: string): void {
-  if (!GA_ID || typeof window.gtag !== 'function') return;
+  if (!shouldTrack() || typeof window.gtag !== 'function') return;
   window.gtag('event', 'page_view', {
     page_path: path,
     page_location: window.location.href,
@@ -52,7 +68,7 @@ export function trackPageView(path: string): void {
 let initialized = false;
 
 export function initAnalytics(): void {
-  if (initialized || !GA_ID || typeof window === 'undefined') return;
+  if (initialized || !shouldTrack()) return;
   initialized = true;
 
   const s = document.createElement('script');

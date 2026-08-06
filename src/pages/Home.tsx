@@ -528,6 +528,16 @@ function Footer() {
               <a href="tel:+5491162284649" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>+54 9 116228-4649</a><br />
               <a href="mailto:ventas@femavi.com.ar" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>ventas@femavi.com.ar</a>
             </p>
+            {/* El link visible acompaña al "sameAs" del schema en index.html: Google usa
+                ambas señales para asociar el sitio con el perfil de LinkedIn de la empresa. */}
+            <a
+              href="https://www.linkedin.com/company/femavi-sa"
+              target="_blank"
+              rel="noopener"
+              style={{ display: 'inline-block', marginTop: 14, fontSize: 14, fontWeight: 600, color: COLORS.accentLight, textDecoration: 'none' }}
+            >
+              LinkedIn ↗
+            </a>
           </div>
         </div>
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

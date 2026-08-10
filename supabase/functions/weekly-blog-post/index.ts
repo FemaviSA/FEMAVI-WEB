@@ -135,10 +135,35 @@ El slug debe ser en minúsculas, con guiones, sin tildes. Los tags deben incluir
   };
 }
 
+async function triggerDeploy(): Promise<{ ok: boolean; detail: string }> {
+  const hookUrl = Deno.env.get("VERCEL_DEPLOY_HOOK_URL");
+  if (!hookUrl) return { ok: false, detail: "sin VERCEL_DEPLOY_HOOK_URL configurada" };
+
+  try {
+    const res = await fetch(hookUrl, { method: "POST" });
+    if (!res.ok) return { ok: false, detail: `el hook devolvió ${res.status}` };
+    return { ok: true, detail: "rebuild disparado" };
+  } catch (err) {
+    return { ok: false, detail: `no se pudo llamar al hook: ${err}` };
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS_HEADERS });
 
   try {
+    // {"only_deploy": true} dispara el rebuild sin redactar ni publicar nada. Sirve para
+    // verificar que VERCEL_DEPLOY_HOOK_URL esté bien cargada, y para publicar en el HTML
+    // estático un post que ya está en la base pero se creó cuando el hook fallaba.
+    const body = await req.json().catch(() => ({}));
+    if (body?.only_deploy === true) {
+      const result = await triggerDeploy();
+      return new Response(JSON.stringify({ ok: result.ok, deploy: result }), {
+        status: result.ok ? 200 : 500,
+        headers: { ...CORS_HEADERS, "content-type": "application/json" },
+      });
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -191,8 +216,20 @@ Deno.serve(async (req: Request) => {
 
     if (updateError) throw updateError;
 
+    // El post ya está en la base, pero prerender.mjs y generate-sitemap.mjs corren solo
+    // durante el build: sin un deploy nuevo el artículo es invisible para Googlebot, que
+    // no ejecuta JS en su primera pasada. El hook de Vercel dispara ese rebuild.
+    // Si falla, el post igual quedó publicado — se reporta pero no se rompe la respuesta.
+    const deployTriggered = await triggerDeploy();
+
     return new Response(
-      JSON.stringify({ ok: true, article_id: article.id, slug: finalSlug, topic_id: topic.id }),
+      JSON.stringify({
+        ok: true,
+        article_id: article.id,
+        slug: finalSlug,
+        topic_id: topic.id,
+        deploy: deployTriggered,
+      }),
       { status: 200, headers: { ...CORS_HEADERS, "content-type": "application/json" } },
     );
   } catch (err) {

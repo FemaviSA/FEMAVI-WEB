@@ -101,7 +101,7 @@ El slug debe ser en minúsculas, con guiones, sin tildes. Los tags deben incluir
     },
     body: JSON.stringify({
       model: ANTHROPIC_MODEL,
-      max_tokens: 4000,
+      max_tokens: 16000,
       messages: [{ role: "user", content: prompt }],
     }),
   });
@@ -111,9 +111,16 @@ El slug debe ser en minúsculas, con guiones, sin tildes. Los tags deben incluir
   }
 
   const data = await res.json();
-  const text: string = data.content?.[0]?.text ?? "";
+  const textBlock = Array.isArray(data.content)
+    ? data.content.find((b: { type?: string }) => b?.type === "text")
+    : undefined;
+  const text: string = (textBlock as { text?: string } | undefined)?.text ?? "";
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error(`La respuesta del modelo no contenía JSON: ${text.slice(0, 300)}`);
+  if (!jsonMatch) {
+    throw new Error(
+      `La respuesta del modelo no contenía JSON. stop_reason=${data.stop_reason}, content=${JSON.stringify(data.content).slice(0, 500)}`,
+    );
+  }
 
   const parsed = JSON.parse(jsonMatch[0]);
   if (!parsed.title || !parsed.content || !parsed.excerpt) {

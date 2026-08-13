@@ -26,8 +26,8 @@ const OUT_DIR = process.env.PRERENDER_OUT || 'dist';
 // Espejo de src/data/categoryConfigs.ts. Mantener en sync (el script no puede importar TS).
 const CATEGORIES = [
   { slug: 'desengrasantes', name: 'Desengrasantes', subcategories: ['Desengrasantes'],
-    seoTitle: 'Desengrasante Industrial en Argentina | FEMAVI',
-    seoDesc: 'Desengrasantes industriales concentrados y biodegradables para metales, motores y piezas. Fórmula propia FEMAVI, venta por bidón o mayor, entrega en 48hs.',
+    seoTitle: 'Desengrasante Industrial para Piezas y Metales — Argentina | FEMAVI',
+    seoDesc: 'Desengrasantes industriales concentrados y biodegradables para limpieza de piezas mecánicas, metales y motores. Fórmula propia FEMAVI, venta por bidón o mayor, entrega en 48hs.',
     heroTitle: 'Desengrasante industrial concentrado, biodegradable y de alto rendimiento' },
   { slug: 'higiene-industrial', name: 'Higiene y Limpieza Industrial', subcategories: ['Higiene Industrial', 'Limpiadores', 'Detergentes'],
     seoTitle: 'Productos de Limpieza Industrial Argentina | FEMAVI',
@@ -38,8 +38,8 @@ const CATEGORIES = [
     seoDesc: 'Cera acrílica para pisos de alto tránsito: cerámicos, graníticos y cemento alisado. Alta duración y brillo profesional. Fabricante argentino, entrega en 48hs.',
     heroTitle: 'Cera acrílica industrial para pisos de alto tránsito' },
   { slug: 'bactericidas', name: 'Bactericidas', subcategories: ['Desinfectantes'],
-    seoTitle: 'Bactericida Industrial de Amplio Espectro | FEMAVI',
-    seoDesc: 'Bactericida industrial concentrado, apto para industria alimenticia, con acción residual y amplio espectro. Fabricante argentino, entrega en 48hs.',
+    seoTitle: 'Desinfectante y Bactericida Industrial — Industria Alimentaria | FEMAVI',
+    seoDesc: 'Desinfectante bactericida industrial concentrado para industria alimentaria, cocinas y plantas. Amplio espectro y acción residual. Fabricante argentino, entrega en 48hs.',
     heroTitle: 'Bactericida industrial de amplio espectro y acción residual' },
   { slug: 'anticorrosivos', name: 'Anticorrosivos', subcategories: ['Anticorrosivos'],
     seoTitle: 'Anticorrosivo Industrial para Metales y Maquinaria | FEMAVI',

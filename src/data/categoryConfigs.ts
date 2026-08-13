@@ -24,8 +24,10 @@ export const CATEGORY_CONFIGS: CategoryConfig[] = [
     subcategories: ['Desengrasantes'],
     heroTitle: 'Desengrasante industrial concentrado, biodegradable y de alto rendimiento',
     heroDesc: 'Fórmulas propias para eliminar grasa carbonizada, aceite y suciedad pesada en metales, motores y piezas. Alta dilución, máximo rendimiento por litro. Fabricado en Argentina con entrega en 48hs.',
-    seoTitle: 'Desengrasante Industrial en Argentina | FEMAVI',
-    seoDesc: 'Desengrasantes industriales concentrados y biodegradables para metales, motores y piezas. Fórmula propia FEMAVI, venta por bidón o mayor, entrega en 48hs.',
+    // "piezas" viene de Search Console: "limpieza de piezas mecánicas" traía impresiones
+    // pero cero clics, porque el título no usaba esa palabra. Ver comentario al pie.
+    seoTitle: 'Desengrasante Industrial para Piezas y Metales — Argentina | FEMAVI',
+    seoDesc: 'Desengrasantes industriales concentrados y biodegradables para limpieza de piezas mecánicas, metales y motores. Fórmula propia FEMAVI, venta por bidón o mayor, entrega en 48hs.',
     keywords: 'desengrasante industrial, desengrasante industrial Argentina, desengrasante industrial Buenos Aires, desengrasante para metales, desengrasante para piezas, desengrasante para motores, desengrasante biodegradable industrial, desengrasante concentrado por bidón, desengrasante por mayor',
     intro: 'Grasa carbonizada, aceite acumulado y suciedad industrial pesada necesitan una fórmula con verdadera capacidad de arrastre. Nuestros desengrasantes se desarrollan y fabrican internamente, ajustando concentración y pH según la superficie: metales, motores, pisos de taller o cocinas industriales.',
     benefits: [
@@ -94,9 +96,14 @@ export const CATEGORY_CONFIGS: CategoryConfig[] = [
     subcategories: ['Desinfectantes'],
     heroTitle: 'Bactericida industrial de amplio espectro y acción residual',
     heroDesc: 'Desinfección profesional para superficies en contacto con alimentos, clínicas, centros de salud y plantas industriales. Fórmulas de cuarta generación con acción residual prolongada.',
-    seoTitle: 'Bactericida Industrial de Amplio Espectro | FEMAVI',
-    seoDesc: 'Bactericida industrial concentrado, apto para industria alimenticia, con acción residual y amplio espectro. Fabricante argentino, entrega en 48hs.',
-    keywords: 'bactericida industrial, bactericida para eliminar malos olores, desinfectante bactericida concentrado, bactericida para industria alimentaria',
+    // El título arranca con "desinfectante" a propósito, aunque internamente la categoría
+    // se llame "bactericida". Search Console mostró que la gente busca "desinfectante
+    // industrial" y "desinfectantes en la industria alimentaria" (23 impresiones, CERO
+    // clics): aparecíamos pero el título usaba otra palabra y no lo reconocían como
+    // respuesta. Se mantienen ambos términos para no perder las búsquedas por bactericida.
+    seoTitle: 'Desinfectante y Bactericida Industrial — Industria Alimentaria | FEMAVI',
+    seoDesc: 'Desinfectante bactericida industrial concentrado para industria alimentaria, cocinas y plantas. Amplio espectro y acción residual. Fabricante argentino, entrega en 48hs.',
+    keywords: 'desinfectante industrial, desinfectantes en la industria alimentaria, bactericida industrial, bactericida para eliminar malos olores, desinfectante bactericida concentrado, bactericida para industria alimentaria',
     intro: 'Una sola fórmula que desinfecta cocinas, cámaras frigoríficas, clínicas y áreas de servicio sin cambiar de producto. Nuestros bactericidas eliminan bacterias, hongos y levaduras con acción residual prolongada.',
     benefits: [
       { icon: '🍽️', title: 'Apto industria alimenticia', desc: 'Cumple los requisitos para superficies en contacto con alimentos.' },

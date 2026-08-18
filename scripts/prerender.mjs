@@ -725,10 +725,20 @@ function write404(template) {
   // Una 404 no se indexa. El index,follow global de index.html diría lo contrario, así que
   // acá se pisa: noindex para que no entre al índice, follow para que igual siga los enlaces
   // de arriba y le sirvan al crawler para redescubrir el catálogo.
+  const antes = html;
   html = html.replace(
     /<meta name="robots" content="[^"]*" \/>/,
     '<meta name="robots" content="noindex, follow" />'
   );
+  // Sin este corte, un cambio en index.html haría que el reemplazo no matchee y la 404
+  // quedaría publicada con el "index, follow" global — o sea, una página de error
+  // compitiendo en el índice. Falla silenciosa y difícil de notar: mejor romper el build.
+  if (html === antes) {
+    throw new Error(
+      'No se pudo poner noindex en 404.html: no matcheó el <meta name="robots"> de index.html. ' +
+      '¿Cambió ese tag? Revisá write404() en scripts/prerender.mjs.'
+    );
+  }
 
   writeFileSync(join(OUT_DIR, '404.html'), html, 'utf8');
 }

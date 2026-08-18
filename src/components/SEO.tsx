@@ -42,7 +42,13 @@ export function SEO({
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       <link rel="canonical" href={canonical} />
-      {noindex && <meta name="robots" content="noindex, nofollow" />}
+      {/* follow, no nofollow: la página no se indexa, pero conviene que el crawler siga
+          igual los enlaces de salida y redescubra el catálogo desde acá. Es lo mismo que
+          escribe el 404 estático en scripts/prerender.mjs.
+          Queda conviviendo con el <meta robots> global de index.html, que dice
+          "index, follow". No es un problema: ante directivas en conflicto vale la más
+          restrictiva, así que gana este noindex. */}
+      {noindex && <meta name="robots" content="noindex, follow" />}
 
       <meta property="og:type" content={type} />
       <meta property="og:title" content={fullTitle} />

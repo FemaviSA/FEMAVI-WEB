@@ -461,7 +461,7 @@
       "destination": "/app.html"
     },
     {
-      "source": "/industrias/:path*",
+      "source": "/industrias/:path+",
       "destination": "/app.html"
     },
     {

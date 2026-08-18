@@ -204,6 +204,9 @@ const S = {
   dd: 'font-size:14px;font-weight:500;margin:0',
   cta: 'display:inline-block;padding:14px 28px;background:#0067ac;color:#fff;font-weight:700;border-radius:10px;text-decoration:none;margin:8px 0 32px',
   link: 'color:#0067ac;text-decoration:none;font-weight:600',
+  table: 'width:100%;border-collapse:collapse;margin:0 0 24px;font-size:15px',
+  th: 'text-align:left;padding:10px 12px;background:#f6f8fa;border:1px solid #e2e8ee;font-weight:700;color:#004370',
+  td: 'padding:10px 12px;border:1px solid #e2e8ee',
 };
 
 function productBody(p, related, category) {
@@ -332,18 +335,61 @@ function blogListBody(articles) {
 </div>`;
 }
 
-/** Markdown → HTML mínimo. Solo headings, párrafos y links: alcanza para que el crawler
- *  lea el texto sin sumar una dependencia de markdown al build. */
+/** Markdown → HTML mínimo: headings, párrafos, links, negritas, listas y tablas.
+ *  No usamos una librería de markdown para no sumar una dependencia al build; alcanza
+ *  con cubrir lo que realmente escriben los posts.
+ *
+ *  Las tablas importan para SEO: varios posts comparan grados de viscosidad, dosis o
+ *  normativas en tablas, y son justamente el dato que la gente busca ("iso vg 46
+ *  equivalente sae"). Renderizadas como párrafo con pipes, Google leía un choclo
+ *  ilegible; como <table> lee una fila por grado. */
+function inline(text) {
+  return esc(text)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, `<a style="${S.link}" href="$2">$1</a>`)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+}
+
+/** Una fila `| a | b |` → celdas. Ignora los pipes de los extremos. */
+function celdas(linea) {
+  return linea.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+}
+
+const ES_SEPARADOR = /^\|?[\s:-]*-[\s:|-]*\|?$/;
+
+function tabla(lineas) {
+  const head = celdas(lineas[0]);
+  const filas = lineas.slice(2).map(celdas);
+  const th = head.map(c => `<th style="${S.th}">${inline(c)}</th>`).join('');
+  const tr = filas
+    .map(f => `<tr>${f.map(c => `<td style="${S.td}">${inline(c)}</td>`).join('')}</tr>`)
+    .join('');
+  return `<table style="${S.table}"><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table>`;
+}
+
 function miniMarkdown(md) {
   return String(md ?? '')
     .split(/\n{2,}/)
     .map(block => {
       const b = block.trim();
       if (!b) return '';
+
       const h = b.match(/^(#{2,4})\s+(.*)$/s);
-      if (h) return `<h2 style="${S.h2}">${esc(h[2].replace(/\n[\s\S]*$/, ''))}</h2>`;
-      const text = esc(b).replace(/\[([^\]]+)\]\(([^)]+)\)/g, `<a style="${S.link}" href="$2">$1</a>`);
-      return `<p style="${S.p}">${text}</p>`;
+      if (h) return `<h2 style="${S.h2}">${inline(h[2].replace(/\n[\s\S]*$/, ''))}</h2>`;
+
+      const lineas = b.split('\n').map(l => l.trim()).filter(Boolean);
+
+      // Tabla GFM: encabezado + separador (|---|---|) + al menos una fila.
+      if (lineas.length >= 3 && lineas[0].includes('|') && ES_SEPARADOR.test(lineas[1])) {
+        return tabla(lineas);
+      }
+
+      // Lista: todas las líneas arrancan con - o *.
+      if (lineas.every(l => /^[-*]\s+/.test(l))) {
+        const li = lineas.map(l => `<li>${inline(l.replace(/^[-*]\s+/, ''))}</li>`).join('');
+        return `<ul style="${S.ul}">${li}</ul>`;
+      }
+
+      return `<p style="${S.p}">${inline(b)}</p>`;
     })
     .join('');
 }

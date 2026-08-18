@@ -1,4 +1,456 @@
 {
+  "redirects": [
+    {
+      "source": "/tienda/germax",
+      "destination": "/catalogo/germax",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/pluri-fem-d",
+      "destination": "/catalogo/pluri-fem-d",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/redumax",
+      "destination": "/catalogo/redumax",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/super-clean",
+      "destination": "/catalogo/super-clean",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/fin-grass-plus",
+      "destination": "/catalogo/fin-grass-plus",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/cera-acrilica",
+      "destination": "/catalogo/cera-acrilica",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/green-oil",
+      "destination": "/catalogo/green-oil",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/aceite-para-bancada",
+      "destination": "/catalogo/aceite-para-bancada",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/anticongelante",
+      "destination": "/catalogo/anticongelante",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/lubri-fem",
+      "destination": "/catalogo/lubri-fem",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/grasa-grafitada",
+      "destination": "/catalogo/grasa-grafitada",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/top-wash",
+      "destination": "/catalogo/top-wash",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/rax",
+      "destination": "/catalogo/rax",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/fibra-corta",
+      "destination": "/catalogo/fibra-corta",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/red-oil",
+      "destination": "/catalogo/red-oil",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/tritoil-e",
+      "destination": "/catalogo/tritoil-e",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/tritoil-g",
+      "destination": "/catalogo/tritoil-g",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/fat-remover",
+      "destination": "/catalogo/fat-remover",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/tronic",
+      "destination": "/catalogo/tronic",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/decap-gel",
+      "destination": "/catalogo/decap-gel",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/fos-fem-mn",
+      "destination": "/catalogo/fos-fem-mn",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/tritex",
+      "destination": "/catalogo/tritex",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/emul-fem",
+      "destination": "/catalogo/emul-fem",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/clean-bath",
+      "destination": "/catalogo/clean-bath",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/bitex",
+      "destination": "/catalogo/bitex",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/antiseize",
+      "destination": "/catalogo/antiseize",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/aceite-grafitado",
+      "destination": "/catalogo/aceite-grafitado",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/ultra-skin",
+      "destination": "/catalogo/ultra-skin",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/flox-granel",
+      "destination": "/catalogo/flox-granel",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/lube-a",
+      "destination": "/catalogo/lube-a",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/fos-fem-10",
+      "destination": "/catalogo/fos-fem-10",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/diel-oil",
+      "destination": "/catalogo/diel-oil",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/cold-fem-alum",
+      "destination": "/catalogo/cold-fem-alum",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/diel-fem-a",
+      "destination": "/catalogo/diel-fem-a",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/adicyt",
+      "destination": "/catalogo/adicyt",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/efilube",
+      "destination": "/catalogo/efilube",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/efe-d-jet",
+      "destination": "/catalogo/efe-d-jet",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/s-e-10",
+      "destination": "/catalogo/s-e-10",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/l-u-b-r-e-x",
+      "destination": "/catalogo/lubrex",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/oil-t-e-x-t-i-l",
+      "destination": "/catalogo/oil-textil",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/f-t-a-c-7",
+      "destination": "/catalogo/f-t-a-c7",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/cold-fem-b-e",
+      "destination": "/catalogo/cold-fem-be",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/rax-a-t",
+      "destination": "/catalogo/rax-at",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/rax-a-v",
+      "destination": "/catalogo/rax-av",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/lubri-stamp-1",
+      "destination": "/catalogo/lubristamp-1",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/m-k-2-g",
+      "destination": "/catalogo/mk2",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/graf-dill-s-r-l",
+      "destination": "/catalogo/graf-dill-sr",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/aceite-para-corte-de-vidrio",
+      "destination": "/catalogo/aceite-p-corte-de-vidrio",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/aceite-para-brunido",
+      "destination": "/catalogo/aceite-p-brunido",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/inhibidor-para-mercaptano",
+      "destination": "/catalogo/inhibidor-p-mercaptano",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/aceite-para-corte-de-al",
+      "destination": "/catalogo/aceite-corte-p-aluminio",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/desengrasante-para-al",
+      "destination": "/catalogo/desengrasante-p-aluminio",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/revividor-gomas-azul",
+      "destination": "/catalogo/daurange-revividor-gomas-azul",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/germicida-pino",
+      "destination": "/catalogo/daurange-germicida-pino",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/mr-wash",
+      "destination": "/catalogo/daurange-mr-wash",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/mr-wash-clorado",
+      "destination": "/catalogo/daurange-mr-wash-clorado",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/lavavajillas-neutro",
+      "destination": "/catalogo/daurange-lavavajilla",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/shampoo-teflonado",
+      "destination": "/catalogo/daurange-shampoo-para-autos",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/limpiador-encerarte-bactericida",
+      "destination": "/catalogo/daurange-limpiador-encerante",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/grasa-grafitada-aerosol",
+      "destination": "/catalogo/aerosol-grasa-grafitada",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/lubrex-aerosol",
+      "destination": "/catalogo/aerosol-lubrex",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/flox",
+      "destination": "/catalogo/aerosol-flox",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/lindess",
+      "destination": "/catalogo/lindess-frag-varias",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/absorb",
+      "destination": "/catalogo/absorb-en-barrica",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/antiadherente-pintable",
+      "destination": "/catalogo/ansol-antiadherente-pintable",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/desmoldante-de-caucho",
+      "destination": "/catalogo/desmoldante-para-caucho",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/desmoldante-para-hormigon",
+      "destination": "/catalogo/desmoldante-hormigon",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/desmoldante-para-panaderia",
+      "destination": "/catalogo/desmoldante-de-panaderia",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/aceite-alimenticio-sae-10",
+      "destination": "/catalogo/aceite-alimenticio",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/deslizante-para-madera-2",
+      "destination": "/catalogo/deslizante-para-madera",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/pasinox-200-300-400",
+      "destination": "/catalogo/pasinox-200-300",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/skin-fem-pasta-pino",
+      "destination": "/catalogo/skin-fem-pasta-frutilla",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/skin-citrus",
+      "destination": "/catalogo",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/acido-peracetico-al-15",
+      "destination": "/catalogo",
+      "permanent": true
+    },
+    {
+      "source": "/categoria/grasas",
+      "destination": "/catalogo/categoria/lubricantes",
+      "permanent": true
+    },
+    {
+      "source": "/categoria/aceites",
+      "destination": "/catalogo/categoria/lubricantes",
+      "permanent": true
+    },
+    {
+      "source": "/categoria/lubricantes",
+      "destination": "/catalogo/categoria/lubricantes",
+      "permanent": true
+    },
+    {
+      "source": "/categoria/tratamiento-para-aguas",
+      "destination": "/catalogo",
+      "permanent": true
+    },
+    {
+      "source": "/logistica",
+      "destination": "/nosotros",
+      "permanent": true
+    },
+    {
+      "source": "/logistica-terciarizada",
+      "destination": "/nosotros",
+      "permanent": true
+    },
+    {
+      "source": "/envasado-de-productos",
+      "destination": "/nosotros",
+      "permanent": true
+    },
+    {
+      "source": "/servicios",
+      "destination": "/nosotros",
+      "permanent": true
+    },
+    {
+      "source": "/servicio/productos-elaborados",
+      "destination": "/nosotros",
+      "permanent": true
+    },
+    {
+      "source": "/service-single",
+      "destination": "/nosotros",
+      "permanent": true
+    },
+    {
+      "source": "/contacto",
+      "destination": "/cotizar",
+      "permanent": true
+    },
+    {
+      "source": "/bunch_projects/le-cardeuse",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/tienda",
+      "destination": "/catalogo",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/page/2",
+      "destination": "/catalogo",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/:resto*",
+      "destination": "/catalogo",
+      "permanent": true
+    },
+    {
+      "source": "/categoria/:resto*",
+      "destination": "/catalogo",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!assets/|favicon|robots\\.txt|sitemap\\.xml|og-image).*)",
@@ -9,21 +461,36 @@
     {
       "source": "/assets/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     },
     {
       "source": "/sitemap.xml",
       "headers": [
-        { "key": "Content-Type", "value": "application/xml" },
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
+        {
+          "key": "Content-Type",
+          "value": "application/xml"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
       ]
     },
     {
       "source": "/robots.txt",
       "headers": [
-        { "key": "Content-Type", "value": "text/plain" },
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
+        {
+          "key": "Content-Type",
+          "value": "text/plain"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
       ]
     }
   ]

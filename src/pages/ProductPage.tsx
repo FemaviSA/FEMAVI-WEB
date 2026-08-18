@@ -6,6 +6,7 @@ import { AddToQuoteButton } from '../components/AddToQuoteButton';
 import { ProductLabel } from '../components/ProductLabel';
 import { findCategoryConfigBySubcategory } from '../data/categoryConfigs';
 import { buildProductTitle, buildProductDescription } from '../lib/productSeo';
+import { buildProductFaq, faqJsonLd } from '../lib/productFaq';
 import { verticalesDe } from '../lib/productIndustries';
 import type { Product } from '../types/product';
 
@@ -132,6 +133,12 @@ export default function ProductPage() {
   const seoTitle = buildProductTitle(product);
   const seoDescription = buildProductDescription(product);
 
+  // Las preguntas salen de los campos de la ficha (ver src/lib/productFaq.ts). Se renderizan
+  // abajo, visibles: marcar como FAQPage algo que el usuario no puede leer es exactamente lo
+  // que las guías de datos estructurados prohíben. Espejado en scripts/prerender.mjs.
+  const faq = buildProductFaq(product);
+  const faqLd = faqJsonLd(faq);
+
   return (
     <>
       <SEO
@@ -140,7 +147,7 @@ export default function ProductPage() {
         canonical={url}
         image={product.image_url ?? undefined}
         type="product.item"
-        jsonLd={[productJsonLd, breadcrumbJsonLd]}
+        jsonLd={faqLd ? [productJsonLd, breadcrumbJsonLd, faqLd] : [productJsonLd, breadcrumbJsonLd]}
       />
 
       <nav style={{ position: 'sticky', top: 0, zIndex: 1000, background: C.white, borderBottom: `1px solid ${C.borderLight}` }}>
@@ -257,6 +264,36 @@ export default function ProductPage() {
             )}
           </div>
         </div>
+
+        {faq.length > 0 && (
+          <section style={{ marginTop: 80, padding: '48px 0 0', borderTop: `1px solid ${C.borderLight}` }}>
+            <h2 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 24, fontWeight: 800, color: C.dark, marginBottom: 8 }}>
+              Preguntas frecuentes sobre {product.name}
+            </h2>
+            <p style={{ fontSize: 15, color: C.textMuted, marginBottom: 24 }}>
+              Las respuestas salen de la ficha técnica del producto.
+            </p>
+            <div style={{ display: 'grid', gap: 12, maxWidth: 800 }}>
+              {faq.map(({ q, a }) => (
+                // Abiertas por defecto, no colapsadas. El texto de un <details> cerrado no
+                // entra en el innerText de la página: sigue en el DOM, pero los extractores
+                // que leen texto renderizado —varios crawlers de IA— se pierden justo las
+                // respuestas. Además así React muestra lo mismo que el HTML prerenderizado.
+                // El usuario puede cerrarlas.
+                <details
+                  key={q}
+                  open
+                  style={{ background: C.white, border: `1px solid ${C.borderLight}`, borderRadius: 14, padding: '18px 22px' }}
+                >
+                  <summary style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 700, color: C.dark, cursor: 'pointer', listStyle: 'none' }}>
+                    {q}
+                  </summary>
+                  <p style={{ fontSize: 15, lineHeight: 1.7, color: C.textMuted, margin: '12px 0 0' }}>{a}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
 
         {relatedProducts.length > 0 && (
           <section style={{ marginTop: 80, padding: '48px 0 0', borderTop: `1px solid ${C.borderLight}` }}>

@@ -317,7 +317,111 @@ const S = {
   table: 'width:100%;border-collapse:collapse;margin:0 0 24px;font-size:15px',
   th: 'text-align:left;padding:10px 12px;background:#f6f8fa;border:1px solid #e2e8ee;font-weight:700;color:#004370',
   td: 'padding:10px 12px;border:1px solid #e2e8ee',
+  faqItem: 'background:#fff;border:1px solid #e2e8ee;border-radius:14px;padding:18px 22px;margin:0 0 12px;max-width:800px',
+  faqQ: 'font-size:16px;font-weight:700;color:#004370;margin:0',
+  faqA: 'font-size:15px;line-height:1.7;color:#5a6f80;margin:12px 0 0',
 };
+
+// ─── Preguntas frecuentes por producto ───
+// Espejo de src/lib/productFaq.ts — mantener en sync. Ahí está el porqué; en resumen:
+// cada respuesta reformula un campo ya cargado en la base y si el campo está vacío la
+// pregunta no se genera. Con productos químicos, una dilución inventada arruina material
+// o lastima a alguien, así que acá no se rellena nada a ojo.
+
+function enumerar(items) {
+  if (items.length <= 1) return items[0] ?? '';
+  return `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`;
+}
+
+function punto(s) {
+  const t = String(s).trim();
+  return /[.!?]$/.test(t) ? t : `${t}.`;
+}
+
+/** Baja la inicial de los beneficios (están cargados como títulos), salvo siglas. */
+function minuscula(s) {
+  const t = String(s).trim().replace(/\.$/, '');
+  const primera = t.split(/\s+/)[0] ?? '';
+  if (primera.length > 1 && primera === primera.toUpperCase()) return t;
+  return t.charAt(0).toLowerCase() + t.slice(1);
+}
+
+function buildProductFaq(p) {
+  const faq = [];
+
+  if (p.description) {
+    faq.push({
+      q: `¿Para qué sirve ${p.name}?`,
+      a: p.headline ? `${punto(p.headline)} ${punto(p.description)}` : punto(p.description),
+    });
+  }
+
+  const dil = p.dilution?.trim();
+  if (dil) {
+    const esPuro = /^puro$/i.test(dil);
+    const esMixto = /^puro o/i.test(dil);
+    faq.push({
+      q: `¿${p.name} se usa puro o diluido?`,
+      a: esPuro
+        ? `Se usa puro, sin diluir, tal como viene en el envase.`
+        : esMixto
+          ? `Admite las dos formas según la aplicación. Su ficha técnica indica: ${punto(dil)}`
+          : `Se usa diluido. Su ficha técnica indica: ${punto(dil)}`,
+    });
+  }
+
+  if (p.presentations?.length) {
+    faq.push({
+      q: `¿En qué presentaciones viene ${p.name}?`,
+      a: `${p.name} se entrega en ${enumerar(p.presentations)}. FEMAVI vende a empresas por bidón y por mayor, con entrega en 48 hs en AMBA y despacho al resto del país.`,
+    });
+  }
+
+  if (p.industries?.length) {
+    faq.push({
+      q: `¿En qué industrias se usa ${p.name}?`,
+      a: `Según su ficha técnica, ${p.name} se usa en ${enumerar(p.industries)}.`,
+    });
+  }
+
+  const alimenticias = (p.industries ?? []).filter(i => /aliment|gastronom/i.test(i));
+  if (alimenticias.length) {
+    faq.push({
+      q: `¿${p.name} se puede usar en industria alimentaria o gastronomía?`,
+      a: `Su ficha técnica lo indica para ${enumerar(alimenticias)}. Para usos en contacto directo con alimentos, pedí la ficha técnica y la hoja de seguridad (MSDS) a ventas@femavi.com.ar antes de aplicarlo.`,
+    });
+  }
+
+  if (p.benefits?.length) {
+    const lista = p.benefits
+      .map((b, i) => (i === 0 ? b.trim().replace(/\.$/, '') : minuscula(b)))
+      .join('; ');
+    faq.push({
+      q: `¿Qué ventajas tiene ${p.name}?`,
+      a: `${lista}. Es de fórmula propia FEMAVI, desarrollada y fabricada en Argentina.`,
+    });
+  }
+
+  faq.push({
+    q: `¿Cuánto cuesta ${p.name}?`,
+    a: `FEMAVI vende a empresas por cotización y no publica lista de precios: el valor depende del volumen y de la presentación. Se pide presupuesto en ${SITE_URL}/cotizar, por mail a ventas@femavi.com.ar o por WhatsApp al +54 9 11 6228-4649.`,
+  });
+
+  return faq;
+}
+
+function faqJsonLd(faq) {
+  if (!faq.length) return null;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faq.map(({ q, a }) => ({
+      '@type': 'Question',
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
+    })),
+  };
+}
 
 function productBody(p, related, category) {
   const tipo = p.subcategory ?? p.category;
@@ -347,6 +451,15 @@ function productBody(p, related, category) {
         .join('')}</ul></section>`
     : '';
 
+  // Mismo texto que renderiza ProductPage.tsx. Va visible porque marcar como FAQPage algo
+  // que el usuario no puede leer es justo lo que las guías de datos estructurados prohíben.
+  const faq = buildProductFaq(p);
+  const faqHtml = faq.length
+    ? `<section><h2 style="${S.h2}">Preguntas frecuentes sobre ${esc(p.name)}</h2>${faq
+        .map(({ q, a }) => `<div style="${S.faqItem}"><h3 style="${S.faqQ}">${esc(q)}</h3><p style="${S.faqA}">${esc(a)}</p></div>`)
+        .join('')}</section>`
+    : '';
+
   const categoryCrumb = category
     ? `<a style="${S.crumbLink}" href="/catalogo/categoria/${esc(category.slug)}">${esc(category.name)}</a>`
     : `<span>${esc(tipo)}</span>`;
@@ -363,6 +476,7 @@ function productBody(p, related, category) {
   ${p.story ? `<h2 style="${S.h2}">La historia detrás del producto</h2><p style="${S.p}">${esc(p.story)}</p>` : ''}
   ${specs ? `<h2 style="${S.h2}">Datos técnicos</h2><dl style="${S.dl}">${specs}</dl>` : ''}
   <a style="${S.cta}" href="/cotizar">Pedir cotización de ${esc(p.name)}</a>
+  ${faqHtml}
   ${verticalesHtml}
   ${relatedHtml}
 </article>
@@ -641,6 +755,9 @@ for (const p of products) {
       ],
     },
   ];
+
+  const faqLd = faqJsonLd(buildProductFaq(p));
+  if (faqLd) jsonLd.push(faqLd);
 
   writePage(`catalogo/${p.slug}`, renderPage(template, {
     title: buildProductTitle(p),

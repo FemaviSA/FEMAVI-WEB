@@ -6,6 +6,7 @@ import { AddToQuoteButton } from '../components/AddToQuoteButton';
 import { ProductLabel } from '../components/ProductLabel';
 import { findCategoryConfigBySubcategory } from '../data/categoryConfigs';
 import { buildProductTitle, buildProductDescription } from '../lib/productSeo';
+import { verticalesDe } from '../lib/productIndustries';
 import type { Product } from '../types/product';
 
 const C = {
@@ -41,6 +42,10 @@ export default function ProductPage() {
   useEffect(() => {
     listProducts().then(setAllProducts).catch(() => setAllProducts([]));
   }, []);
+
+  // Las industrias a las que sirve el producto, enlazadas a su página. Mismo criterio
+  // que usa cada /industrias/* para armar su listado (ver src/lib/productIndustries.ts).
+  const verticales = useMemo(() => verticalesDe(product?.industries), [product]);
 
   const relatedProducts = useMemo(() => {
     if (!product) return [];
@@ -231,6 +236,25 @@ export default function ProductPage() {
                 💬 WhatsApp
               </a>
             </div>
+
+            {verticales.length > 0 && (
+              <div style={{ marginTop: 28, paddingTop: 24, borderTop: `1px solid ${C.borderLight}` }}>
+                <h2 style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+                  Se usa en
+                </h2>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {verticales.map(v => (
+                    <Link
+                      key={v.slug}
+                      to={`/industrias/${v.slug}`}
+                      style={{ padding: '6px 14px', background: C.accentPale, color: C.accent, fontSize: 13, fontWeight: 600, borderRadius: 100, textDecoration: 'none' }}
+                    >
+                      {v.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

@@ -185,11 +185,48 @@ function buildProductTitle(p) {
   return `${nombre}${BRAND}`;
 }
 
+// La meta description es lo que Google muestra bajo el título. Antes se recortaba a
+// 158 con "…": como las descripciones promedian 321 caracteres, las 199 fichas salían
+// cortadas al medio y en ninguna se alcanzaba a ver "entrega en 48 hs". Ahora el
+// cierre comercial tiene lugar reservado y el cuerpo se arma con oraciones enteras.
+const MAX_DESC = 155;
+const CIERRE = 'Fabricación propia FEMAVI, entrega en 48 hs.';
+
+function oraciones(texto) {
+  return String(texto ?? '')
+    .split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ¿¡])/)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
 function buildProductDescription(p) {
-  const tipo = p.subcategory ?? p.category;
-  const base = (p.headline || '').trim() ? `${p.headline.trim()}. ${p.description}` : p.description;
-  const withBrand = `${base} ${tipo} de fabricación propia FEMAVI, entrega en 48 hs.`;
-  return withBrand.length > 158 ? `${withBrand.slice(0, 157).trimEnd()}…` : withBrand;
+  const presupuesto = MAX_DESC - CIERRE.length - 1;
+
+  const h = (p.headline ?? '').trim().replace(/[.\s]+$/, '');
+  const d = (p.description ?? '').trim();
+
+  let cuerpo = '';
+  if (h) cuerpo = h.length <= presupuesto ? `${h}.` : `${recortarAPalabra(h, presupuesto - 1)}.`;
+
+  if (cuerpo.length < presupuesto) {
+    for (const o of oraciones(d)) {
+      const cand = cuerpo ? `${cuerpo} ${o}` : o;
+      if (cand.length <= presupuesto) cuerpo = cand;
+      else break;
+    }
+  }
+
+  if (!cuerpo) {
+    const r = recortarAPalabra(d, presupuesto - 1);
+    cuerpo = r ? `${r}.` : '';
+  }
+
+  const generico = GENERICO[(p.subcategory ?? p.category ?? '').trim()];
+  if (generico) {
+    const largo = `${generico} de fabricación propia FEMAVI, entrega en 48 hs.`;
+    if (`${cuerpo} ${largo}`.length <= MAX_DESC) return cuerpo ? `${cuerpo} ${largo}` : largo;
+  }
+  return cuerpo ? `${cuerpo} ${CIERRE}` : CIERRE;
 }
 
 function esc(s) {
@@ -299,6 +336,17 @@ function productBody(p, related, category) {
         .join('')}</ul></section>`
     : '';
 
+  // Espejo de src/lib/productIndustries.ts — mantener en sync.
+  // Mismo criterio con el que cada /industrias/* arma su listado, pero al revés.
+  const verticales = VERTICALS.filter(v =>
+    (p.industries ?? []).some(ind => v.industryKeywords.some(kw => ind.toLowerCase().includes(kw))),
+  );
+  const verticalesHtml = verticales.length
+    ? `<section><h2 style="${S.h2}">Se usa en</h2><ul style="${S.ul}">${verticales
+        .map(v => `<li><a style="${S.link}" href="/industrias/${esc(v.slug)}">${esc(v.name)}</a></li>`)
+        .join('')}</ul></section>`
+    : '';
+
   const categoryCrumb = category
     ? `<a style="${S.crumbLink}" href="/catalogo/categoria/${esc(category.slug)}">${esc(category.name)}</a>`
     : `<span>${esc(tipo)}</span>`;
@@ -315,6 +363,7 @@ function productBody(p, related, category) {
   ${p.story ? `<h2 style="${S.h2}">La historia detrás del producto</h2><p style="${S.p}">${esc(p.story)}</p>` : ''}
   ${specs ? `<h2 style="${S.h2}">Datos técnicos</h2><dl style="${S.dl}">${specs}</dl>` : ''}
   <a style="${S.cta}" href="/cotizar">Pedir cotización de ${esc(p.name)}</a>
+  ${verticalesHtml}
   ${relatedHtml}
 </article>
 </div>`;

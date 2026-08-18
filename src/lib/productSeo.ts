@@ -107,13 +107,57 @@ export function buildProductTitle(product: Pick<Product, 'name' | 'headline' | '
   return `${nombre}${BRAND}`;
 }
 
+/**
+ * La meta description es el texto que Google muestra debajo del título: es lo que
+ * termina de convencer del clic. Antes se pegaba headline + description + la frase
+ * comercial y se recortaba a 158 con "…". Como las descripciones promedian 321
+ * caracteres, las 199 fichas salían cortadas al medio y en ninguna llegaba a verse
+ * "entrega en 48 hs" — el recorte se comía justo el argumento de venta.
+ *
+ * Ahora el cierre comercial tiene su lugar reservado y el cuerpo se arma con
+ * oraciones enteras hasta donde entren.
+ */
+const MAX_DESC = 155;
+const CIERRE = 'Fabricación propia FEMAVI, entrega en 48 hs.';
+
+/** Parte en oraciones: corta en punto seguido de mayúscula, así no rompe siglas. */
+function oraciones(texto: string | null | undefined): string[] {
+  return String(texto ?? '')
+    .split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ¿¡])/)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
 export function buildProductDescription(
   product: Pick<Product, 'name' | 'headline' | 'description' | 'subcategory' | 'category'>,
 ): string {
-  const tipo = product.subcategory ?? product.category;
-  const base = product.headline?.trim()
-    ? `${product.headline.trim()}. ${product.description}`
-    : product.description;
-  const withBrand = `${base} ${tipo} de fabricación propia FEMAVI, entrega en 48 hs.`;
-  return withBrand.length > 158 ? `${withBrand.slice(0, 157).trimEnd()}…` : withBrand;
+  const presupuesto = MAX_DESC - CIERRE.length - 1;
+
+  const h = (product.headline ?? '').trim().replace(/[.\s]+$/, '');
+  const d = (product.description ?? '').trim();
+
+  let cuerpo = '';
+  if (h) cuerpo = h.length <= presupuesto ? `${h}.` : `${recortarAPalabra(h, presupuesto - 1)}.`;
+
+  if (cuerpo.length < presupuesto) {
+    for (const o of oraciones(d)) {
+      const cand = cuerpo ? `${cuerpo} ${o}` : o;
+      if (cand.length <= presupuesto) cuerpo = cand;
+      else break;
+    }
+  }
+
+  if (!cuerpo) {
+    const r = recortarAPalabra(d, presupuesto - 1);
+    cuerpo = r ? `${r}.` : '';
+  }
+
+  // Si sobró lugar, el cierre suma el genérico del rubro: es la palabra que la
+  // gente escribe en Google y evita desperdiciar la mitad del espacio visible.
+  const generico = GENERICO[(product.subcategory ?? product.category ?? '').trim()];
+  if (generico) {
+    const largo = `${generico} de fabricación propia FEMAVI, entrega en 48 hs.`;
+    if (`${cuerpo} ${largo}`.length <= MAX_DESC) return cuerpo ? `${cuerpo} ${largo}` : largo;
+  }
+  return cuerpo ? `${cuerpo} ${CIERRE}` : CIERRE;
 }

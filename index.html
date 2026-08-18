@@ -50,7 +50,15 @@
          (clicks a WhatsApp y cotizaciones enviadas).
          Para activarlo: definir VITE_GA4_ID en las variables de entorno de Vercel. -->
 
-    <!-- Structured Data global: Organization + LocalBusiness + WebSite -->
+    <!-- Structured Data global: Organization + LocalBusiness + WebSite.
+         OJO: es JSON, no HTML — no admite comentarios adentro. Un <!-- --> acá dentro no
+         se ve en pantalla pero invalida el bloque entero y Google deja de leer la entidad.
+
+         El campo knowsAbout no genera ningún rich result en Google: sirve para los motores
+         que arman grafos de entidades (Bing, y los modelos de lenguaje que se apoyan en
+         ellos). Es lo que conecta "FEMAVI" con lo que alguien le pregunta a un asistente
+         —"quién fabrica desengrasantes industriales en Argentina"— cuando el que pregunta
+         todavía no conoce la marca y por lo tanto no la puede nombrar en la búsqueda. -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -65,6 +73,22 @@
           "foundingDate": "1970",
           "description": "Fabricantes argentinos de productos químicos industriales con más de 50 años de desarrollo propio.",
           "sameAs": ["https://www.linkedin.com/company/femavi-sa"],
+          "email": "ventas@femavi.com.ar",
+          "areaServed": { "@type": "Country", "name": "Argentina" },
+          "brand": { "@type": "Brand", "name": "FEMAVI" },
+          "makesOffer": { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Fabricación de productos químicos industriales a medida" } },
+          "knowsAbout": [
+            "Desengrasantes industriales",
+            "Bactericidas y desinfectantes de grado alimentario",
+            "Ceras acrílicas para pisos de alto tránsito",
+            "Lubricantes, grasas y aceites industriales",
+            "Anticorrosivos para metales y maquinaria",
+            "Desmoldantes",
+            "Tratamiento de aguas industriales",
+            "Limpieza industrial y facility management",
+            "Higiene en flotas de transporte",
+            "Limpieza en cocinas industriales y gastronomía"
+          ],
           "contactPoint": {
             "@type": "ContactPoint",
             "telephone": "+54-9-116228-4649",

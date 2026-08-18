@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/generate-sitemap.mjs && node scripts/prerender.mjs",
+    "build": "tsc -b && vite build && node scripts/generate-sitemap.mjs && node scripts/generate-llms.mjs && node scripts/prerender.mjs && node scripts/indexnow.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "sitemap": "node scripts/generate-sitemap.mjs",
-    "prerender": "node scripts/prerender.mjs"
+    "prerender": "node scripts/prerender.mjs",
+    "llms": "node scripts/generate-llms.mjs",
+    "indexnow": "node scripts/indexnow.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.3",

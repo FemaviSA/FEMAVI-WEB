@@ -1,6 +1,123 @@
+# https://www.femavi.com.ar/robots.txt
+
+# ── Buscadores tradicionales ──────────────────────────────────────────────
 User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
 
+User-agent: Googlebot
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+User-agent: bingbot
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+# ── Crawlers de IA ────────────────────────────────────────────────────────
+# El "Allow: /" de arriba ya los cubre por wildcard, pero van explícitos a
+# propósito: varios de estos bots buscan primero su propio User-agent y solo
+# caen al bloque genérico si no lo encuentran. Nombrarlos deja constancia de
+# que el acceso es deliberado — si alguna vez se quiere bloquear alguno,
+# se cambia su Allow por Disallow acá y no se toca nada más.
+#
+# Bloquear a estos bots NO mejora nada: es la única vía por la que ChatGPT,
+# Perplexity, Copilot, Claude o Gemini pueden citar a FEMAVI cuando alguien
+# les pregunta qué desengrasante industrial comprar en Argentina.
+
+# OpenAI — GPTBot indexa, OAI-SearchBot alimenta la búsqueda de ChatGPT,
+# ChatGPT-User entra en vivo cuando un usuario pide abrir la página.
+User-agent: GPTBot
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+# Anthropic (Claude)
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+User-agent: Claude-User
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+User-agent: Perplexity-User
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+# Google Gemini / AI Overviews. Ojo: Google-Extended NO afecta el ranking en
+# la Búsqueda de Google — controla únicamente si el contenido puede usarse
+# para las respuestas generadas por IA. Bloquearlo nos saca de ahí.
+User-agent: Google-Extended
+Allow: /
+
+# Microsoft Copilot
+User-agent: msnbot
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+# Apple Intelligence / Siri
+User-agent: Applebot
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Meta AI
+User-agent: meta-externalagent
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+# Amazon (Alexa / Rufus)
+User-agent: Amazonbot
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+# Mistral, DuckDuckGo AI, Common Crawl (alimenta a casi todos los modelos)
+User-agent: MistralAI-User
+Allow: /
+
+User-agent: DuckAssistBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+
+# ── Índices ───────────────────────────────────────────────────────────────
 Sitemap: https://www.femavi.com.ar/sitemap.xml
+
+# Resumen del sitio en markdown, pensado para que un modelo lo lea entero
+# sin tener que rastrear 240 páginas HTML. Ver /llms.txt y /llms-full.txt

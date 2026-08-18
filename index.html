@@ -51,8 +51,12 @@
          Para activarlo: definir VITE_GA4_ID en las variables de entorno de Vercel. -->
 
     <!-- Structured Data global: Organization + LocalBusiness + WebSite.
-         OJO: es JSON, no HTML — no admite comentarios adentro. Un <!-- --> acá dentro no
-         se ve en pantalla pero invalida el bloque entero y Google deja de leer la entidad.
+         OJO: el bloque de abajo es JSON, no HTML, y no admite comentarios adentro. Meter uno
+         ahí no se ve en pantalla pero invalida la entidad entera y Google deja de leerla.
+
+         Y ojo también acá: los comentarios de HTML no se pueden anidar. Escribir la marca de
+         cierre como ejemplo dentro de este comentario lo termina antes de tiempo, y todo lo
+         que sigue se imprime como texto arriba de cada página del sitio. Ya pasó una vez.
 
          El campo knowsAbout no genera ningún rich result en Google: sirve para los motores
          que arman grafos de entidades (Bing, y los modelos de lenguaje que se apoyan en

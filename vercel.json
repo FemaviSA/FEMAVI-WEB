@@ -453,7 +453,35 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!assets/|favicon|robots\\.txt|sitemap\\.xml|og-image).*)",
+      "source": "/catalogo/:path*",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/blog/:path*",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/industrias/:path*",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/nosotros",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/cotizar",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/pedidos",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/admin",
       "destination": "/app.html"
     }
   ],

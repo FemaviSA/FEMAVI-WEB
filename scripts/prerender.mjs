@@ -679,6 +679,60 @@ function writePage(routePath, html) {
   writeFileSync(join(dir, 'index.html'), html, 'utf8');
 }
 
+/**
+ * dist/404.html — Vercel lo sirve automáticamente, y con status 404 de verdad, para
+ * cualquier ruta que no matchee ni un archivo ni un rewrite de vercel.json.
+ *
+ * POR QUÉ HACE FALTA
+ * Antes el rewrite mandaba TODO lo que no fuera un archivo estático a /app.html, así que
+ * una URL inexistente contestaba 200 con el shell del SPA. Para un buscador eso es un
+ * "soft 404": la página no existe pero el servidor jura que sí, así que la deja indexada
+ * y le sigue gastando presupuesto de rastreo. Bing es especialmente reacio a soltarlas, y
+ * el sitio arrastra URLs del sitio viejo que no están en la lista de redirects.
+ *
+ * Lleva el script de la app igual que el resto, así que React monta encima y el usuario
+ * termina viendo el NotFound de siempre (App.tsx, path="*"). O sea: status correcto para
+ * el crawler y la misma pantalla de siempre para la persona.
+ */
+function write404(template) {
+  const body = `<div style="${S.wrap}">
+<article>
+  <span style="${S.eyebrow}">Error 404</span>
+  <h1 style="${S.h1}">Esta página no existe</h1>
+  <p style="${S.p}">Puede que el enlace esté viejo o mal escrito. El sitio se reorganizó: si venís de un buscador o de un enlace guardado, lo que buscabas probablemente esté en el catálogo.</p>
+  <a style="${S.cta}" href="/catalogo">Ir al catálogo</a>
+  <h2 style="${S.h2}">Secciones</h2>
+  <ul style="${S.ul}">
+    <li><a style="${S.link}" href="/">Inicio</a></li>
+    <li><a style="${S.link}" href="/catalogo">Catálogo completo</a></li>
+    <li><a style="${S.link}" href="/nosotros">Nosotros</a></li>
+    <li><a style="${S.link}" href="/blog">Blog</a></li>
+    <li><a style="${S.link}" href="/cotizar">Pedir cotización</a></li>
+  </ul>
+  ${categoryLinks()}
+  ${verticalLinks()}
+</article>
+</div>`;
+
+  let html = renderPage(template, {
+    title: 'Página no encontrada (404) — FEMAVI',
+    description: 'La página que buscás no existe o cambió de dirección. Entrá al catálogo de productos químicos industriales de FEMAVI.',
+    canonical: `${SITE_URL}/404`,
+    jsonLd: { '@context': 'https://schema.org', '@type': 'WebPage', name: 'Página no encontrada' },
+    bodyHtml: body,
+  });
+
+  // Una 404 no se indexa. El index,follow global de index.html diría lo contrario, así que
+  // acá se pisa: noindex para que no entre al índice, follow para que igual siga los enlaces
+  // de arriba y le sirvan al crawler para redescubrir el catálogo.
+  html = html.replace(
+    /<meta name="robots" content="[^"]*" \/>/,
+    '<meta name="robots" content="noindex, follow" />'
+  );
+
+  writeFileSync(join(OUT_DIR, '404.html'), html, 'utf8');
+}
+
 // ─── main ───
 const templatePath = join(OUT_DIR, 'index.html');
 if (!existsSync(templatePath)) {
@@ -686,6 +740,11 @@ if (!existsSync(templatePath)) {
   process.exit(1);
 }
 const template = readFileSync(templatePath, 'utf8');
+
+// Va antes de consultar Supabase y antes del corte por "sin productos": si el 404 faltara,
+// Vercel caería en su página de error genérica, que no tiene ni la marca ni un enlace de
+// vuelta al catálogo. No depende de los datos — solo de CATEGORIES y VERTICALS.
+write404(template);
 
 const [products, articles] = await Promise.all([
   fetchTable(

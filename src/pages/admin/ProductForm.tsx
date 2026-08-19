@@ -8,7 +8,7 @@ import { AdminLayout } from '../../components/AdminLayout';
 
 const EMPTY: ProductInput = {
   slug: '', name: '', category: '', subcategory: '', headline: '', description: '', story: '',
-  industries: [], benefits: [], presentations: [], tags: [],
+  industries: [], benefits: [], presentations: [], tags: [], extra_subcategories: [],
   dilution: '', ph: '', image_url: '',
   featured: false, display_order: 0, is_active: true,
 };
@@ -183,11 +183,18 @@ export default function ProductForm() {
                 </select>
               </Field>
             </div>
-            <Field label="Tipo de producto (subcategoría)" hint="Filtra los productos en el catálogo por tipo. Debe coincidir exactamente con las opciones del catálogo.">
+            <Field label="Tipo de producto (subcategoría principal)" hint="Define en qué categoría queda el producto y qué ruta muestra el breadcrumb. Es una sola.">
               <select value={form.subcategory ?? ''} onChange={e => set('subcategory', e.target.value || null)} className={inputCls}>
                 <option value="">— Sin subcategoría —</option>
                 {SUBCATEGORY_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
+            </Field>
+            <Field label="También listar en" hint="Categorías adicionales donde aparece el producto. El breadcrumb sigue siendo el de la principal.">
+              <ChipPicker
+                options={SUBCATEGORY_OPTIONS.filter(s => s !== form.subcategory)}
+                selected={form.extra_subcategories ?? []}
+                onChange={v => set('extra_subcategories', v)}
+              />
             </Field>
             <Field label="Slug" hint="URL del producto. Se genera del nombre si lo dejás vacío.">
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 focus-within:border-femavi-500 focus-within:ring-2 focus-within:ring-femavi-100 transition">

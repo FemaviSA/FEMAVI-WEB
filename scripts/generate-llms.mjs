@@ -63,6 +63,13 @@ const VERTICALS = [
     desc: 'Empresas de limpieza profesional, facility management y distribuidores.' },
 ];
 
+// Si el producto se LISTA en esta categoría (primaria + adicionales). Para agrupar en
+// llms-full.txt se usa solo la primaria, así ningún producto sale duplicado.
+function productoEnCategoria(p, cat) {
+  if (p.subcategory && cat.subcategories.includes(p.subcategory)) return true;
+  return (p.extra_subcategories ?? []).some(sub => cat.subcategories.includes(sub));
+}
+
 async function fetchTable(table, select, filter) {
   if (!SUPABASE_URL || !SUPABASE_KEY) return [];
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=${select}&${filter}`, {
@@ -88,7 +95,7 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 const [products, articles] = await Promise.all([
   fetchTable(
     'products',
-    'slug,name,category,subcategory,headline,description,industries,benefits,presentations,dilution,ph',
+    'slug,name,category,subcategory,extra_subcategories,headline,description,industries,benefits,presentations,dilution,ph',
     'is_active=eq.true&order=display_order.asc'
   ),
   fetchTable('articles', 'slug,title,excerpt', 'published=eq.true&order=published_at.desc'),
@@ -131,7 +138,7 @@ const indice = `${IDENTIDAD}
 ## Catálogo por categoría
 
 ${CATEGORIES.map(c => {
-  const n = products.filter(p => p.subcategory && c.subcategories.includes(p.subcategory)).length;
+  const n = products.filter(p => productoEnCategoria(p, c)).length;
   return `- [${c.name}](${SITE_URL}/catalogo/categoria/${c.slug}): ${c.desc} (${n} productos)`;
 }).join('\n')}
 - [Catálogo completo](${SITE_URL}/catalogo): los ${products.length} productos activos, cada uno con su función.

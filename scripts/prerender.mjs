@@ -63,6 +63,14 @@ const CATEGORIES = [
     heroTitle: 'Desmoldantes y antiadherentes para hormigón, caucho, plástico y panadería' },
 ];
 
+// Si el producto se LISTA en esta categoría: mira la primaria y las adicionales.
+// Para el breadcrumb NO se usa esta — ahí vale solo la primaria, así cada ficha tiene
+// un solo camino canónico. Espejo de productoEnCategoria() en categoryConfigs.ts.
+function productoEnCategoria(p, cat) {
+  if (p.subcategory && cat.subcategories.includes(p.subcategory)) return true;
+  return (p.extra_subcategories ?? []).some(sub => cat.subcategories.includes(sub));
+}
+
 // Espejo de los configs de src/pages/industrias/*.tsx (solo lo que importa para SEO;
 // los productos se traen de Supabase por industria, así que no hay que duplicarlos).
 // Mantener en sync con esos archivos.
@@ -803,7 +811,7 @@ write404(template);
 const [products, articles] = await Promise.all([
   fetchTable(
     'products',
-    'slug,name,category,subcategory,headline,description,story,industries,benefits,presentations,dilution,ph,image_url,featured',
+    'slug,name,category,subcategory,extra_subcategories,headline,description,story,industries,benefits,presentations,dilution,ph,image_url,featured',
     'is_active=eq.true&order=display_order.asc'
   ),
   fetchTable('articles', 'slug,title,excerpt,content', 'published=eq.true&order=published_at.desc'),
@@ -885,7 +893,7 @@ for (const p of products) {
 }
 
 for (const cat of CATEGORIES) {
-  const catProducts = products.filter(p => p.subcategory && cat.subcategories.includes(p.subcategory));
+  const catProducts = products.filter(p => productoEnCategoria(p, cat));
   const canonical = `${SITE_URL}/catalogo/categoria/${cat.slug}`;
 
   const jsonLd = [

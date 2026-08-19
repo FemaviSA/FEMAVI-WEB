@@ -5,7 +5,7 @@ import { listArticles } from '../lib/articles';
 import { ProductCard } from '../components/ProductCard';
 import { ProductModal } from '../components/ProductModal';
 import { SEO, SITE_URL } from '../components/SEO';
-import { getCategoryConfig } from '../data/categoryConfigs';
+import { getCategoryConfig, productoEnCategoria } from '../data/categoryConfigs';
 import type { Product } from '../types/product';
 import type { Article } from '../types/article';
 
@@ -54,7 +54,9 @@ export default function CategoryPage() {
 
   const categoryProducts = useMemo(() => {
     if (!config) return [];
-    return products.filter(p => p.subcategory && config.subcategories.includes(p.subcategory));
+    // Incluye las categorías adicionales del producto, no solo la primaria: un producto
+    // puede listarse en más de una categoría (ver productoEnCategoria).
+    return products.filter(p => productoEnCategoria(p, config));
   }, [products, config]);
 
   const url = `${SITE_URL}/catalogo/categoria/${slug}`;

@@ -1,3 +1,5 @@
+import type { Product } from '../types/product';
+
 export type CategoryConfig = {
   slug: string;
   icon: string;
@@ -246,7 +248,28 @@ export function getCategoryConfig(slug: string): CategoryConfig | undefined {
   return CATEGORY_CONFIGS.find(c => c.slug === slug);
 }
 
+/**
+ * La categoría PRIMARIA del producto: la que va en el breadcrumb y define su ruta
+ * canónica. Mira solo `subcategory`, nunca las extra — si un producto se lista en dos
+ * categorías, igual tiene una sola primaria y un solo breadcrumb.
+ */
 export function findCategoryConfigBySubcategory(subcategory: string | null | undefined): CategoryConfig | undefined {
   if (!subcategory) return undefined;
   return CATEGORY_CONFIGS.find(c => c.subcategories.includes(subcategory));
+}
+
+/**
+ * Si el producto se LISTA en esta categoría. A diferencia de la función de arriba, mira
+ * la primaria y las adicionales: un desengrasante que también sirve en un lavadero
+ * aparece en las dos páginas, con el breadcrumb de la primaria.
+ *
+ * Usar esta para armar listados; la de arriba para el breadcrumb.
+ * Espejado en scripts/prerender.mjs y scripts/generate-llms.mjs.
+ */
+export function productoEnCategoria(
+  product: Pick<Product, 'subcategory' | 'extra_subcategories'>,
+  config: CategoryConfig,
+): boolean {
+  if (product.subcategory && config.subcategories.includes(product.subcategory)) return true;
+  return (product.extra_subcategories ?? []).some(s => config.subcategories.includes(s));
 }

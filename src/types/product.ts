@@ -4,6 +4,9 @@ export type Product = {
   name: string;
   category: string;
   subcategory?: string | null;
+  /** Categorías adicionales donde se lista. La primaria es `subcategory`, que define
+   *  el breadcrumb y la ruta canónica. Ver src/data/categoryConfigs.ts. */
+  extra_subcategories?: string[] | null;
   headline: string | null;
   description: string;
   story: string | null;

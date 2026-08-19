@@ -163,6 +163,83 @@ export const CATEGORY_CONFIGS: CategoryConfig[] = [
     ],
     blogTag: 'lubricantes',
   },
+  // Las tres de abajo se agregaron el 18-08-2026. Antes, 44 de los 199 productos vivían en
+  // subcategorías sin página propia: solo se llegaba a ellos desde /catalogo o buscando, y
+  // no había ninguna página que pudiera rankear por el término del rubro. Estas tres cubren
+  // 33 de esos 44. Quedan sin página Lavamanos (5), Insecticida (3) y Tratamiento para
+  // Aguas (3), que por volumen no justifican una categoría todavía.
+  {
+    slug: 'aerosoles',
+    icon: '💨',
+    name: 'Aerosoles Industriales',
+    subcategories: ['Aerosoles'],
+    heroTitle: 'Aerosoles industriales para lubricación, penetración y limpieza de precisión',
+    heroDesc: 'Lubricantes con MoS₂, penetrantes desoxidantes, siliconas, desmoldantes y limpiadores de electrónica en formato aerosol. Aplicación puntual, sin desperdicio y sin herramientas. Fabricación propia, entrega en 48hs.',
+    seoTitle: 'Aerosoles Industriales: lubricantes y penetrantes | FEMAVI',
+    seoDesc: 'Aerosoles industriales de fabricación propia: lubricantes con MoS₂, penetrantes desoxidantes, siliconas, desmoldantes y limpiador de electrónica. Caja x 12, entrega en 48hs.',
+    keywords: 'aerosoles industriales, aerosol lubricante, aerosol penetrante desoxidante, aerosol de silicona, grasa en aerosol, limpiador de contactos electrónicos, aerosol desmoldante, aerosoles industriales Argentina',
+    intro: 'El aerosol resuelve lo que el bidón no: llegar a un punto exacto, sin desarmar el equipo y sin desperdiciar producto. La línea cubre lubricación de cadenas y rodamientos, liberación de tuercas oxidadas, protección de contactores eléctricos, desmoldeo y limpieza de componentes electrónicos.',
+    benefits: [
+      { icon: '🎯', title: 'Aplicación puntual', desc: 'Llega a cadenas, guías y rodamientos sin desarmar el equipo ni recurrir a pincel o aceitera.' },
+      { icon: '⚙️', title: 'Aditivados', desc: 'Fórmulas con MoS₂ y grafito para carga y temperatura, no simples lubricantes de uso general.' },
+      { icon: '🔌', title: 'Aptos para electrónica', desc: 'Limpiadores dieléctricos que evaporan sin dejar residuo sobre placas y contactores.' },
+      { icon: '📦', title: 'Caja x 12', desc: 'Se venden por caja cerrada, con precio diferenciado para consumo de planta.' },
+    ],
+    faq: [
+      { q: '¿Qué aerosol sirve para aflojar tuercas oxidadas?', a: 'El penetrante desoxidante está formulado para infiltrarse en el óxido y liberar uniones trabadas: tuercas, tornillos y bulones tomados por la corrosión.' },
+      { q: '¿Tienen algún aerosol apto para componentes electrónicos?', a: 'Sí. Contamos con un limpiador desengrasante dieléctrico que evapora rápido y no deja residuo, pensado para placas, contactores y tableros.' },
+      { q: '¿Se venden por unidad o por caja?', a: 'La presentación es caja por 12 unidades, con precio diferenciado por volumen para consumo de planta o reventa.' },
+    ],
+    blogTag: 'aerosoles',
+  },
+  {
+    slug: 'linea-automotor',
+    icon: '🚗',
+    name: 'Línea Automotor',
+    subcategories: ['Línea Automotor'],
+    heroTitle: 'Productos para lavadero de autos, taller y mantenimiento de flotas',
+    heroDesc: 'Shampoo teflonado, encerantes de carrocería, revividores de interior y gomas, desengrasante de motores y anticongelante. Fórmulas propias para lavaderos, talleres y flotas. Entrega en 48hs.',
+    seoTitle: 'Productos para Lavadero de Autos y Taller | FEMAVI',
+    seoDesc: 'Shampoo para autos, encerante de carrocerías, revividor de interiores y gomas, limpiador de motores y anticongelante. Fabricante argentino, venta por bidón y por mayor.',
+    keywords: 'productos para lavadero de autos, shampoo para autos por mayor, encerante de carrocerias, revividor de gomas, limpiador de motores, anticongelante para radiadores, productos automotor por mayor Argentina',
+    intro: 'Un lavadero o un taller necesita resultado visible y costo por vehículo bajo. La línea cubre el ciclo completo: lavado con shampoo teflonado, desengrase de motor, encerado de carrocería y recuperación de plásticos y gomas del interior.',
+    benefits: [
+      { icon: '✨', title: 'Resultado a la vista', desc: 'Ceras de alto punto de fusión y siliconas que devuelven el brillo y el negro original.' },
+      { icon: '🚚', title: 'Pensada para flotas', desc: 'La usan lavaderos y talleres que procesan decenas de unidades por día, no un auto por fin de semana.' },
+      { icon: '💧', title: 'Concentrados', desc: 'Se diluyen: el costo por vehículo lavado queda muy por debajo del producto listo para usar.' },
+      { icon: '🛢️', title: 'De 10 a 200 litros', desc: 'Desde el bidón para el taller chico hasta el tambor para la flota.' },
+    ],
+    faq: [
+      { q: '¿El shampoo para autos sirve para lavadero de alto volumen?', a: 'Sí. Es un shampoo teflonado concentrado, con agentes protectores que abrillantan; al diluirse, el costo por unidad lavada es bajo. Se entrega desde 10 hasta 200 litros.' },
+      { q: '¿Qué usan para limpiar motores?', a: 'Un limpiador desengrasante específico para motores, que disuelve grasa y aceite acumulado sin atacar gomas ni plásticos del compartimento.' },
+      { q: '¿Venden a lavaderos y talleres por mayor?', a: 'Sí, la venta es a empresas por cotización, con precio diferenciado por volumen. Se pide presupuesto y responde el equipo comercial.' },
+    ],
+    blogTag: 'automotor',
+  },
+  {
+    slug: 'desmoldantes',
+    icon: '🧱',
+    name: 'Desmoldantes y Antiadherentes',
+    subcategories: ['Desmoldantes'],
+    heroTitle: 'Desmoldantes y antiadherentes para hormigón, caucho, plástico y panadería',
+    heroDesc: 'Agentes de desmoldeo para encofrado de hormigón, prensas, rotomoldeado, caucho y moldes de panadería. Con lubricantes y anticorrosivos incorporados. Fórmulas propias, entrega en 48hs.',
+    seoTitle: 'Desmoldante Industrial para Hormigón y Caucho | FEMAVI',
+    seoDesc: 'Desmoldantes para encofrado de hormigón, prensas, rotomoldeado, caucho y panadería. Con y sin silicona, solubles en agua y en pasta. Fabricante argentino, entrega en 48hs.',
+    keywords: 'desmoldante industrial, desmoldante para hormigon, desmoldante para encofrado, desmoldante para caucho, desmoldante para rotomoldeado, antiadherente de panaderia, desmoldante sin silicona, agente desmoldante Argentina',
+    intro: 'Un desmoldeo que falla arruina la pieza y el molde. La línea cubre desde el encofrado de hormigón —con anticorrosivos para proteger el metal— hasta el rotomoldeado, el caucho, el corte de madera y los moldes de panadería que trabajan a alta temperatura.',
+    benefits: [
+      { icon: '🧱', title: 'Para cada material', desc: 'Fórmulas distintas para hormigón, caucho, plástico, madera y panadería: no es un producto único forzado a todo.' },
+      { icon: '🛡️', title: 'Protegen el molde', desc: 'El desmoldante de hormigón lleva anticorrosivos y lubricantes que cuidan el encofrado metálico.' },
+      { icon: '🚫', title: 'Con y sin silicona', desc: 'Versión libre de silicona para piezas que después se pintan o se pegan.' },
+      { icon: '🔥', title: 'Alta temperatura', desc: 'Antiadherentes que aguantan la temperatura de horno en panadería industrial.' },
+    ],
+    faq: [
+      { q: '¿Qué desmoldante se usa para encofrado de hormigón?', a: 'El desmoldante para hormigón, formulado con anticorrosivos y lubricantes: además de liberar la pieza, protege el encofrado metálico de la corrosión.' },
+      { q: '¿Tienen desmoldante sin silicona?', a: 'Sí. Hay una versión libre de silicona y antiadherente, indicada cuando la pieza se pinta, se pega o se suelda después del desmoldeo.' },
+      { q: '¿Sirve alguno para moldes de panadería?', a: 'Sí, contamos con un antiadherente para alta temperatura específico para moldes de panadería industrial.' },
+    ],
+    blogTag: 'desmoldantes',
+  },
 ];
 
 export function getCategoryConfig(slug: string): CategoryConfig | undefined {

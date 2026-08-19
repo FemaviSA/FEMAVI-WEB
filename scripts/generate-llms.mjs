@@ -41,6 +41,12 @@ const CATEGORIES = [
     desc: 'Protección anticorrosiva de larga duración para metales, maquinaria y estructuras metálicas.' },
   { slug: 'lubricantes', name: 'Lubricantes', subcategories: ['Lubricantes', 'Grasas', 'Aceites y Aditivos'],
     desc: 'Lubricantes, grasas y aceites industriales de fórmula propia para mantenimiento y producción.' },
+  { slug: 'aerosoles', name: 'Aerosoles Industriales', subcategories: ['Aerosoles'],
+    desc: 'Lubricantes con MoS₂, penetrantes desoxidantes, siliconas, desmoldantes y limpiadores de electrónica en aerosol.' },
+  { slug: 'linea-automotor', name: 'Línea Automotor', subcategories: ['Línea Automotor'],
+    desc: 'Shampoo, encerantes, revividores de interior y gomas, limpiador de motores y anticongelante para lavaderos y talleres.' },
+  { slug: 'desmoldantes', name: 'Desmoldantes y Antiadherentes', subcategories: ['Desmoldantes'],
+    desc: 'Agentes de desmoldeo para encofrado de hormigón, prensas, rotomoldeado, caucho, madera y panadería.' },
 ];
 
 // Espejo de src/pages/industrias/*.tsx — mantener en sync.

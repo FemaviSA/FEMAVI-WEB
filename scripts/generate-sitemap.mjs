@@ -12,7 +12,8 @@ const today = new Date().toISOString().split('T')[0];
 
 // Slugs fijos de rutas que no vienen de la base de datos.
 const VERTICAL_SLUGS = ['transporte', 'gastronomia', 'edificios', 'industria', 'limpieza'];
-const CATEGORY_SLUGS = ['desengrasantes', 'higiene-industrial', 'ceras-y-pisos', 'bactericidas', 'anticorrosivos', 'lubricantes'];
+// Mantener en sync con src/data/categoryConfigs.ts y con el espejo de scripts/prerender.mjs.
+const CATEGORY_SLUGS = ['desengrasantes', 'higiene-industrial', 'ceras-y-pisos', 'bactericidas', 'anticorrosivos', 'lubricantes', 'aerosoles', 'linea-automotor', 'desmoldantes'];
 
 function urlEntry({ loc, lastmod = today, changefreq = 'weekly', priority = '0.7' }) {
   return `  <url>

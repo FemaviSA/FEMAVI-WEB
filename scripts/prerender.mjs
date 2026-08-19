@@ -49,6 +49,18 @@ const CATEGORIES = [
     seoTitle: 'Lubricantes Industriales Especiales | FEMAVI',
     seoDesc: 'Lubricantes industriales, grasas y aceites de fórmula propia para mantenimiento industrial. Fabricante argentino con más de 50 años, entrega en 48hs.',
     heroTitle: 'Lubricantes industriales especiales de desarrollo propio' },
+  { slug: 'aerosoles', name: 'Aerosoles Industriales', subcategories: ['Aerosoles'],
+    seoTitle: 'Aerosoles Industriales: lubricantes y penetrantes | FEMAVI',
+    seoDesc: 'Aerosoles industriales de fabricación propia: lubricantes con MoS₂, penetrantes desoxidantes, siliconas, desmoldantes y limpiador de electrónica. Caja x 12, entrega en 48hs.',
+    heroTitle: 'Aerosoles industriales para lubricación, penetración y limpieza de precisión' },
+  { slug: 'linea-automotor', name: 'Línea Automotor', subcategories: ['Línea Automotor'],
+    seoTitle: 'Productos para Lavadero de Autos y Taller | FEMAVI',
+    seoDesc: 'Shampoo para autos, encerante de carrocerías, revividor de interiores y gomas, limpiador de motores y anticongelante. Fabricante argentino, venta por bidón y por mayor.',
+    heroTitle: 'Productos para lavadero de autos, taller y mantenimiento de flotas' },
+  { slug: 'desmoldantes', name: 'Desmoldantes y Antiadherentes', subcategories: ['Desmoldantes'],
+    seoTitle: 'Desmoldante Industrial para Hormigón y Caucho | FEMAVI',
+    seoDesc: 'Desmoldantes para encofrado de hormigón, prensas, rotomoldeado, caucho y panadería. Con y sin silicona, solubles en agua y en pasta. Fabricante argentino, entrega en 48hs.',
+    heroTitle: 'Desmoldantes y antiadherentes para hormigón, caucho, plástico y panadería' },
 ];
 
 // Espejo de los configs de src/pages/industrias/*.tsx (solo lo que importa para SEO;

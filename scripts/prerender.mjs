@@ -183,9 +183,26 @@ function descriptorDe(headline, presupuesto) {
   return porPalabra.length >= MIN_DESCRIPTOR ? porPalabra : '';
 }
 
+// Descriptores a mano para los casos donde el corte automático se come la palabra que
+// la gente busca. Espejo de src/lib/productSeo.ts — ahí está el porqué y por qué no se
+// arregló cambiando el algoritmo.
+const DESCRIPTOR_A_MANO = {
+  'alubril': 'Limpiador y Abrillantador para Aluminio',
+  'pasinox-200-300': 'Pasivante para Acero Inoxidable',
+  'pasinox-400': 'Pasivante para Acero Inoxidable',
+  'oil-plus-300': 'Aceite hidráulico ISO VG 68',
+  'oil-plus-iso-vg-32': 'Aceite hidráulico ISO VG-32',
+  'oil-term': 'Aceite térmico parafínico refinado',
+  'grasa-grafitada': 'Grasa grafitada NLGI 1-2',
+  'aerosol-grasa-grafitada': 'Aerosol de grasa NLGI 1-2',
+};
+
 function buildProductTitle(p) {
   const nombre = p.name.trim();
   const presupuesto = MAX_TITLE - BRAND.length - nombre.length - 3; // 3 = ' — '
+
+  const aMano = DESCRIPTOR_A_MANO[p.slug];
+  if (aMano && aMano.length <= presupuesto) return `${nombre} — ${aMano}${BRAND}`;
 
   if (presupuesto >= MIN_DESCRIPTOR) {
     const d = descriptorDe(p.headline, presupuesto);

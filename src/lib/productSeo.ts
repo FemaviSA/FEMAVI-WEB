@@ -92,9 +92,57 @@ function descriptorDe(headline: string | null | undefined, presupuesto: number):
   return porPalabra.length >= MIN_DESCRIPTOR ? porPalabra : '';
 }
 
-export function buildProductTitle(product: Pick<Product, 'name' | 'headline' | 'category' | 'subcategory'>): string {
+/**
+ * Descriptores escritos a mano, para los casos donde el corte automático se come una
+ * palabra que Search Console demuestra que la gente busca.
+ *
+ * El corte prueba separadores (coma, "con", "para", "y", "de", "en") y se queda con el
+ * prefijo más largo que entre en el presupuesto. Con "Limpiador y Abrillantador para
+ * Aluminio No Ácido" el único corte posible deja "Limpiador y Abrillantador": se pierde
+ * justo "Aluminio", que es la palabra por la que buscan la ficha.
+ *
+ * Antes de escribirlos a mano se evaluó mejorar el algoritmo. No hace falta: recortarAPalabra
+ * ya extiende hasta el último límite de palabra cuando ningún separador sirve, así que el
+ * corte por palabra ya está cubierto. Revisados los 199 títulos construidos, solo 5 salían
+ * mal, y todos por lo mismo: el corte caía a la mitad de una especificación técnica
+ * ("…ISO VG" sin el número, "…NLGI" sin el grado) o en un adverbio ("…parafínico
+ * altamente"). Enseñarle esas excepciones al algoritmo pedía una lista de unidades y de
+ * adverbios que igual habría que mantener a mano — con la diferencia de que un error ahí
+ * afecta a los 199 títulos en vez de a uno. Por eso van como excepciones explícitas.
+ *
+ * Ojo con los finales que PARECEN rotos y no lo están: "NLGI 2", "EP", "MoS₂" y "SAE 68"
+ * son designaciones técnicas completas. No agregarlas a ninguna lista de "colgadas".
+ *
+ * La clave es el slug, no el nombre, porque el nombre puede cambiar.
+ * Mantener en sync con scripts/prerender.mjs.
+ */
+const DESCRIPTOR_A_MANO: Record<string, string> = {
+  // "alubril aluminio": 2 impresiones, posición 9,0. El título decía solo
+  // "Limpiador y Abrillantador", sin la palabra que se busca.
+  'alubril': 'Limpiador y Abrillantador para Aluminio',
+  // "pasivante acero inoxidable": 2 impresiones, posición 11,5. El título decía
+  // "Pasivante" a secas.
+  'pasinox-200-300': 'Pasivante para Acero Inoxidable',
+  'pasinox-400': 'Pasivante para Acero Inoxidable',
+
+  // Los cuatro de abajo salían con el corte partido a la mitad de una especificación o
+  // en un adverbio: "…ISO VG" sin el número, "…ISO" solo, "…parafínico altamente",
+  // "…NLGI" sin el grado. Se revisaron los 199 títulos construidos y son los únicos
+  // cuatro rotos de verdad; el resto de los finales que parecen sospechosos ("NLGI 2",
+  // "EP", "MoS₂", "SAE 68") son designaciones técnicas completas y correctas.
+  'oil-plus-300': 'Aceite hidráulico ISO VG 68',
+  'oil-plus-iso-vg-32': 'Aceite hidráulico ISO VG-32',
+  'oil-term': 'Aceite térmico parafínico refinado',
+  'grasa-grafitada': 'Grasa grafitada NLGI 1-2',
+  'aerosol-grasa-grafitada': 'Aerosol de grasa NLGI 1-2',
+};
+
+export function buildProductTitle(product: Pick<Product, 'slug' | 'name' | 'headline' | 'category' | 'subcategory'>): string {
   const nombre = product.name.trim();
   const presupuesto = MAX_TITLE - BRAND.length - nombre.length - 3; // 3 = ' — '
+
+  const aMano = DESCRIPTOR_A_MANO[product.slug];
+  if (aMano && aMano.length <= presupuesto) return `${nombre} — ${aMano}${BRAND}`;
 
   if (presupuesto >= MIN_DESCRIPTOR) {
     const d = descriptorDe(product.headline, presupuesto);

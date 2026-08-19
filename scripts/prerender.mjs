@@ -322,6 +322,20 @@ const S = {
   faqA: 'font-size:15px;line-height:1.7;color:#5a6f80;margin:12px 0 0',
 };
 
+// ─── Grafías alternativas de nombre ───
+// Espejo de src/lib/productNames.ts — mantener en sync. Ahí está el porqué: buscan
+// "lubrifem" y "crystalcar", y esas grafías no existían en ninguna parte de la ficha.
+// Es una lista a mano y no una regla porque pegar las palabras de los 77 nombres de dos
+// términos generaría ruido ("aceitealimenticio", "pulinoxf") para ganar dos casos reales.
+const GRAFIAS = {
+  'lubri-fem': ['LUBRIFEM'],
+  'crystal-car': ['CRYSTALCAR'],
+};
+
+function grafiasDe(slug) {
+  return GRAFIAS[slug] ?? [];
+}
+
 // ─── Preguntas frecuentes por producto ───
 // Espejo de src/lib/productFaq.ts — mantener en sync. Ahí está el porqué; en resumen:
 // cada respuesta reformula un campo ya cargado en la base y si el campo está vacío la
@@ -470,6 +484,7 @@ function productBody(p, related, category) {
   <span style="${S.eyebrow}">${esc(tipo)}</span>
   <h1 style="${S.h1}">${esc(p.name)}</h1>
   ${p.headline ? `<h2 style="${S.lead}">${esc(p.headline)}</h2>` : ''}
+  ${grafiasDe(p.slug).length ? `<p style="${S.p}">También escrito ${esc(grafiasDe(p.slug).join(' o '))}.</p>` : ''}
   ${p.benefits?.length ? `<ul style="${S.ul}">${p.benefits.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}
   <h2 style="${S.h2}">Descripción</h2>
   <p style="${S.p}">${esc(p.description)}</p>
@@ -799,6 +814,7 @@ for (const p of products) {
       description: p.headline ? `${p.headline}. ${p.description}` : p.description,
       image: p.image_url ? [p.image_url] : undefined,
       sku: p.slug,
+      alternateName: grafiasDe(p.slug).length ? grafiasDe(p.slug) : undefined,
       category: p.subcategory ?? p.category,
       brand: { '@type': 'Brand', name: 'FEMAVI' },
       manufacturer: { '@id': `${SITE_URL}/#organization` },

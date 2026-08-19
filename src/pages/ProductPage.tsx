@@ -7,6 +7,7 @@ import { ProductLabel } from '../components/ProductLabel';
 import { findCategoryConfigBySubcategory } from '../data/categoryConfigs';
 import { buildProductTitle, buildProductDescription } from '../lib/productSeo';
 import { buildProductFaq, faqJsonLd } from '../lib/productFaq';
+import { grafiasDe } from '../lib/productNames';
 import { verticalesDe } from '../lib/productIndustries';
 import type { Product } from '../types/product';
 
@@ -99,6 +100,8 @@ export default function ProductPage() {
     description: product.description,
     image: product.image_url ? [product.image_url] : undefined,
     sku: product.slug,
+    // Grafías con las que la gente busca el producto (ver src/lib/productNames.ts).
+    alternateName: grafiasDe(product.slug).length ? grafiasDe(product.slug) : undefined,
     category: product.subcategory ?? product.category,
     brand: { '@type': 'Brand', name: 'FEMAVI' },
     manufacturer: { '@id': `${SITE_URL}/#organization` },
@@ -192,6 +195,13 @@ export default function ProductPage() {
               <h2 style={{ fontSize: 18, fontWeight: 400, color: C.textMuted, fontStyle: 'italic', margin: '0 0 24px', lineHeight: 1.5 }}>
                 {product.headline}
               </h2>
+            )}
+            {/* La grafía pegada tiene que estar en el TEXTO, no solo en el alternateName del
+                JSON-LD: es lo que Google matchea cuando alguien escribe "lubrifem". */}
+            {grafiasDe(product.slug).length > 0 && (
+              <p style={{ fontSize: 14, color: C.textLight, margin: '-16px 0 24px' }}>
+                También escrito {grafiasDe(product.slug).join(' o ')}.
+              </p>
             )}
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 28 }}>

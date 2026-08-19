@@ -639,7 +639,7 @@ export default function Home() {
     <>
       <SEO
         title="Productos Químicos Industriales en Argentina — FEMAVI"
-        description="Fabricantes argentinos de productos químicos industriales con +50 años: desengrasantes, bactericidas, ceras acrílicas, lubricantes y aerosoles. Fórmulas de desarrollo propio, entrega en 48 hs en todo el país. +20.000 clientes."
+        description="Fabricante argentino de productos químicos y de higiene industrial: desengrasantes, bactericidas, ceras, lubricantes y aerosoles. Entrega en 48 hs."
         canonical={SITE_URL + '/'}
         jsonLd={homeJsonLd}
       />

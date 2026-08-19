@@ -167,6 +167,8 @@ export function buildProductTitle(product: Pick<Product, 'slug' | 'name' | 'head
  */
 const MAX_DESC = 155;
 const CIERRE = 'Fabricación propia FEMAVI, entrega en 48 hs.';
+/** Debajo de esto la descripción no dice nada útil y conviene repetir el headline. */
+const MIN_CUERPO = 60;
 
 /** Parte en oraciones: corta en punto seguido de mayúscula, así no rompe siglas. */
 function oraciones(texto: string | null | undefined): string[] {
@@ -177,19 +179,44 @@ function oraciones(texto: string | null | undefined): string[] {
 }
 
 export function buildProductDescription(
-  product: Pick<Product, 'name' | 'headline' | 'description' | 'subcategory' | 'category'>,
+  product: Pick<Product, 'slug' | 'name' | 'headline' | 'description' | 'subcategory' | 'category'>,
 ): string {
   const presupuesto = MAX_DESC - CIERRE.length - 1;
 
   const h = (product.headline ?? '').trim().replace(/[.\s]+$/, '');
   const d = (product.description ?? '').trim();
 
+  // El título ya muestra el headline (entero o recortado). Si la descripción vuelve a
+  // arrancar con él, en el resultado de búsqueda la misma frase aparece dos veces
+  // seguidas y la segunda no agrega nada. Pasaba en 188 de las 199 fichas y se comía 29
+  // de los 155 caracteres visibles. Cuando el título ya lo dice, se arranca por la
+  // descripción del producto, que es información nueva.
+  const yaEnTitulo = h.length > 0 && buildProductTitle(product).includes(h.slice(0, 20));
+
   let cuerpo = '';
-  if (h) cuerpo = h.length <= presupuesto ? `${h}.` : `${recortarAPalabra(h, presupuesto - 1)}.`;
+  if (h && !yaEnTitulo) {
+    cuerpo = h.length <= presupuesto ? `${h}.` : `${recortarAPalabra(h, presupuesto - 1)}.`;
+  }
 
   if (cuerpo.length < presupuesto) {
     for (const o of oraciones(d)) {
       const cand = cuerpo ? `${cuerpo} ${o}` : o;
+      if (cand.length <= presupuesto) { cuerpo = cand; continue; }
+      // Con cuerpo ya armado se corta acá: saltear una oración del medio rompe el hilo.
+      // Con el cuerpo vacío es otra cosa: significa que la PRIMERA oración no entraba, y
+      // rendirse ahí obliga a caer al headline, que el título ya muestra. Conviene seguir
+      // buscando una que entre — en ULTRA SKIN la primera mide 118 y la segunda 60.
+      if (cuerpo) break;
+    }
+  }
+
+  // Red de seguridad: si la descripción no aportó casi nada (fichas con description muy
+  // corta), es preferible repetir el headline antes que publicar una meta description que
+  // sea casi solo el cierre comercial.
+  if (yaEnTitulo && cuerpo.length < MIN_CUERPO && h) {
+    cuerpo = h.length <= presupuesto ? `${h}.` : `${recortarAPalabra(h, presupuesto - 1)}.`;
+    for (const o of oraciones(d)) {
+      const cand = `${cuerpo} ${o}`;
       if (cand.length <= presupuesto) cuerpo = cand;
       else break;
     }

@@ -106,7 +106,7 @@ const VERTICALS = [
 const STATIC_PAGES = {
   home: {
     title: 'Productos Químicos Industriales en Argentina — FEMAVI',
-    desc: 'Fabricantes argentinos de productos químicos industriales con +50 años: desengrasantes, bactericidas, ceras acrílicas, lubricantes y aerosoles. Fórmulas de desarrollo propio, entrega en 48 hs en todo el país. +20.000 clientes.',
+    desc: 'Fabricante argentino de productos químicos y de higiene industrial: desengrasantes, bactericidas, ceras, lubricantes y aerosoles. Entrega en 48 hs.',
   },
   nosotros: {
     title: 'Nosotros — FEMAVI fabricantes argentinos desde 1970',
@@ -228,6 +228,8 @@ function buildProductTitle(p) {
 // cierre comercial tiene lugar reservado y el cuerpo se arma con oraciones enteras.
 const MAX_DESC = 155;
 const CIERRE = 'Fabricación propia FEMAVI, entrega en 48 hs.';
+// Debajo de esto la descripción no dice nada útil y conviene repetir el headline.
+const MIN_CUERPO = 60;
 
 function oraciones(texto) {
   return String(texto ?? '')
@@ -242,12 +244,32 @@ function buildProductDescription(p) {
   const h = (p.headline ?? '').trim().replace(/[.\s]+$/, '');
   const d = (p.description ?? '').trim();
 
+  // El título ya muestra el headline. Repetirlo acá hace que en el resultado de búsqueda
+  // la misma frase salga dos veces seguidas: pasaba en 188 de las 199 fichas y gastaba 29
+  // de los 155 caracteres visibles. Espejo de src/lib/productSeo.ts.
+  const yaEnTitulo = h.length > 0 && buildProductTitle(p).includes(h.slice(0, 20));
+
   let cuerpo = '';
-  if (h) cuerpo = h.length <= presupuesto ? `${h}.` : `${recortarAPalabra(h, presupuesto - 1)}.`;
+  if (h && !yaEnTitulo) {
+    cuerpo = h.length <= presupuesto ? `${h}.` : `${recortarAPalabra(h, presupuesto - 1)}.`;
+  }
 
   if (cuerpo.length < presupuesto) {
     for (const o of oraciones(d)) {
       const cand = cuerpo ? `${cuerpo} ${o}` : o;
+      if (cand.length <= presupuesto) { cuerpo = cand; continue; }
+      // Con el cuerpo vacío, la primera oración no entraba: seguir buscando una que sí,
+      // en vez de caer al headline que el título ya muestra. Espejo de productSeo.ts.
+      if (cuerpo) break;
+    }
+  }
+
+  // Si la descripción no aportó casi nada, es mejor repetir el headline que publicar una
+  // meta description que sea casi solo el cierre comercial.
+  if (yaEnTitulo && cuerpo.length < MIN_CUERPO && h) {
+    cuerpo = h.length <= presupuesto ? `${h}.` : `${recortarAPalabra(h, presupuesto - 1)}.`;
+    for (const o of oraciones(d)) {
+      const cand = `${cuerpo} ${o}`;
       if (cand.length <= presupuesto) cuerpo = cand;
       else break;
     }

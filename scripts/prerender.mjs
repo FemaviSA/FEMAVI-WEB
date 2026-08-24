@@ -683,8 +683,17 @@ function miniMarkdown(md) {
       const b = block.trim();
       if (!b) return '';
 
-      const h = b.match(/^(#{2,4})\s+(.*)$/s);
-      if (h) return `<h2 style="${S.h2}">${inline(h[2].replace(/\n[\s\S]*$/, ''))}</h2>`;
+      // Encabezado. Ojo: cuando el redactor no deja línea en blanco entre el título y su
+      // párrafo, ambos caen en el mismo bloque. Antes se emitía el <h2> y se tiraba TODO
+      // lo que venía abajo — 17 de los 29 posts perdían párrafos enteros, y con ellos los
+      // enlaces al catálogo, sin que se notara en pantalla (React usa marked, no esto).
+      // Ahora el resto del bloque se procesa aparte.
+      const h = b.match(/^(#{2,4})\s+([^\n]*)\n?([\s\S]*)$/);
+      if (h) {
+        const encabezado = `<h2 style="${S.h2}">${inline(h[2].trim())}</h2>`;
+        const resto = h[3].trim();
+        return resto ? encabezado + miniMarkdown(resto) : encabezado;
+      }
 
       const lineas = b.split('\n').map(l => l.trim()).filter(Boolean);
 

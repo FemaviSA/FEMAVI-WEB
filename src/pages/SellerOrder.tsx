@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Loader2, Plus, Trash2, CheckCircle2, Lock, LogOut, Copy } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
-import { createOrder, sendOrderNotification } from '../lib/orders';
+import { createOrder, sendOrderNotification, SesionVencidaError } from '../lib/orders';
 import { verifySellerPin, rememberedSeller, forgetSeller, type Seller } from '../lib/sellers';
 import { SEO, SITE_URL } from '../components/SEO';
 
@@ -126,7 +126,7 @@ function limpiarCantidad(valor: string): string {
 // Pantalla de PIN
 // ---------------------------------------------------------------------------
 
-function PantallaPin({ code, onOk }: { code: string; onOk: (s: Seller) => void }) {
+function PantallaPin({ code, aviso, onOk }: { code: string; aviso?: string | null; onOk: (s: Seller) => void }) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -182,6 +182,13 @@ function PantallaPin({ code, onOk }: { code: string; onOk: (s: Seller) => void }
           Ingresá tu PIN para cargar pedidos.
         </p>
 
+        {aviso && (
+          <div style={{
+            marginBottom: 16, padding: '10px 14px', background: '#fffbeb',
+            border: '1px solid #fde68a', color: '#92400e', borderRadius: 8, fontSize: 13,
+          }}>{aviso}</div>
+        )}
+
         <input
           autoFocus required value={pin} type="password" inputMode="numeric"
           autoComplete="one-time-code" placeholder="••••••"
@@ -233,6 +240,9 @@ export default function SellerOrder() {
   const { products } = useProducts();
 
   const [seller, setSeller] = useState<Seller | null>(() => rememberedSeller(code));
+  // Si el pase vence a mitad de un pedido, se vuelve al PIN con este aviso. El
+  // formulario sigue montado detrás, así que lo cargado no se pierde.
+  const [avisoPin, setAvisoPin] = useState<string | null>(null);
   const [enviado, setEnviado] = useState(false);
   // El número lo asigna la base al guardar, así que recién se conoce acá.
   const [numero, setNumero] = useState<string | null>(null);
@@ -444,7 +454,7 @@ export default function SellerOrder() {
         })),
         total,
         notes: f.notes,
-      });
+      }, seller?.token);
 
       // Se espera el mail para que "administración ya lo recibió" sea cierto
       // cuando el vendedor lo lee. Si falla, no rompe: el pedido ya está guardado.
@@ -454,6 +464,12 @@ export default function SellerOrder() {
       setEnviado(true);
       window.scrollTo(0, 0);
     } catch (err: any) {
+      if (err instanceof SesionVencidaError) {
+        forgetSeller();
+        setSeller(null);
+        setAvisoPin(err.message);
+        return;
+      }
       setError(err?.message ?? 'No se pudo enviar el pedido.');
     } finally {
       enviandoRef.current = false;
@@ -480,7 +496,11 @@ export default function SellerOrder() {
     <SEO title="Carga de pedidos — FEMAVI" description="" canonical={`${SITE_URL}/vendedores`} noindex />
   );
 
-  if (!seller) return <>{seo}<PantallaPin code={code} onOk={setSeller} /></>;
+  if (!seller) {
+    return (
+      <>{seo}<PantallaPin code={code} aviso={avisoPin} onOk={s => { setAvisoPin(null); setSeller(s); }} /></>
+    );
+  }
 
   if (enviado) {
     return (
@@ -562,7 +582,7 @@ export default function SellerOrder() {
               </div>
               <button
                 type="button" title="Salir"
-                onClick={() => { forgetSeller(); setSeller(null); }}
+                onClick={() => { forgetSeller(seller.token); setSeller(null); }}
                 style={{
                   width: 32, height: 32, borderRadius: 7, background: C.bg,
                   border: `1px solid ${C.borderLight}`, color: C.textMuted, cursor: 'pointer',

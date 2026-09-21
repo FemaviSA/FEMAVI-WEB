@@ -67,9 +67,25 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // Cada pedido se avisa una sola vez y solo si se cargó en la última hora.
+    // El pedido se "reclama" de forma atómica marcando notified_at: si ya
+    // estaba marcado, o es viejo, no se manda nada. Así nadie puede usar esta
+    // función para reenviar pedidos y llenar de correo a ventas@.
+    const haceUnaHora = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const { data: o, error: errOrden } = await supabase
-      .from("orders").select("*").eq("id", order_id).single();
-    if (errOrden || !o) throw new Error("No encontré el pedido " + order_id);
+      .from("orders")
+      .update({ notified_at: new Date().toISOString() })
+      .eq("id", order_id)
+      .is("notified_at", null)
+      .gte("created_at", haceUnaHora)
+      .select("*")
+      .maybeSingle();
+    if (errOrden) throw new Error("No pude leer el pedido " + order_id);
+    if (!o) {
+      return new Response(JSON.stringify({ ok: true, enviado: false }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     let vendedor = o.seller_code ? "Agente " + o.seller_code : "—";
     if (o.seller_code) {
@@ -405,6 +421,8 @@ Deno.serve(async (req: Request) => {
     if (!res.ok) {
       const err = await res.text();
       console.error("Resend error:", res.status, err);
+      // Si el mail no salió, se libera el pedido para poder reintentar.
+      await supabase.from("orders").update({ notified_at: null }).eq("id", order_id);
       return new Response(JSON.stringify({ error: err }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

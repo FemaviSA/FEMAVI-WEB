@@ -3,6 +3,12 @@ import { supabase } from './supabase';
 export interface Seller {
   code: string;
   name: string;
+  /**
+   * Pase de sesión que entrega la base al validar el PIN. Es lo que prueba que
+   * el pedido lo carga este vendedor: la base saca el vendedor del pase, no de
+   * lo que diga el formulario.
+   */
+  token: string;
 }
 
 export type PinResult =
@@ -26,8 +32,8 @@ export async function verifySellerPin(code: string, pin: string): Promise<PinRes
     throw new Error('No pudimos validar el PIN. Revisá la conexión e intentá de nuevo.');
   }
 
-  if (data?.ok) {
-    const seller: Seller = { code: String(data.code), name: String(data.name) };
+  if (data?.ok && data?.token) {
+    const seller: Seller = { code: String(data.code), name: String(data.name), token: String(data.token) };
     remember(seller);
     return { ok: true, seller };
   }
@@ -42,23 +48,22 @@ export async function verifySellerPin(code: string, pin: string): Promise<PinRes
 // ---------------------------------------------------------------------------
 // Sesión en el navegador del vendedor.
 //
-// Guarda que ese código ya se validó y cuándo — nunca el PIN. Así no lo tiene
-// que tipear en cada pedido, pero si alguien le mira el celular no se lleva la
-// clave. A los 30 días se vuelve a pedir.
+// Guarda el pase — nunca el PIN — para que no tenga que tipearlo en cada
+// pedido. El pase vence a los 30 días del lado de la base; si administración
+// da de baja al vendedor, deja de servir en el acto.
 // ---------------------------------------------------------------------------
 
 const STORAGE_KEY = 'femavi_vendedor';
-const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 interface StoredSession {
   code: string;
   name: string;
-  at: number;
+  token: string;
 }
 
 function remember(seller: Seller): void {
   try {
-    const payload: StoredSession = { code: seller.code, name: seller.name, at: Date.now() };
+    const payload: StoredSession = { code: seller.code, name: seller.name, token: seller.token };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch {
     // Navegación privada o almacenamiento bloqueado: seguimos sin recordar,
@@ -70,22 +75,25 @@ export function rememberedSeller(code: string): Seller | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const s = JSON.parse(raw) as StoredSession;
-    if (s.code !== code) return null;
-    if (Date.now() - s.at > MAX_AGE_MS) {
-      localStorage.removeItem(STORAGE_KEY);
-      return null;
-    }
-    return { code: s.code, name: s.name };
+    const s = JSON.parse(raw) as Partial<StoredSession>;
+    // Sesiones guardadas antes de que existiera el pase no sirven: se pide el PIN.
+    if (s.code !== code || !s.token || !s.name) return null;
+    return { code: s.code, name: s.name, token: s.token };
   } catch {
     return null;
   }
 }
 
-export function forgetSeller(): void {
+/** Cierra la sesión acá y en la base, para que el pase no sirva más. */
+export function forgetSeller(token?: string): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {
-    // Si no se puede borrar, igual caduca sola a los 30 días.
+    // Si no se puede borrar, el pase igual se invalida en la base abajo.
+  }
+  if (token) {
+    void supabase.rpc('end_seller_session', { p_token: token }).then(({ error }) => {
+      if (error) console.warn('[sellers] no se pudo cerrar la sesión:', error.message);
+    });
   }
 }

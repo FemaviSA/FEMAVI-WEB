@@ -54,7 +54,20 @@ export interface OrderCreated {
   order_number: string | null;
 }
 
-export async function createOrder(input: OrderInput): Promise<OrderCreated> {
+/** El pase del vendedor venció o se cerró: hay que volver a pedir el PIN. */
+export class SesionVencidaError extends Error {
+  constructor() {
+    super('Tu sesión venció. Volvé a ingresar tu PIN y el pedido sigue cargado.');
+    this.name = 'SesionVencidaError';
+  }
+}
+
+/**
+ * `sellerToken` es el pase del vendedor. La base saca de ahí a quién
+ * pertenece el pedido; sin pase, el pedido queda sin vendedor (formulario de
+ * clientes).
+ */
+export async function createOrder(input: OrderInput, sellerToken?: string): Promise<OrderCreated> {
   const items = input.items.filter(i => i.product.trim());
 
   // El total se recalcula acá y no se confía en el que venga del formulario:
@@ -74,7 +87,6 @@ export async function createOrder(input: OrderInput): Promise<OrderCreated> {
     sales_cycle: txt(input.sales_cycle),
     purchase_order: txt(input.purchase_order),
     ship_date: txt(input.ship_date),
-    seller_code: txt(input.seller_code),
     is_new_client: input.is_new_client ?? false,
 
     client_name: input.client_name.trim(),
@@ -102,7 +114,10 @@ export async function createOrder(input: OrderInput): Promise<OrderCreated> {
     total,
     notes: txt(input.notes),
     },
+    p_token: sellerToken ?? null,
   });
+
+  if (error?.message?.includes('sesion_vencida')) throw new SesionVencidaError();
 
   if (error || !data) {
     console.warn('[orders] insert error:', error?.message);

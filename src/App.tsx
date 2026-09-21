@@ -15,6 +15,7 @@ const Quote = lazy(() => import('./pages/Quote'));
 const OrderForm = lazy(() => import('./pages/OrderForm'));
 const SellerOrder = lazy(() => import('./pages/SellerOrder'));
 const Login = lazy(() => import('./pages/admin/Login'));
+const NuevaClave = lazy(() => import('./pages/admin/NuevaClave'));
 const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
 const ProductForm = lazy(() => import('./pages/admin/ProductForm'));
 const Quotes = lazy(() => import('./pages/admin/Quotes'));
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="/pedidos" element={<OrderForm />} />
           <Route path="/vendedores/:code" element={<SellerOrder />} />
           <Route path="/admin/login" element={<Login />} />
+          <Route path="/admin/nueva-clave" element={<NuevaClave />} />
           <Route path="/admin" element={<RequireAuth><Dashboard /></RequireAuth>} />
           <Route path="/admin/products/new" element={<RequireAuth><ProductForm /></RequireAuth>} />
           <Route path="/admin/products/:id" element={<RequireAuth><ProductForm /></RequireAuth>} />

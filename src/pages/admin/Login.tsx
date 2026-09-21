@@ -11,6 +11,22 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  // Manda el link para elegir una contraseña nueva. La respuesta es la misma
+  // exista o no el mail, para no revelar quién tiene cuenta.
+  const olvideClave = async () => {
+    setError(null);
+    setAviso(null);
+    if (!email.trim()) {
+      setError('Escribí tu email arriba y volvé a tocar "¿Olvidaste la contraseña?".');
+      return;
+    }
+    await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: window.location.origin + '/admin/nueva-clave',
+    });
+    setAviso('Si ese mail tiene acceso, te llegó un correo con un link para elegir una contraseña nueva.');
+  };
 
   useEffect(() => {
     if (session) navigate('/admin', { replace: true });
@@ -160,12 +176,14 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-slate-100">
-            <p className="text-xs text-slate-400 text-center leading-relaxed">
-              ¿Olvidaste la contraseña? Reseteala desde el dashboard de Supabase →
-              <br />
-              <span className="text-slate-500">Auth → Users → tu email → Send recovery</span>
-            </p>
+          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+            {aviso ? (
+              <p className="text-sm text-femavi-700 bg-femavi-50 border border-femavi-200 rounded-lg px-4 py-3">{aviso}</p>
+            ) : (
+              <button type="button" onClick={olvideClave} className="text-sm text-slate-500 hover:text-slate-800 underline">
+                ¿Olvidaste la contraseña?
+              </button>
+            )}
           </div>
         </div>
       </div>

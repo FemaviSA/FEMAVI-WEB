@@ -917,6 +917,10 @@
       "destination": "/app.html"
     },
     {
+      "source": "/vendedores/:path*",
+      "destination": "/app.html"
+    },
+    {
       "source": "/admin/:path*",
       "destination": "/app.html"
     },

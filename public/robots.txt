@@ -5,16 +5,22 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 User-agent: Googlebot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 User-agent: bingbot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 # ── Crawlers de IA ────────────────────────────────────────────────────────
 # El "Allow: /" de arriba ya los cubre por wildcard, pero van explícitos a
@@ -33,43 +39,59 @@ User-agent: GPTBot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 User-agent: OAI-SearchBot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 User-agent: ChatGPT-User
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 # Anthropic (Claude)
 User-agent: ClaudeBot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 User-agent: Claude-SearchBot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 User-agent: Claude-User
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 # Perplexity
 User-agent: PerplexityBot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 User-agent: Perplexity-User
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 # Google Gemini / AI Overviews. Ojo: Google-Extended NO afecta el ranking en
 # la Búsqueda de Google — controla únicamente si el contenido puede usarse
@@ -82,12 +104,16 @@ User-agent: msnbot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 # Apple Intelligence / Siri
 User-agent: Applebot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 User-agent: Applebot-Extended
 Allow: /
@@ -97,12 +123,16 @@ User-agent: meta-externalagent
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 # Amazon (Alexa / Rufus)
 User-agent: Amazonbot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 # Mistral, DuckDuckGo AI, Common Crawl (alimenta a casi todos los modelos)
 User-agent: MistralAI-User
@@ -115,6 +145,8 @@ User-agent: CCBot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /vendedores
+Disallow: /vendedores/*
 
 # ── Índices ───────────────────────────────────────────────────────────────
 Sitemap: https://www.femavi.com.ar/sitemap.xml

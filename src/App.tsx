@@ -13,6 +13,7 @@ const ProductPage = lazy(() => import('./pages/ProductPage'));
 const CategoryPage = lazy(() => import('./pages/CategoryPage'));
 const Quote = lazy(() => import('./pages/Quote'));
 const OrderForm = lazy(() => import('./pages/OrderForm'));
+const SellerOrder = lazy(() => import('./pages/SellerOrder'));
 const Login = lazy(() => import('./pages/admin/Login'));
 const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
 const ProductForm = lazy(() => import('./pages/admin/ProductForm'));
@@ -47,15 +48,20 @@ function AnalyticsTracker() {
   return null;
 }
 
+// Pantallas de trabajo interno: sin carrito flotante ni boton de WhatsApp,
+// que ahi solo estorban.
+const esPantallaInterna = (ruta: string) =>
+  ruta.startsWith('/admin') || ruta.startsWith('/vendedores');
+
 function PublicCartPill() {
   const location = useLocation();
-  if (location.pathname.startsWith('/admin')) return null;
+  if (esPantallaInterna(location.pathname)) return null;
   return <QuoteCartPill />;
 }
 
 function PublicWhatsApp() {
   const location = useLocation();
-  if (location.pathname.startsWith('/admin')) return null;
+  if (esPantallaInterna(location.pathname)) return null;
   return <WhatsAppButton />;
 }
 
@@ -83,6 +89,7 @@ export default function App() {
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/cotizar" element={<Quote />} />
           <Route path="/pedidos" element={<OrderForm />} />
+          <Route path="/vendedores/:code" element={<SellerOrder />} />
           <Route path="/admin/login" element={<Login />} />
           <Route path="/admin" element={<RequireAuth><Dashboard /></RequireAuth>} />
           <Route path="/admin/products/new" element={<RequireAuth><ProductForm /></RequireAuth>} />

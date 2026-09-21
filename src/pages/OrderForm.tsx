@@ -4,7 +4,7 @@ import { setCartMode } from '../lib/cartMode';
 import { Trash2, ShoppingCart, ArrowLeft, CheckCircle2, Loader2, Package } from 'lucide-react';
 import { useQuoteCart } from '../hooks/useQuoteCart';
 import { useProducts } from '../hooks/useProducts';
-import { createOrder } from '../lib/orders';
+import { createOrder, sendOrderNotification } from '../lib/orders';
 import { SEO, SITE_URL } from '../components/SEO';
 
 const C = {
@@ -101,7 +101,7 @@ export default function OrderForm() {
         presentation: productDetails[p.slug]?.presentation ?? p.presentations?.[0] ?? '',
         quantity: productDetails[p.slug]?.quantity ?? 1,
       }));
-      await createOrder({
+      const pedido = await createOrder({
         client_name: form.client_name,
         client_code: form.client_code || null,
         email: form.email,
@@ -111,24 +111,7 @@ export default function OrderForm() {
         notes: form.notes || null,
         items,
       });
-      // Fire-and-forget email notification
-      fetch('https://lhqawwjszwjzxxsonvwa.supabase.co/functions/v1/send-order-notification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxocWF3d2pzendqenh4c29udndhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwMTQ2NDMsImV4cCI6MjA5MjU5MDY0M30.3Dx6c3mLwqGDgRfQK4mn70ohuSZ5GXV7WvrtlV6A0DM',
-        },
-        body: JSON.stringify({
-          client_name: form.client_name,
-          client_code: form.client_code || null,
-          email: form.email,
-          phone: form.phone,
-          company: form.company,
-          delivery_address: form.delivery_address,
-          notes: form.notes || null,
-          items,
-        }),
-      }).catch(() => { /* non-critical */ });
+      await sendOrderNotification(pedido.id);
       setSubmitted(true);
       clear();
     } catch (err: any) {

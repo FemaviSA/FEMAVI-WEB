@@ -82,12 +82,12 @@ export default function Pedidos() {
 
   // Los rechazados no suman, salvo que se esté mirando justamente esa pestaña.
   const totales = useMemo(() => {
-    const t = { pesos: 0, litros: 0, kilos: 0, unidades: 0, bonificado: 0 };
+    const t = { pesos: 0, volumen: 0, bonificado: 0 };
     for (const p of visibles) {
       if (p.status === 'rechazado' && pestaña !== 'rechazado') continue;
       const v = volumenDe(p.items);
       t.pesos += Number(p.total) || 0;
-      t.litros += v.litros; t.kilos += v.kilos; t.unidades += v.unidades; t.bonificado += v.bonificado;
+      t.volumen += v.volumen; t.bonificado += v.bonificado;
     }
     return t;
   }, [visibles, pestaña]);
@@ -154,8 +154,8 @@ export default function Pedidos() {
         {[
           { r: 'Pedidos', v: fmtNum(visibles.length) },
           { r: 'Facturación', v: fmtPesos.format(totales.pesos) },
-          { r: 'Litros', v: fmtNum(totales.litros) },
-          { r: 'Kilos', v: fmtNum(totales.kilos) + (totales.unidades ? ` · ${fmtNum(totales.unidades)} u` : '') },
+          { r: 'Volumen L/kg', v: fmtNum(totales.volumen) },
+          { r: 'Bonificado L/kg', v: fmtNum(totales.bonificado) },
         ].map(t => (
           <div key={t.r} className="rounded-xl bg-white border border-slate-200 px-4 py-3">
             <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{t.r}</div>
@@ -204,7 +204,7 @@ export default function Pedidos() {
                     </td>
                     <td className="px-4 py-3 text-slate-500 font-semibold">{p.account ?? '—'}</td>
                     <td className="px-4 py-3 text-right text-slate-600 whitespace-nowrap">
-                      {[v.litros && `${fmtNum(v.litros)} L`, v.kilos && `${fmtNum(v.kilos)} kg`, v.unidades && `${fmtNum(v.unidades)} u`].filter(Boolean).join(' · ') || '—'}
+                      {v.volumen ? `${fmtNum(v.volumen)} L/kg` : '—'}
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-slate-900 whitespace-nowrap">{fmtPesos.format(Number(p.total) || 0)}</td>
                     <td className="px-4 py-3"><ChipEstado estado={p.status} /></td>

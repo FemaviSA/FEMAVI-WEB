@@ -25,7 +25,6 @@ export interface ItemPedido {
   presentation?: string | null;
   quantity: number;
   unit_price?: number | null;
-  unit?: 'L' | 'kg' | 'u' | null;
 }
 
 export interface Pedido {
@@ -115,19 +114,18 @@ export async function completarDatos(id: number, datos: { sales_cycle?: string |
 }
 
 // ---------------------------------------------------------------------------
-// Cuentas. La cantidad es el total en litros o kilos; un renglón negativo es
-// una bonificación y resta. Se suma por unidad: litros y kilos no se mezclan.
+// Cuentas. La cantidad es el total en litros o kilos, y 1 L = 1 kg: se suma
+// todo como un solo volumen, sin mirar el catálogo, así cualquier producto
+// que escriban cuenta. Un renglón negativo es una bonificación y resta.
 // ---------------------------------------------------------------------------
 
-export interface Volumen { litros: number; kilos: number; unidades: number; bonificado: number }
+export interface Volumen { volumen: number; bonificado: number }
 
 export function volumenDe(items: ItemPedido[]): Volumen {
-  const v: Volumen = { litros: 0, kilos: 0, unidades: 0, bonificado: 0 };
+  const v: Volumen = { volumen: 0, bonificado: 0 };
   for (const it of items ?? []) {
     const q = Number(it.quantity) || 0;
-    if (it.unit === 'kg') v.kilos += q;
-    else if (it.unit === 'u') v.unidades += q;
-    else if (it.unit === 'L') v.litros += q;
+    v.volumen += q;
     if (q < 0) v.bonificado += -q;
   }
   return v;
@@ -146,14 +144,13 @@ export function exportarCsv(pedidos: Pedido[], nombreVendedor: (code: string | n
     return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
   const cabecera = ['Pedido', 'Fecha', 'Estado', 'Vendedor', 'Cuenta', 'N° cliente', 'Cliente nuevo', 'Razón social',
-    'Ciudad', 'Zona', 'Transporte', 'Litros', 'Kilos', 'Unidades', 'Bonificado', 'Total $', 'Motivo rechazo'];
+    'Ciudad', 'Zona', 'Transporte', 'Volumen L/kg', 'Bonificado L/kg', 'Total $', 'Motivo rechazo'];
   const filas = pedidos.map(p => {
     const v = volumenDe(p.items);
     return [p.order_number, fmtFecha(p.created_at), ETIQUETA_ESTADO[p.status] ?? p.status,
       nombreVendedor(p.seller_code), p.account, p.client_code, p.is_new_client ? 'sí' : '', p.company,
       p.bill_city, p.zone, p.carrier,
-      String(v.litros).replace('.', ','), String(v.kilos).replace('.', ','), String(v.unidades).replace('.', ','),
-      String(v.bonificado).replace('.', ','), String(p.total ?? 0).replace('.', ','), p.rejection_reason];
+      String(v.volumen).replace('.', ','), String(v.bonificado).replace('.', ','), String(p.total ?? 0).replace('.', ','), p.rejection_reason];
   });
   const csv = '\uFEFF' + [cabecera, ...filas].map(f => f.map(campo).join(';')).join('\r\n');
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));

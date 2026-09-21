@@ -192,7 +192,7 @@ export default function PedidoDetalle({
                     const importe = (Number(it.quantity) || 0) * (Number(it.unit_price) || 0);
                     return (
                       <tr key={i} className={`border-t border-slate-100 ${bonif ? 'bg-emerald-50 text-emerald-800' : ''}`}>
-                        <td className="px-3 py-2 font-semibold whitespace-nowrap">{fmtNum(Number(it.quantity))} {it.unit === 'u' ? 'u' : it.unit ?? ''}</td>
+                        <td className="px-3 py-2 font-semibold whitespace-nowrap">{fmtNum(Number(it.quantity))}</td>
                         <td className="px-3 py-2">{it.presentation || '—'}</td>
                         <td className="px-3 py-2">{bonif && <span className="text-[10px] font-bold mr-1">BONIF.</span>}{it.product}</td>
                         <td className="px-3 py-2 text-right whitespace-nowrap">{fmtPesos.format(Number(it.unit_price) || 0)}</td>
@@ -204,8 +204,7 @@ export default function PedidoDetalle({
                 <tfoot className="bg-slate-50 border-t border-slate-200">
                   <tr>
                     <td colSpan={3} className="px-3 py-2 text-xs text-slate-500">
-                      {[v.litros && `${fmtNum(v.litros)} L`, v.kilos && `${fmtNum(v.kilos)} kg`, v.unidades && `${fmtNum(v.unidades)} u`,
-                        v.bonificado && `(${fmtNum(v.bonificado)} bonificados)`].filter(Boolean).join(' · ')}
+                      {fmtNum(v.volumen)} L/kg{v.bonificado ? ` · ${fmtNum(v.bonificado)} bonificados` : ''}
                     </td>
                     <td className="px-3 py-2 text-right text-xs font-bold text-slate-500">TOTAL</td>
                     <td className="px-3 py-2 text-right font-bold text-slate-900">{fmtPesos.format(Number(pedido.total) || 0)}</td>

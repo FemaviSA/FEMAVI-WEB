@@ -56,7 +56,6 @@ export default function MisVentas({ token, onPaseVencido }: { token: string; onP
   }, [token, periodo, onPaseVencido]);
 
   const t = datos?.totales;
-  const bonificado = (t?.litros_bonificados ?? 0) + (t?.kilos_bonificados ?? 0);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
@@ -81,8 +80,8 @@ export default function MisVentas({ token, onPaseVencido }: { token: string; onP
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
             {[
               { r: 'Facturación', v: pesos.format(t.pesos) },
-              { r: 'Litros', v: num.format(t.litros) },
-              { r: 'Kilos', v: num.format(t.kilos) + (t.unidades ? ` · ${num.format(t.unidades)} u` : '') },
+              { r: 'Volumen L/kg', v: num.format(t.volumen) },
+              { r: 'Bonificado L/kg', v: num.format(t.bonificado) },
               { r: 'Pedidos · Clientes', v: `${t.pedidos} · ${t.clientes}` },
             ].map(x => (
               <div key={x.r} className="rounded-xl bg-white border border-slate-200 px-4 py-3">
@@ -92,7 +91,7 @@ export default function MisVentas({ token, onPaseVencido }: { token: string; onP
             ))}
           </div>
           <p className="text-xs text-slate-400 mb-6">
-            No incluye pedidos rechazados.{bonificado > 0 && ` Bonificaste ${num.format(bonificado)} litros/kilos en el período.`}
+            No incluye pedidos rechazados. El volumen suma litros y kilos juntos.
           </p>
 
           <div className="rounded-xl bg-white border border-slate-200 overflow-hidden">

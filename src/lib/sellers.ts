@@ -108,8 +108,9 @@ export function forgetSeller(token?: string): void {
 export interface ResumenVentas {
   totales: {
     pedidos: number; clientes: number; pesos: number;
-    litros: number; kilos: number; unidades: number;
-    litros_bonificados: number; kilos_bonificados: number;
+    /** Litros y kilos juntos (1 L = 1 kg), neto de bonificaciones. */
+    volumen: number;
+    bonificado: number;
   };
   por_estado: Record<string, number>;
   pedidos: {

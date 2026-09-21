@@ -97,3 +97,37 @@ export function forgetSeller(token?: string): void {
     });
   }
 }
+
+// ---------------------------------------------------------------------------
+// Resumen de ventas del vendedor.
+//
+// Se pide con el pase, nunca con un código: la base saca de ahí de quién es el
+// resumen, así que no hay forma de pedir el de otro vendedor.
+// ---------------------------------------------------------------------------
+
+export interface ResumenVentas {
+  totales: {
+    pedidos: number; clientes: number; pesos: number;
+    litros: number; kilos: number; unidades: number;
+    litros_bonificados: number; kilos_bonificados: number;
+  };
+  por_estado: Record<string, number>;
+  pedidos: {
+    numero: string | null; fecha: string; cliente: string | null; cuenta: string | null;
+    total: number | null; estado: string; motivo: string | null;
+  }[];
+}
+
+export class PaseVencidoError extends Error {
+  constructor() {
+    super('Tu sesión venció. Volvé a ingresar tu PIN.');
+    this.name = 'PaseVencidoError';
+  }
+}
+
+export async function resumenDeVentas(token: string, desde: string, hasta: string): Promise<ResumenVentas> {
+  const { data, error } = await supabase.rpc('seller_summary', { p_token: token, p_desde: desde, p_hasta: hasta });
+  if (error?.message?.includes('sesion_vencida')) throw new PaseVencidoError();
+  if (error || !data) throw new Error('No se pudo cargar el resumen. Revisá la conexión.');
+  return data as ResumenVentas;
+}

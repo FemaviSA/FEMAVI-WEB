@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Loader2, Plus, Trash2, CheckCircle2, Lock, LogOut, Copy } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
 import { createOrder, sendOrderNotification, SesionVencidaError } from '../lib/orders';
 import { verifySellerPin, rememberedSeller, forgetSeller, type Seller } from '../lib/sellers';
 import { SEO, SITE_URL } from '../components/SEO';
+import MisVentas from '../components/MisVentas';
 
 const C = {
   bg: '#f6f8fa', white: '#FFFFFF', accent: '#0067ac',
@@ -243,6 +244,12 @@ export default function SellerOrder() {
   // Si el pase vence a mitad de un pedido, se vuelve al PIN con este aviso. El
   // formulario sigue montado detrás, así que lo cargado no se pierde.
   const [avisoPin, setAvisoPin] = useState<string | null>(null);
+  const [vista, setVista] = useState<'pedido' | 'ventas'>('pedido');
+  const paseVencido = useCallback(() => {
+    forgetSeller();
+    setSeller(null);
+    setAvisoPin('Tu sesión venció. Volvé a ingresar tu PIN.');
+  }, []);
   const [enviado, setEnviado] = useState(false);
   // El número lo asigna la base al guardar, así que recién se conoce acá.
   const [numero, setNumero] = useState<string | null>(null);
@@ -574,7 +581,17 @@ export default function SellerOrder() {
             maxWidth: 1000, margin: '0 auto', padding: '10px 16px',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12,
           }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: C.dark }}>Carga de pedidos</span>
+            <div style={{ display: 'flex', gap: 4, background: C.bg, borderRadius: 8, padding: 3 }}>
+              {([['pedido', 'Nuevo pedido'], ['ventas', 'Mis ventas']] as const).map(([k, r]) => (
+                <button key={k} type="button" onClick={() => setVista(k)} style={{
+                  padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                  fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
+                  background: vista === k ? C.white : 'transparent',
+                  color: vista === k ? C.dark : C.textMuted,
+                  boxShadow: vista === k ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                }}>{r}</button>
+              ))}
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ textAlign: 'right', lineHeight: 1.2 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.dark }}>{seller.name}</div>
@@ -595,6 +612,9 @@ export default function SellerOrder() {
           </div>
         </header>
 
+        {vista === 'ventas' ? (
+          <MisVentas token={seller.token} onPaseVencido={paseVencido} />
+        ) : (
         <form onSubmit={submit} style={{ maxWidth: 1000, margin: '0 auto', padding: '20px 16px 60px' }}>
           {error && (
             <div style={{
@@ -889,6 +909,7 @@ export default function SellerOrder() {
             {enviando ? 'Enviando…' : `Enviar pedido — ${money.format(total)}`}
           </button>
         </form>
+        )}
       </div>
 
       <style>{`

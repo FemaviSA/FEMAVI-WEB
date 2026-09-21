@@ -1,9 +1,10 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Package, ExternalLink, LogOut, Menu, X, ChevronRight, Mail, BookOpen } from 'lucide-react';
+import { Package, ExternalLink, LogOut, Menu, X, ChevronRight, Mail, BookOpen, ClipboardList } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { getQuoteCounts } from '../lib/quotes';
 import { useQuotesRealtime } from '../hooks/useQuotesRealtime';
+import { supabase } from '../lib/supabase';
 
 type Crumb = { label: string; to?: string };
 
@@ -20,6 +21,20 @@ export function AdminLayout({
   const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [newQuotes, setNewQuotes] = useState(0);
+  // Pedidos que esperan aprobación: es lo que administración tiene que mirar primero.
+  const [porAprobar, setPorAprobar] = useState(0);
+
+  useEffect(() => {
+    let vigente = true;
+    const cargar = async () => {
+      const { count } = await supabase
+        .from('orders').select('id', { count: 'exact', head: true }).eq('status', 'recibido');
+      if (vigente) setPorAprobar(count ?? 0);
+    };
+    cargar();
+    const id = setInterval(cargar, 60_000);
+    return () => { vigente = false; clearInterval(id); };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -97,6 +112,15 @@ export function AdminLayout({
           <div className="px-3 mb-2 text-[10px] font-semibold text-slate-600 uppercase tracking-widest">
             Gestión
           </div>
+          <NavLink to="/admin/pedidos" className={navItem}>
+            <ClipboardList className="w-4 h-4" />
+            <span className="flex-1">Pedidos</span>
+            {porAprobar > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+                {porAprobar}
+              </span>
+            )}
+          </NavLink>
           <NavLink to="/admin" end className={navItem}>
             <Package className="w-4 h-4" />
             <span className="flex-1">Productos</span>

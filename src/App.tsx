@@ -20,6 +20,7 @@ const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
 const ProductForm = lazy(() => import('./pages/admin/ProductForm'));
 const Quotes = lazy(() => import('./pages/admin/Quotes'));
 const QuoteDetail = lazy(() => import('./pages/admin/QuoteDetail'));
+const Pedidos = lazy(() => import('./pages/admin/Pedidos'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Blog = lazy(() => import('./pages/Blog'));
 const BlogPost = lazy(() => import('./pages/BlogPost'));
@@ -97,6 +98,7 @@ export default function App() {
           <Route path="/admin/products/new" element={<RequireAuth><ProductForm /></RequireAuth>} />
           <Route path="/admin/products/:id" element={<RequireAuth><ProductForm /></RequireAuth>} />
           <Route path="/admin/cotizaciones" element={<RequireAuth><Quotes /></RequireAuth>} />
+          <Route path="/admin/pedidos" element={<RequireAuth><Pedidos /></RequireAuth>} />
           <Route path="/admin/cotizaciones/:id" element={<RequireAuth><QuoteDetail /></RequireAuth>} />
           <Route path="/admin/blog" element={<RequireAuth><Articles /></RequireAuth>} />
           <Route path="/admin/blog/new" element={<RequireAuth><ArticleForm /></RequireAuth>} />

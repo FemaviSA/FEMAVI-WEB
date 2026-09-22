@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Package, ExternalLink, LogOut, Menu, X, ChevronRight, Mail, BookOpen, ClipboardList, Users } from 'lucide-react';
+import { Package, ExternalLink, LogOut, Menu, X, ChevronRight, Mail, BookOpen, ClipboardList, Users, TrendingDown } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { getQuoteCounts } from '../lib/quotes';
 import { useQuotesRealtime } from '../hooks/useQuotesRealtime';
@@ -124,6 +124,10 @@ export function AdminLayout({
           <NavLink to="/admin/clientes" className={navItem}>
             <Users className="w-4 h-4" />
             <span className="flex-1">Clientes</span>
+          </NavLink>
+          <NavLink to="/admin/se-caen" className={navItem}>
+            <TrendingDown className="w-4 h-4" />
+            <span className="flex-1">Se están cayendo</span>
           </NavLink>
           <NavLink to="/admin" end className={navItem}>
             <Package className="w-4 h-4" />

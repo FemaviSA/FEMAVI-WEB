@@ -128,3 +128,79 @@ export async function estadoSincronizacion(): Promise<{ ultimo_uso_at: string | 
   if (error) return null;
   return data as { ultimo_uso_at: string | null; ultimo_cambio_at: string | null };
 }
+
+// ── Clientes que se están cayendo ──
+
+export type TipoCaida = 'caida' | 'perdido' | 'dormido';
+
+export interface ClienteEnCaida {
+  codigo: string;
+  razon_social: string | null;
+  localidad: string | null;
+  vendedor: string | null;
+  zona: string | null;
+  telefonos: string | null;
+  ultima_compra: string | null;
+  compras: number;
+  volumen: number;
+  volumen_12m: number;
+  volumen_12m_anterior: number;
+  volumen_previo2: number;
+  /** Litros/kg por año que se dejaron de vender. */
+  perdido: number;
+  caida_pct: number | null;
+  tipo: TipoCaida;
+  total_filas: number;
+}
+
+export interface FiltrosCaida {
+  vendedor?: string;
+  zona?: string;
+  tipo?: TipoCaida | '';
+  min?: number;
+  orden?: 'perdido' | 'porcentaje' | 'ultima';
+  pagina?: number;
+}
+
+export const ETIQUETA_CAIDA: Record<TipoCaida, string> = {
+  caida: 'Bajó fuerte',
+  perdido: 'Dejó de comprar',
+  dormido: 'Dormido',
+};
+
+const normalizarCaida = (data: unknown): ClienteEnCaida[] =>
+  ((data ?? []) as ClienteEnCaida[]).map(c => ({
+    ...c,
+    compras: Number(c.compras), volumen: Number(c.volumen), volumen_12m: Number(c.volumen_12m),
+    volumen_12m_anterior: Number(c.volumen_12m_anterior), volumen_previo2: Number(c.volumen_previo2),
+    perdido: Number(c.perdido), caida_pct: c.caida_pct === null ? null : Number(c.caida_pct),
+    total_filas: Number(c.total_filas),
+  }));
+
+export async function clientesEnCaida(f: FiltrosCaida): Promise<ClienteEnCaida[]> {
+  const { data, error } = await supabase.rpc('hist_clientes_en_caida', {
+    p_vendedor: f.vendedor || null,
+    p_zona: f.zona || null,
+    p_tipo: f.tipo || null,
+    p_min: f.min ?? null,
+    p_orden: f.orden || 'perdido',
+    p_limite: POR_PAGINA,
+    p_offset: (f.pagina ?? 0) * POR_PAGINA,
+  });
+  if (error) throw new Error(error.message);
+  return normalizarCaida(data);
+}
+
+/** Los del vendedor dueño del token. */
+export async function misClientesEnCaida(token: string, f: Omit<FiltrosCaida, 'vendedor' | 'zona'>): Promise<ClienteEnCaida[]> {
+  const { data, error } = await supabase.rpc('seller_clientes_en_caida', {
+    p_token: token,
+    p_tipo: f.tipo || null,
+    p_min: f.min ?? null,
+    p_orden: f.orden || 'perdido',
+    p_limite: POR_PAGINA,
+    p_offset: (f.pagina ?? 0) * POR_PAGINA,
+  });
+  if (error) throw errorDeVendedor(error);
+  return normalizarCaida(data);
+}

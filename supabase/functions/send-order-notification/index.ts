@@ -94,6 +94,12 @@ Deno.serve(async (req: Request) => {
       if (s?.name) vendedor = s.name + " (" + o.seller_code + ")";
     }
 
+    // FemWay es otra unidad de negocio: tiene que verse de una en el asunto,
+    // en la planilla y en el nombre del archivo, para que administración no
+    // mezcle un pedido con el otro.
+    const esFemway = o.proyecto === "femway";
+    const nombreProyecto = esFemway ? "FemWay" : "FEMAVI";
+
     const items: OrderItem[] = Array.isArray(o.items) ? o.items : [];
     const creado = new Date(o.created_at);
     const fecha = creado.toLocaleDateString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" });
@@ -147,7 +153,7 @@ Deno.serve(async (req: Request) => {
     pintarFila(5, AZUL_OSCURO);
     ws.mergeCells("B5:E5");
     const titulo = ws.getCell("B5");
-    titulo.value = "P E D I D O   N°  " + dato(o.order_number);
+    titulo.value = (esFemway ? "FEMWAY  ·  " : "") + "P E D I D O   N°  " + dato(o.order_number);
     titulo.font = F(true, 15, BLANCO);
     titulo.alignment = { horizontal: "left", vertical: "middle" };
 
@@ -320,7 +326,7 @@ Deno.serve(async (req: Request) => {
 
     const empresaSegura = String(o.company || "cliente").toLowerCase()
       .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-    const filename = "pedido-" + dato(o.order_number) + "-" + empresaSegura + ".xlsx";
+    const filename = "pedido-" + (esFemway ? "femway-" : "") + dato(o.order_number) + "-" + empresaSegura + ".xlsx";
 
     // ===================== MAIL =====================
     const plata = new Intl.NumberFormat("es-AR", {
@@ -354,7 +360,7 @@ Deno.serve(async (req: Request) => {
       '<div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto">' +
       '<div style="background:#1B3A6B;padding:18px 26px;border-radius:8px 8px 0 0">' +
       `<h2 style="color:#fff;margin:0;font-size:19px">Pedido N° ${esc(dato(o.order_number))} · Cuenta ${esc(dato(o.account))}</h2>` +
-      `<p style="color:rgba(255,255,255,.75);margin:4px 0 0;font-size:13px">${esc(vendedor)} · ${fecha}</p>` +
+      `<p style="color:rgba(255,255,255,.75);margin:4px 0 0;font-size:13px">${esc(nombreProyecto)} · ${esc(vendedor)} · ${fecha}</p>` +
       "</div>" +
       '<div style="border:1px solid #e2e8ee;border-top:none;padding:20px 26px;border-radius:0 0 8px 8px">' +
 
@@ -402,7 +408,7 @@ Deno.serve(async (req: Request) => {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY no configurada");
 
-    const asunto = (prueba === true ? "[PRUEBA] " : "") +
+    const asunto = (prueba === true ? "[PRUEBA] " : "") + (esFemway ? "[FemWay] " : "") +
       "Pedido " + dato(o.order_number) + " · " + dato(o.account) +
       " · " + vendedor + " · " + dato(o.company);
 

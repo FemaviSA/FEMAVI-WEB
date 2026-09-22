@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { NOMBRE_PROYECTO, PROYECTOS, type Proyecto } from '../../lib/proyectos';
 import { Download, Loader2, RefreshCw, Search } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import PedidoDetalle, { ChipEstado } from './PedidoDetalle';
@@ -23,6 +24,8 @@ export default function Pedidos() {
 
   // Arranca en "Recibidos": lo primero que hay que mirar es lo que espera aprobación.
   const [pestaña, setPestaña] = useState<Pestaña>('recibido');
+  // FEMAVI y FemWay se miran por separado, nunca juntos: es el corte de más arriba.
+  const [proyecto, setProyecto] = useState<Proyecto>('femavi');
   const [vendedor, setVendedor] = useState('');
   const [cuenta, setCuenta] = useState('');
   const [desde, setDesde] = useState('');
@@ -55,6 +58,7 @@ export default function Pedidos() {
   const filtradosSinEstado = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     return pedidos.filter(p => {
+      if (p.proyecto !== proyecto) return false;
       if (vendedor && (p.seller_code ?? '') !== vendedor) return false;
       if (cuenta && p.account !== cuenta) return false;
       const dia = diaAR(p.created_at);
@@ -66,7 +70,7 @@ export default function Pedidos() {
       }
       return true;
     });
-  }, [pedidos, vendedor, cuenta, desde, hasta, busqueda]);
+  }, [pedidos, proyecto, vendedor, cuenta, desde, hasta, busqueda]);
 
   const conteo = useMemo(() => {
     const c: Record<string, number> = { todos: filtradosSinEstado.length };
@@ -113,6 +117,27 @@ export default function Pedidos() {
         </div>
       }
     >
+      {/* Proyecto: el corte principal. Lo de cada uno se mide aparte. */}
+      <div className="flex gap-2 mb-4">
+        {PROYECTOS.map(k => {
+          const nuevos = pedidos.filter(p => p.proyecto === k && p.status === 'recibido').length;
+          const activo = proyecto === k;
+          return (
+            <button key={k} onClick={() => setProyecto(k)}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition ring-1 ${activo
+                ? (k === 'femway' ? 'bg-violet-600 text-white ring-violet-600' : 'bg-sky-600 text-white ring-sky-600')
+                : 'bg-white text-slate-600 ring-slate-200 hover:bg-slate-50'}`}>
+              {NOMBRE_PROYECTO[k]}
+              {nuevos > 0 && (
+                <span className={`ml-2 px-1.5 py-0.5 rounded-full text-[10px] ${activo ? 'bg-white/20' : 'bg-amber-500 text-white'}`}>
+                  {nuevos}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Pestañas por estado */}
       <div className="flex gap-1 overflow-x-auto pb-1 mb-4">
         {(['recibido', 'aprobado', 'ingresado', 'facturado', 'entregado', 'rechazado', 'todos'] as Pestaña[]).map(e => (

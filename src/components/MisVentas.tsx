@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { resumenDeVentas, PaseVencidoError, type ResumenVentas } from '../lib/sellers';
+import { NOMBRE_PROYECTO, type Proyecto } from '../lib/proyectos';
 
 const ETIQUETA: Record<string, string> = {
   recibido: 'Recibido', aprobado: 'Aprobado', ingresado: 'Ingresado',
@@ -33,8 +34,10 @@ function rango(p: Periodo): [string, string] {
   return [dia(new Date(y, 0, 1, 12)), dia(hoy)];
 }
 
-export default function MisVentas({ token, onPaseVencido }: { token: string; onPaseVencido: () => void }) {
+export default function MisVentas({ token, proyectos, onPaseVencido }: { token: string; proyectos: Proyecto[]; onPaseVencido: () => void }) {
   const [periodo, setPeriodo] = useState<Periodo>('mes');
+  // Cada proyecto se mira por separado: nunca se suman FEMAVI y FemWay.
+  const [proyecto, setProyecto] = useState<Proyecto>(proyectos[0]);
   const [datos, setDatos] = useState<ResumenVentas | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +47,7 @@ export default function MisVentas({ token, onPaseVencido }: { token: string; onP
     setCargando(true);
     setError(null);
     const [desde, hasta] = rango(periodo);
-    resumenDeVentas(token, desde, hasta)
+    resumenDeVentas(token, desde, hasta, proyecto)
       .then(r => { if (vigente) setDatos(r); })
       .catch(e => {
         if (!vigente) return;
@@ -53,14 +56,28 @@ export default function MisVentas({ token, onPaseVencido }: { token: string; onP
       })
       .finally(() => { if (vigente) setCargando(false); });
     return () => { vigente = false; };
-  }, [token, periodo, onPaseVencido]);
+  }, [token, periodo, proyecto, onPaseVencido]);
 
   const t = datos?.totales;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-        <h1 className="text-2xl font-extrabold text-slate-900">Mis ventas</h1>
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900">Mis ventas</h1>
+          {proyectos.length > 1 && (
+            <div className="flex gap-1 mt-2">
+              {proyectos.map(p => (
+                <button key={p} onClick={() => setProyecto(p)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold ring-1 ${proyecto === p
+                    ? (p === 'femway' ? 'bg-violet-600 text-white ring-violet-600' : 'bg-sky-600 text-white ring-sky-600')
+                    : 'bg-white text-slate-500 ring-slate-200'}`}>
+                  {NOMBRE_PROYECTO[p]}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
           {([['mes', 'Este mes'], ['mes_pasado', 'Mes pasado'], ['90', '90 días'], ['anio', 'Este año']] as [Periodo, string][]).map(([k, r]) => (
             <button key={k} onClick={() => setPeriodo(k)}
@@ -91,7 +108,7 @@ export default function MisVentas({ token, onPaseVencido }: { token: string; onP
             ))}
           </div>
           <p className="text-xs text-slate-400 mb-6">
-            No incluye pedidos rechazados. El volumen suma litros y kilos juntos.
+            {proyectos.length > 1 ? 'Solo ' + NOMBRE_PROYECTO[proyecto] + '. ' : ''}No incluye pedidos rechazados. El volumen suma litros y kilos juntos.
           </p>
 
           <div className="rounded-xl bg-white border border-slate-200 overflow-hidden">

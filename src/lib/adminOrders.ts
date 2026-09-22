@@ -1,7 +1,9 @@
 import { supabase } from './supabase';
+import { NOMBRE_PROYECTO, type Proyecto } from './proyectos';
 
 export const ESTADOS = ['recibido', 'aprobado', 'ingresado', 'facturado', 'entregado', 'rechazado'] as const;
 export type Estado = (typeof ESTADOS)[number];
+export type { Proyecto };
 
 export const ETIQUETA_ESTADO: Record<Estado, string> = {
   recibido: 'Recibido',
@@ -29,6 +31,8 @@ export interface ItemPedido {
 
 export interface Pedido {
   id: number;
+  /** FEMAVI o FemWay. Nunca se mezclan en pantalla ni en los totales. */
+  proyecto: Proyecto;
   order_number: string | null;
   created_at: string;
   status: Estado;
@@ -143,11 +147,11 @@ export function exportarCsv(pedidos: Pedido[], nombreVendedor: (code: string | n
     const s = String(v ?? '');
     return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
-  const cabecera = ['Pedido', 'Fecha', 'Estado', 'Vendedor', 'Cuenta', 'N° cliente', 'Cliente nuevo', 'Razón social',
+  const cabecera = ['Pedido', 'Fecha', 'Proyecto', 'Estado', 'Vendedor', 'Cuenta', 'N° cliente', 'Cliente nuevo', 'Razón social',
     'Ciudad', 'Zona', 'Transporte', 'Volumen L/kg', 'Bonificado L/kg', 'Total $', 'Motivo rechazo'];
   const filas = pedidos.map(p => {
     const v = volumenDe(p.items);
-    return [p.order_number, fmtFecha(p.created_at), ETIQUETA_ESTADO[p.status] ?? p.status,
+    return [p.order_number, fmtFecha(p.created_at), NOMBRE_PROYECTO[p.proyecto] ?? p.proyecto, ETIQUETA_ESTADO[p.status] ?? p.status,
       nombreVendedor(p.seller_code), p.account, p.client_code, p.is_new_client ? 'sí' : '', p.company,
       p.bill_city, p.zone, p.carrier,
       String(v.volumen).replace('.', ','), String(v.bonificado).replace('.', ','), String(p.total ?? 0).replace('.', ','), p.rejection_reason];

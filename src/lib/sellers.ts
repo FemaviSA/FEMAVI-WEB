@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { proyectosDe, type Proyecto } from './proyectos';
 
 export interface Seller {
   code: string;
@@ -9,6 +10,8 @@ export interface Seller {
    * lo que diga el formulario.
    */
   token: string;
+  /** En qué proyectos trabaja: ['femavi'], ['femway'] o los dos. */
+  proyectos: Proyecto[];
 }
 
 export type PinResult =
@@ -33,7 +36,10 @@ export async function verifySellerPin(code: string, pin: string): Promise<PinRes
   }
 
   if (data?.ok && data?.token) {
-    const seller: Seller = { code: String(data.code), name: String(data.name), token: String(data.token) };
+    const seller: Seller = {
+      code: String(data.code), name: String(data.name), token: String(data.token),
+      proyectos: proyectosDe(data.proyectos),
+    };
     remember(seller);
     return { ok: true, seller };
   }
@@ -58,12 +64,15 @@ const STORAGE_KEY = 'femavi_vendedor';
 interface StoredSession {
   code: string;
   name: string;
+  proyectos?: Proyecto[];
   token: string;
 }
 
 function remember(seller: Seller): void {
   try {
-    const payload: StoredSession = { code: seller.code, name: seller.name, token: seller.token };
+    const payload: StoredSession = {
+      code: seller.code, name: seller.name, token: seller.token, proyectos: seller.proyectos,
+    };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch {
     // Navegación privada o almacenamiento bloqueado: seguimos sin recordar,
@@ -78,7 +87,9 @@ export function rememberedSeller(code: string): Seller | null {
     const s = JSON.parse(raw) as Partial<StoredSession>;
     // Sesiones guardadas antes de que existiera el pase no sirven: se pide el PIN.
     if (s.code !== code || !s.token || !s.name) return null;
-    return { code: s.code, name: s.name, token: s.token };
+    // Las sesiones guardadas antes de que existiera FemWay no traen proyectos:
+    // se asume FEMAVI y se corrige al consultar el perfil.
+    return { code: s.code, name: s.name, token: s.token, proyectos: proyectosDe(s.proyectos) };
   } catch {
     return null;
   }
@@ -126,9 +137,21 @@ export class PaseVencidoError extends Error {
   }
 }
 
-export async function resumenDeVentas(token: string, desde: string, hasta: string): Promise<ResumenVentas> {
-  const { data, error } = await supabase.rpc('seller_summary', { p_token: token, p_desde: desde, p_hasta: hasta });
+export async function resumenDeVentas(token: string, desde: string, hasta: string, proyecto: Proyecto): Promise<ResumenVentas> {
+  const { data, error } = await supabase.rpc('seller_summary', { p_token: token, p_desde: desde, p_hasta: hasta, p_proyecto: proyecto });
   if (error?.message?.includes('sesion_vencida')) throw new PaseVencidoError();
   if (error || !data) throw new Error('No se pudo cargar el resumen. Revisá la conexión.');
   return data as ResumenVentas;
+}
+
+/**
+ * Vuelve a preguntar en qué proyectos trabaja el vendedor. Hace falta para las
+ * sesiones abiertas antes de que existiera FemWay, y para que un cambio se note
+ * sin tener que volver a poner el PIN.
+ */
+export async function perfilDeVendedor(token: string): Promise<{ name: string; proyectos: Proyecto[] } | null> {
+  const { data, error } = await supabase.rpc('seller_perfil', { p_token: token });
+  if (error?.message?.includes('sesion_vencida')) throw new PaseVencidoError();
+  if (error || !data) return null;
+  return { name: String(data.name), proyectos: proyectosDe(data.proyectos) };
 }

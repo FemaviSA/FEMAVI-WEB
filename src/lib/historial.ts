@@ -121,3 +121,10 @@ export const IVA: Record<string, string> = { '1': 'Responsable inscripto' };
 
 /** "010" del sistema viejo -> "10" de la web. */
 export const codigoVendedorWeb = (v: string | null) => (v ? String(Number(v)) : '');
+
+/** Cuándo pasó por última vez la PC de la oficina que sincroniza el sistema viejo. */
+export async function estadoSincronizacion(): Promise<{ ultimo_uso_at: string | null; ultimo_cambio_at: string | null } | null> {
+  const { data, error } = await supabase.rpc('hist_estado_sync');
+  if (error) return null;
+  return data as { ultimo_uso_at: string | null; ultimo_cambio_at: string | null };
+}

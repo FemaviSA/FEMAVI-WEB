@@ -1,0 +1,8 @@
+node.exe
+config.json
+estado.json
+estado.json.tmp
+huella.txt
+resultado.txt
+sincronizar.log
+sincronizar.lock

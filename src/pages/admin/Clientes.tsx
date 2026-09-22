@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Loader2, Search, TrendingDown, TrendingUp } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { listarVendedores, type Vendedor, fmtNum } from '../../lib/adminOrders';
-import { buscarClientes, codigoVendedorWeb, POR_PAGINA, type ClienteLista, type FiltrosClientes } from '../../lib/historial';
+import { buscarClientes, codigoVendedorWeb, estadoSincronizacion, POR_PAGINA, type ClienteLista, type FiltrosClientes } from '../../lib/historial';
 
 const fechaCorta = (iso: string | null) =>
   iso ? new Date(iso + 'T12:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—';
@@ -18,6 +18,19 @@ function hace(iso: string | null): string {
   return `hace ${anios} año${anios > 1 ? 's' : ''}`;
 }
 
+/** La PC de la oficina avisa en cada pasada (cada 15 min): si hace más de una hora que no avisa, algo pasa. */
+function EstadoSync({ sync }: { sync: Awaited<ReturnType<typeof estadoSincronizacion>> }) {
+  const ultimo = sync?.ultimo_uso_at;
+  if (!ultimo) return <span className="block text-xs text-slate-400 mt-1">Todavía no se sincroniza solo: los datos son de la última copia manual.</span>;
+  const min = Math.floor((Date.now() - new Date(ultimo).getTime()) / 60000);
+  const cuando = min < 1 ? 'recién' : min < 60 ? `hace ${min} min` : min < 1440 ? `hace ${Math.floor(min / 60)} h` : `hace ${Math.floor(min / 1440)} días`;
+  return (
+    <span className={`block text-xs mt-1 ${min > 60 ? 'text-red-600 font-semibold' : 'text-slate-400'}`}>
+      Sincronizado con el sistema {cuando}{min > 60 ? ' — revisar la PC de la oficina (¿apagada o sin internet?)' : ''}.
+    </span>
+  );
+}
+
 export default function Clientes() {
   const [filtros, setFiltros] = useState<FiltrosClientes>({ orden: 'ultima', estado: '', pagina: 0 });
   const [texto, setTexto] = useState('');
@@ -26,7 +39,10 @@ export default function Clientes() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [sync, setSync] = useState<Awaited<ReturnType<typeof estadoSincronizacion>> | undefined>(undefined);
+
   useEffect(() => { listarVendedores().then(setVendedores).catch(() => {}); }, []);
+  useEffect(() => { estadoSincronizacion().then(setSync); }, []);
 
   // La búsqueda por texto espera a que se deje de tipear.
   useEffect(() => {
@@ -63,6 +79,7 @@ export default function Clientes() {
     <AdminLayout crumbs={[{ label: 'Clientes' }]}>
       <p className="text-sm text-slate-500 mb-4">
         Historial del sistema de gestión desde 1995. Los volúmenes suman litros y kilos juntos, netos de notas de crédito.
+        {sync !== undefined && <EstadoSync sync={sync} />}
       </p>
 
       <div className="flex flex-wrap items-center gap-2 mb-4">

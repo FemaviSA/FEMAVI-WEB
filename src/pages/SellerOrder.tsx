@@ -6,6 +6,7 @@ import { createOrder, sendOrderNotification, SesionVencidaError } from '../lib/o
 import { verifySellerPin, rememberedSeller, forgetSeller, type Seller } from '../lib/sellers';
 import { SEO, SITE_URL } from '../components/SEO';
 import MisVentas from '../components/MisVentas';
+import MisClientes from '../components/MisClientes';
 
 const C = {
   bg: '#f6f8fa', white: '#FFFFFF', accent: '#0067ac',
@@ -244,7 +245,7 @@ export default function SellerOrder() {
   // Si el pase vence a mitad de un pedido, se vuelve al PIN con este aviso. El
   // formulario sigue montado detrás, así que lo cargado no se pierde.
   const [avisoPin, setAvisoPin] = useState<string | null>(null);
-  const [vista, setVista] = useState<'pedido' | 'ventas'>('pedido');
+  const [vista, setVista] = useState<'pedido' | 'ventas' | 'clientes'>('pedido');
   const paseVencido = useCallback(() => {
     forgetSeller();
     setSeller(null);
@@ -582,7 +583,7 @@ export default function SellerOrder() {
             display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12,
           }}>
             <div style={{ display: 'flex', gap: 4, background: C.bg, borderRadius: 8, padding: 3 }}>
-              {([['pedido', 'Nuevo pedido'], ['ventas', 'Mis ventas']] as const).map(([k, r]) => (
+              {([['pedido', 'Nuevo pedido'], ['ventas', 'Mis ventas'], ['clientes', 'Mis clientes']] as const).map(([k, r]) => (
                 <button key={k} type="button" onClick={() => setVista(k)} style={{
                   padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
                   fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
@@ -614,6 +615,8 @@ export default function SellerOrder() {
 
         {vista === 'ventas' ? (
           <MisVentas token={seller.token} onPaseVencido={paseVencido} />
+        ) : vista === 'clientes' ? (
+          <MisClientes token={seller.token} vendedor={seller} onPaseVencido={paseVencido} />
         ) : (
         <form onSubmit={submit} style={{ maxWidth: 1000, margin: '0 auto', padding: '20px 16px 60px' }}>
           {error && (

@@ -1,7 +1,9 @@
 import { supabase } from './supabase';
+import { PaseVencidoError } from './sellers';
 
-// Historial del sistema viejo (RM/COBOL). Solo lo leen administradores: las
-// funciones de la base rechazan a cualquier otro.
+// Historial del sistema viejo (RM/COBOL). Lo leen los administradores (todo) y
+// cada vendedor (solo sus clientes, con el token de su sesión). Las funciones
+// de la base rechazan a cualquier otro.
 
 export interface ClienteLista {
   codigo: string;
@@ -41,12 +43,39 @@ export async function buscarClientes(f: FiltrosClientes): Promise<ClienteLista[]
     p_offset: (f.pagina ?? 0) * POR_PAGINA,
   });
   if (error) throw new Error(error.message);
-  return ((data ?? []) as ClienteLista[]).map(c => ({
+  return normalizarLista(data);
+}
+
+const normalizarLista = (data: unknown): ClienteLista[] =>
+  ((data ?? []) as ClienteLista[]).map(c => ({
     ...c,
     compras: Number(c.compras), volumen: Number(c.volumen),
     volumen_12m: Number(c.volumen_12m), volumen_12m_anterior: Number(c.volumen_12m_anterior),
     total_filas: Number(c.total_filas),
   }));
+
+function errorDeVendedor(error: { message?: string }): Error {
+  return error.message?.includes('sesion_vencida') ? new PaseVencidoError() : new Error(error.message);
+}
+
+/** Clientes del vendedor dueño del token. La base pone el filtro; 50 por página. */
+export async function misClientes(token: string, f: Omit<FiltrosClientes, 'vendedor' | 'zona'>): Promise<ClienteLista[]> {
+  const { data, error } = await supabase.rpc('seller_clientes', {
+    p_token: token,
+    p_q: f.q?.trim() || null,
+    p_estado: f.estado || null,
+    p_orden: f.orden || 'ultima',
+    p_offset: (f.pagina ?? 0) * POR_PAGINA,
+  });
+  if (error) throw errorDeVendedor(error);
+  return normalizarLista(data);
+}
+
+/** Ficha de un cliente del vendedor; null si no existe o no es suyo. */
+export async function miFichaCliente(token: string, codigo: string): Promise<FichaCliente | null> {
+  const { data, error } = await supabase.rpc('seller_ficha_cliente', { p_token: token, p_codigo: codigo });
+  if (error) throw errorDeVendedor(error);
+  return (data as FichaCliente) ?? null;
 }
 
 export interface Renglon {

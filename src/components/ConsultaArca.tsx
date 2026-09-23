@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Building2, Loader2, Search } from 'lucide-react';
 import { consultarArca, FaltaCertificadoError, type PersonaArca } from '../lib/arca';
 import { buscarClientes, type ClienteLista } from '../lib/historial';
@@ -19,11 +19,13 @@ function Dato({ rotulo, valor }: { rotulo: string; valor: React.ReactNode }) {
   );
 }
 
-export default function ConsultaArca({ cuitInicial, orderId, razonPedido }: {
+export default function ConsultaArca({ cuitInicial, orderId, razonPedido, automatico }: {
   cuitInicial?: string | null;
   orderId?: number;
   /** Para comparar lo que dice ARCA con lo que escribió el vendedor. */
   razonPedido?: string | null;
+  /** Consultar sola al abrir, sin que haya que tocar el botón. */
+  automatico?: boolean;
 }) {
   const [texto, setTexto] = useState(cuitInicial ?? '');
   const [datos, setDatos] = useState<PersonaArca | null>(null);
@@ -65,6 +67,15 @@ export default function ConsultaArca({ cuitInicial, orderId, razonPedido }: {
       setCargando(false);
     }
   };
+
+  // Al abrir el pedido se consulta sola; la respuesta queda guardada una semana,
+  // así abrir el mismo pedido dos veces no molesta a ARCA de nuevo.
+  useEffect(() => {
+    if (!automatico) return;
+    const digitos = soloDigitos(cuitInicial ?? '');
+    if (digitos.length === 11) consultar(digitos);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [automatico, cuitInicial]);
 
   const coincideNombre = datos && razonPedido
     ? datos.razon_social?.toLowerCase().replace(/[^a-z0-9]/g, '') ===

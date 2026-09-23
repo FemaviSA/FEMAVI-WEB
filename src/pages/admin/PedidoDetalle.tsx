@@ -108,11 +108,17 @@ export default function PedidoDetalle({
                 <ShieldCheck className="w-4 h-4" /> Antes de aprobar
               </h3>
               <ControlesPedido orderId={pedido.id} recargar={pedido.status} />
+              <div className="mt-3">
+                <ConsultaArca cuitInicial={pedido.cuit} orderId={pedido.id}
+                  razonPedido={pedido.company} automatico />
+              </div>
             </section>
           )}
 
-          {/* Consulta al padrón, para no tener que entrar a la página de ARCA */}
-          <ConsultaArca cuitInicial={pedido.cuit} orderId={pedido.id} razonPedido={pedido.company} />
+          {/* Fuera del momento de aprobar, queda a mano pero sin consultar sola */}
+          {pedido.status !== 'recibido' && (
+            <ConsultaArca cuitInicial={pedido.cuit} orderId={pedido.id} razonPedido={pedido.company} />
+          )}
 
           {/* Acciones */}
           {pedido.status !== 'rechazado' && pedido.status !== 'entregado' && (

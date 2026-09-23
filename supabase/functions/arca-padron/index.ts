@@ -206,7 +206,7 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { cuit, order_id } = await req.json();
+    const { cuit, order_id, cache_dias } = await req.json();
     const digitos = String(cuit ?? "").replace(/\D/g, "");
     if (digitos.length !== 11) return json({ error: "El CUIT tiene que tener 11 dígitos." }, 400);
 
@@ -230,14 +230,32 @@ Deno.serve(async (req: Request) => {
     const representada = Deno.env.get("ARCA_CUIT");
     if (!representada) throw new Error("FALTA_CERTIFICADO");
 
-    const registrar = (ok: boolean, detalle: string) =>
+    const registrar = (ok: boolean, detalle: string, datos: unknown = null) =>
       supabase.from("arca_consultas").insert({
         cuit: digitos,
         order_id: order_id ?? null,
         consultado_por: usuario?.user?.email ?? null,
         ok,
         detalle,
+        datos,
       });
+
+    // Si ya se preguntó hace poco, se usa lo guardado: ARCA no cambia de un
+    // día para el otro y así no se la molesta en cada apertura del pedido.
+    const dias = Number(cache_dias ?? 7);
+    if (dias > 0) {
+      const desde = new Date(Date.now() - dias * 86400000).toISOString();
+      const { data: previa } = await supabase
+        .from("arca_consultas")
+        .select("datos, consultado_at")
+        .eq("cuit", digitos).eq("ok", true).not("datos", "is", null)
+        .gte("consultado_at", desde)
+        .order("consultado_at", { ascending: false })
+        .limit(1).maybeSingle();
+      if (previa?.datos) {
+        return json({ ok: true, datos: previa.datos, cacheado: true, consultado_at: previa.consultado_at });
+      }
+    }
 
     const parser = new XMLParser({ ignoreAttributes: true, removeNSPrefix: true, parseTagValue: false });
     let ultimoError = "";
@@ -276,7 +294,7 @@ Deno.serve(async (req: Request) => {
         }
 
         const datos = ordenarPersona(persona, servicio);
-        await registrar(true, datos.razon_social ?? "");
+        await registrar(true, datos.razon_social ?? "", datos);
         if (intentos.length) {
           await registrar(false, "fallaron antes: " + intentos.map(i => i.servicio + " -> " + i.error).join(" | "));
         }

@@ -81,8 +81,8 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
       {dup.length > 0 && (
         <Fila tono={c.duplicado_grave ? 'mal' : 'aviso'} icono={<AlertTriangle className="w-4 h-4" />}
           titulo={c.duplicado_grave
-            ? `Este cliente ya existe en FEMAVI y el pedido es de ${NOMBRE_PROYECTO.femway}`
-            : 'Puede ser un cliente que ya está en el sistema'}>
+            ? `Ojo: ya es cliente de FEMAVI y compró en el último año`
+            : 'Ya existe en el sistema, pero no compra hace más de un año'}>
           <ul className="mt-1.5 space-y-1">
             {dup.map(d => (
               <li key={d.codigo} className="text-xs">
@@ -92,6 +92,7 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
                 <span className="opacity-80">
                   {' '}· cód. {d.codigo}{d.localidad ? ` · ${d.localidad}` : ''}
                   {' '}· última compra {fecha(d.ultima_compra)}
+                  {d.compro_ultimo_anio ? ' (en el último año)' : ' (dormido)'}
                   {' '}· {d.coincide_por === 'cuit' ? 'mismo CUIT' : `nombre parecido (${Math.round((d.parecido ?? 0) * 100)}%)`}
                 </span>
               </li>

@@ -177,13 +177,17 @@ export interface ControlesPedido {
   duplicados_sistema: {
     codigo: string; razon_social: string | null; cuit: string | null; localidad: string | null;
     vendedor: string | null; ultima_compra: string | null;
+    /** Si le compró a FEMAVI en los últimos 12 meses. */
+    compro_ultimo_anio: boolean;
     coincide_por: 'cuit' | 'nombre'; parecido: number | null;
   }[];
   duplicados_web: {
     id: number; numero: string | null; fecha: string; proyecto: Proyecto;
     company: string | null; cuit: string | null; vendedor: string | null; estado: Estado;
   }[];
-  /** Un cliente "nuevo" de FemWay que ya existe en FEMAVI: eso hay que mirarlo sí o sí. */
+  /** Cuántos de los encontrados le compraron a FEMAVI en el último año. */
+  duplicados_vivos: number;
+  /** Un cliente "nuevo" de FemWay que además sigue comprando en FEMAVI. */
   duplicado_grave: boolean;
   precio: { estado: string; mensaje: string };
 }

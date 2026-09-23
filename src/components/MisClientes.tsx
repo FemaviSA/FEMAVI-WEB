@@ -142,9 +142,15 @@ export default function MisClientes({ token, vendedor, onPaseVencido }: Props) {
                       {filtros.producto && c.ultima_vez_producto ? ` · ese producto: ${fechaCorta(c.ultima_vez_producto)}` : ''}
                       </span>
                     </span>
-                    <span className="w-32 text-sm text-right">
+                    <span className="w-40 text-sm text-right">
                       <span className="text-slate-800">{fechaCorta(c.ultima_compra)}</span>
-                      <span className="block text-xs text-slate-400">{hace(c.ultima_compra)}</span>
+                      {filtros.atrasados && c.dias_tipicos ? (
+                        <span className="block text-xs text-red-600 font-semibold">
+                          compra cada ~{c.dias_tipicos} d · hace {c.dias_sin_comprar} d
+                        </span>
+                      ) : (
+                        <span className="block text-xs text-slate-400">{hace(c.ultima_compra)}</span>
+                      )}
                     </span>
                   </button>
                 </li>

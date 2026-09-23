@@ -110,6 +110,7 @@ export default function Clientes() {
                 <th className="text-left px-4 py-3">Vendedor</th>
                 <th className="text-left px-4 py-3">Última compra</th>
                 {filtros.producto && <th className="text-left px-4 py-3">Últ. vez ese producto</th>}
+                {filtros.atrasados && <th className="text-left px-4 py-3">Ritmo</th>}
               </tr>
             </thead>
             <tbody>
@@ -128,6 +129,14 @@ export default function Clientes() {
                   <td className="px-4 py-3 text-slate-600">{nombreVendedor(c.vendedor)}</td>
                   <td className="px-4 py-3 text-slate-800 whitespace-nowrap">{fechaCorta(c.ultima_compra)}</td>
                   {filtros.producto && <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{fechaCorta(c.ultima_vez_producto)}</td>}
+                  {filtros.atrasados && (
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className="text-slate-800">compra cada ~{c.dias_tipicos} días</span>
+                      <span className="block text-xs text-red-600 font-semibold">
+                        hace {c.dias_sin_comprar} días · {c.atraso}× su ritmo
+                      </span>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

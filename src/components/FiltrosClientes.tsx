@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function hayFiltrosAvanzados(f: Filtros): boolean {
-  return Boolean(f.localidad || f.sinDesde || f.sinHasta || f.producto || f.dejoProducto);
+  return Boolean(f.localidad || f.sinDesde || f.sinHasta || f.producto || f.dejoProducto || f.atrasados);
 }
 
 export default function FiltrosClientes({ filtros, set, sugerir }: Props) {
@@ -37,7 +37,7 @@ export default function FiltrosClientes({ filtros, set, sugerir }: Props) {
   const limpiar = () => {
     setTextoProducto('');
     setSugerencias([]);
-    set({ localidad: undefined, sinDesde: undefined, sinHasta: undefined,
+    set({ localidad: undefined, sinDesde: undefined, sinHasta: undefined, atrasados: false,
           producto: undefined, prodDesde: undefined, prodHasta: undefined, dejoProducto: false });
   };
 
@@ -54,6 +54,19 @@ export default function FiltrosClientes({ filtros, set, sugerir }: Props) {
 
       {abierto && (
         <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+          {/* Atrasados contra su propio ritmo */}
+          <label className="flex items-start gap-2 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 cursor-pointer">
+            <input type="checkbox" className="mt-0.5" checked={filtros.atrasados ?? false}
+              onChange={e => set({ atrasados: e.target.checked })} />
+            <span className="text-sm text-slate-700">
+              <b>Atrasados según su propio ritmo</b>
+              <span className="block text-xs text-slate-500">
+                El que compra cada 45 días y hace 3 meses que no compra aparece; el que compra cada 6
+                meses, no. Hacen falta 3 compras en los últimos 3 años para saber su ritmo.
+              </span>
+            </span>
+          </label>
+
           {/* Sin compras en un período */}
           <div>
             <div className="text-xs font-semibold text-slate-500 uppercase mb-1.5">

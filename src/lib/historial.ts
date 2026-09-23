@@ -20,6 +20,11 @@ export interface ClienteLista {
   volumen_12m_anterior: number;
   /** Última vez que compró el producto filtrado, si se filtró por producto. */
   ultima_vez_producto: string | null;
+  /** Cada cuántos días compra, según su historia (mediana de los últimos 3 años). */
+  dias_tipicos: number | null;
+  dias_sin_comprar: number | null;
+  /** Cuántas veces su ritmo lleva sin comprar: 2 = el doble de lo habitual. */
+  atraso: number | null;
   total_filas: number;
 }
 
@@ -28,7 +33,7 @@ export interface FiltrosClientes {
   vendedor?: string;
   zona?: string;
   estado?: '' | 'activos' | 'inactivos' | 'sin_compras';
-  orden?: 'ultima' | 'nombre' | 'producto';
+  orden?: 'ultima' | 'nombre' | 'producto' | 'atraso';
   pagina?: number;
   localidad?: string;
   /** Sin ninguna compra entre estas dos fechas (AAAA-MM-DD). */
@@ -40,6 +45,8 @@ export interface FiltrosClientes {
   prodHasta?: string;
   /** Lo compraban y hace más de 12 meses que no. */
   dejoProducto?: boolean;
+  /** Atrasados contra su propio ritmo de compra. */
+  atrasados?: boolean;
 }
 
 /** Los parámetros de filtro que entienden las dos funciones de la base. */
@@ -53,6 +60,7 @@ const paramsDeFiltro = (f: FiltrosClientes) => ({
   p_prod_desde: f.prodDesde || null,
   p_prod_hasta: f.prodHasta || null,
   p_dejo_producto: f.dejoProducto ?? false,
+  p_atrasados: f.atrasados ?? false,
 });
 
 export const POR_PAGINA = 50;

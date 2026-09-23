@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, Loader2, Search } from 'lucide-react';
 import FichaClienteVista from './FichaClienteVista';
 import { fmtNum } from '../lib/adminOrders';
-import { misClientes, miFichaCliente, POR_PAGINA, type ClienteLista, type FichaCliente, type FiltrosClientes } from '../lib/historial';
+import { misClientes, miFichaCliente, misArticulosSugeridos, POR_PAGINA, type ClienteLista, type FichaCliente, type FiltrosClientes } from '../lib/historial';
+import FiltrosAvanzados from './FiltrosClientes';
 import { PaseVencidoError } from '../lib/sellers';
 
 // Clientes del vendedor que inició sesión. Qué clientes son lo decide la base
@@ -119,6 +120,8 @@ export default function MisClientes({ token, vendedor, onPaseVencido }: Props) {
           </select>
         </div>
 
+        <FiltrosAvanzados filtros={filtros} set={set} sugerir={q => misArticulosSugeridos(token, q)} />
+
         {error && <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
 
         <div className={`rounded-xl bg-white border border-slate-200 overflow-hidden ${cargando && filas.length ? 'opacity-60' : ''}`}>
@@ -136,6 +139,7 @@ export default function MisClientes({ token, vendedor, onPaseVencido }: Props) {
                       <span className="font-semibold text-slate-900">{c.razon_social ?? '—'}</span>
                       <span className="block text-xs text-slate-400">
                         Cód. {c.codigo}{c.cuit ? ` · CUIT ${c.cuit}` : ''}{c.localidad ? ` · ${c.localidad}` : ''}
+                      {filtros.producto && c.ultima_vez_producto ? ` · ese producto: ${fechaCorta(c.ultima_vez_producto)}` : ''}
                       </span>
                     </span>
                     <span className="w-32 text-sm text-right">

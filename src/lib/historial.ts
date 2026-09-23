@@ -18,6 +18,8 @@ export interface ClienteLista {
   volumen: number;
   volumen_12m: number;
   volumen_12m_anterior: number;
+  /** Última vez que compró el producto filtrado, si se filtró por producto. */
+  ultima_vez_producto: string | null;
   total_filas: number;
 }
 
@@ -26,9 +28,32 @@ export interface FiltrosClientes {
   vendedor?: string;
   zona?: string;
   estado?: '' | 'activos' | 'inactivos' | 'sin_compras';
-  orden?: 'ultima' | 'volumen_12m' | 'volumen' | 'nombre';
+  orden?: 'ultima' | 'nombre' | 'producto';
   pagina?: number;
+  localidad?: string;
+  /** Sin ninguna compra entre estas dos fechas (AAAA-MM-DD). */
+  sinDesde?: string;
+  sinHasta?: string;
+  /** Código o parte de la descripción del producto. */
+  producto?: string;
+  prodDesde?: string;
+  prodHasta?: string;
+  /** Lo compraban y hace más de 12 meses que no. */
+  dejoProducto?: boolean;
 }
+
+/** Los parámetros de filtro que entienden las dos funciones de la base. */
+const paramsDeFiltro = (f: FiltrosClientes) => ({
+  p_estado: f.estado || null,
+  p_orden: f.orden || 'ultima',
+  p_localidad: f.localidad?.trim() || null,
+  p_sin_desde: f.sinDesde || null,
+  p_sin_hasta: f.sinHasta || null,
+  p_producto: f.producto?.trim() || null,
+  p_prod_desde: f.prodDesde || null,
+  p_prod_hasta: f.prodHasta || null,
+  p_dejo_producto: f.dejoProducto ?? false,
+});
 
 export const POR_PAGINA = 50;
 
@@ -37,10 +62,9 @@ export async function buscarClientes(f: FiltrosClientes): Promise<ClienteLista[]
     p_q: f.q?.trim() || null,
     p_vendedor: f.vendedor || null,
     p_zona: f.zona || null,
-    p_estado: f.estado || null,
-    p_orden: f.orden || 'ultima',
     p_limite: POR_PAGINA,
     p_offset: (f.pagina ?? 0) * POR_PAGINA,
+    ...paramsDeFiltro(f),
   });
   if (error) throw new Error(error.message);
   return normalizarLista(data);
@@ -63,9 +87,8 @@ export async function misClientes(token: string, f: Omit<FiltrosClientes, 'vende
   const { data, error } = await supabase.rpc('seller_clientes', {
     p_token: token,
     p_q: f.q?.trim() || null,
-    p_estado: f.estado || null,
-    p_orden: f.orden || 'ultima',
     p_offset: (f.pagina ?? 0) * POR_PAGINA,
+    ...paramsDeFiltro(f),
   });
   if (error) throw errorDeVendedor(error);
   return normalizarLista(data);
@@ -203,4 +226,29 @@ export async function misClientesEnCaida(token: string, f: Omit<FiltrosCaida, 'v
   });
   if (error) throw errorDeVendedor(error);
   return normalizarCaida(data);
+}
+
+// ── Productos, para el buscador por producto ──
+
+export interface ArticuloSugerido {
+  codigo: string;
+  descripcion: string | null;
+  /** A cuántos clientes se le vendió: los más vendidos primero. */
+  clientes: number;
+}
+
+const normalizarArticulos = (data: unknown): ArticuloSugerido[] =>
+  ((data ?? []) as ArticuloSugerido[]).map(a => ({ ...a, clientes: Number(a.clientes) }));
+
+export async function sugerirArticulos(q: string): Promise<ArticuloSugerido[]> {
+  const { data, error } = await supabase.rpc('admin_articulos_sugeridos', { p_q: q });
+  if (error) return [];
+  return normalizarArticulos(data);
+}
+
+/** Los que le compran a este vendedor. */
+export async function misArticulosSugeridos(token: string, q: string): Promise<ArticuloSugerido[]> {
+  const { data, error } = await supabase.rpc('seller_articulos_sugeridos', { p_token: token, p_q: q });
+  if (error) return [];
+  return normalizarArticulos(data);
 }

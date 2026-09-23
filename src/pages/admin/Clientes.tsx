@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { Loader2, Search, TrendingDown } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { listarVendedores, type Vendedor, fmtNum } from '../../lib/adminOrders';
-import { buscarClientes, codigoVendedorWeb, estadoSincronizacion, POR_PAGINA, type ClienteLista, type FiltrosClientes } from '../../lib/historial';
+import { buscarClientes, codigoVendedorWeb, estadoSincronizacion, sugerirArticulos, POR_PAGINA, type ClienteLista, type FiltrosClientes } from '../../lib/historial';
+import FiltrosAvanzados from '../../components/FiltrosClientes';
 
 // Buscador de clientes: se entra por código, razón social, CUIT o localidad y
 // se abre la ficha. Sin análisis: eso va en los reportes.
@@ -90,6 +91,8 @@ export default function Clientes() {
         </select>
       </div>
 
+      <FiltrosAvanzados filtros={filtros} set={set} sugerir={sugerirArticulos} />
+
       {error && <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
 
       <div className="rounded-xl bg-white border border-slate-200 overflow-x-auto">
@@ -106,6 +109,7 @@ export default function Clientes() {
                 <th className="text-left px-4 py-3">CUIT</th>
                 <th className="text-left px-4 py-3">Vendedor</th>
                 <th className="text-left px-4 py-3">Última compra</th>
+                {filtros.producto && <th className="text-left px-4 py-3">Últ. vez ese producto</th>}
               </tr>
             </thead>
             <tbody>
@@ -123,6 +127,7 @@ export default function Clientes() {
                   <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{c.cuit ?? '—'}</td>
                   <td className="px-4 py-3 text-slate-600">{nombreVendedor(c.vendedor)}</td>
                   <td className="px-4 py-3 text-slate-800 whitespace-nowrap">{fechaCorta(c.ultima_compra)}</td>
+                  {filtros.producto && <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{fechaCorta(c.ultima_vez_producto)}</td>}
                 </tr>
               ))}
             </tbody>

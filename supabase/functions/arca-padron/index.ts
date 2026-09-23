@@ -241,6 +241,8 @@ Deno.serve(async (req: Request) => {
 
     const parser = new XMLParser({ ignoreAttributes: true, removeNSPrefix: true, parseTagValue: false });
     let ultimoError = "";
+    // Qué pasó con cada padrón: sirve para entender por qué no contestó uno.
+    const intentos: { servicio: string; error: string }[] = [];
 
     // Se prueban los padrones en orden y se usa el primero que conteste.
     for (const servicio of SERVICIOS) {
@@ -269,12 +271,16 @@ Deno.serve(async (req: Request) => {
         const persona = devuelto?.persona ?? devuelto;
         if (!persona || (!persona.razonSocial && !persona.datosGenerales && !persona.apellido)) {
           ultimoError = "ARCA no devolvió datos para ese CUIT.";
+          intentos.push({ servicio, error: ultimoError });
           continue;
         }
 
         const datos = ordenarPersona(persona, servicio);
         await registrar(true, datos.razon_social ?? "");
-        return json({ ok: true, datos });
+        if (intentos.length) {
+          await registrar(false, "fallaron antes: " + intentos.map(i => i.servicio + " -> " + i.error).join(" | "));
+        }
+        return json({ ok: true, datos, intentos });
       } catch (e) {
         const msg = String((e as Error).message ?? e);
         if (msg === "FALTA_CERTIFICADO") {
@@ -282,11 +288,12 @@ Deno.serve(async (req: Request) => {
         }
         // Si el servicio no está habilitado, se intenta con el siguiente.
         ultimoError = msg;
+        intentos.push({ servicio, error: msg.slice(0, 200) });
       }
     }
 
-    await registrar(false, ultimoError.slice(0, 300));
-    return json({ error: ultimoError.slice(0, 300) || "ARCA no devolvió datos." }, 502);
+    await registrar(false, intentos.map(i => i.servicio + " -> " + i.error).join(" | ").slice(0, 300));
+    return json({ error: ultimoError.slice(0, 300) || "ARCA no devolvió datos.", intentos }, 502);
   } catch (err) {
     console.error(err);
     return json({ error: String(err) }, 500);

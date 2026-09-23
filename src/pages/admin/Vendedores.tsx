@@ -14,13 +14,13 @@ const campo = 'rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm tex
 interface Borrador {
   code: string;
   name: string;
-  proyectos: Proyecto[];
+  proyecto: Proyecto;
   active: boolean;
   pin: string;
   esNuevo: boolean;
 }
 
-const vacio = (): Borrador => ({ code: '', name: '', proyectos: ['femavi'], active: true, pin: '', esNuevo: true });
+const vacio = (): Borrador => ({ code: '', name: '', proyecto: 'femavi', active: true, pin: '', esNuevo: true });
 
 export default function Vendedores() {
   const [filas, setFilas] = useState<VendedorAdmin[]>([]);
@@ -44,7 +44,7 @@ export default function Vendedores() {
   useEffect(() => { cargar(); }, [cargar]);
 
   const editar = (v: VendedorAdmin) =>
-    setBorrador({ code: v.code, name: v.name, proyectos: v.proyectos, active: v.active, pin: '', esNuevo: false });
+    setBorrador({ code: v.code, name: v.name, proyecto: v.proyecto, active: v.active, pin: '', esNuevo: false });
 
   const guardar = async () => {
     if (!borrador || guardando) return;
@@ -76,14 +76,6 @@ export default function Vendedores() {
     }
   };
 
-  const alternarProyecto = (p: Proyecto) =>
-    setBorrador(b => {
-      if (!b) return b;
-      const tiene = b.proyectos.includes(p);
-      const proyectos = tiene ? b.proyectos.filter(x => x !== p) : [...b.proyectos, p];
-      return { ...b, proyectos: proyectos.length ? proyectos : b.proyectos };  // siempre al menos uno
-    });
-
   return (
     <AdminLayout
       crumbs={[{ label: 'Vendedores' }]}
@@ -95,7 +87,7 @@ export default function Vendedores() {
       }
     >
       <p className="text-sm text-slate-500 mb-4">
-        Cada vendedor entra en femavi.com.ar/vendedores/<b>su código</b> con su PIN. El PIN se guarda cifrado:
+        Cada vendedor entra en femavi.com.ar/vendedores/<b>su código</b> con su PIN, y el código define el proyecto. El PIN se guarda cifrado:
         nadie puede leerlo después, ni yo ni vos. Si un vendedor lo olvida, le ponés uno nuevo desde acá.
       </p>
 
@@ -116,7 +108,7 @@ export default function Vendedores() {
               <tr>
                 <th className="text-left px-4 py-3">Cód.</th>
                 <th className="text-left px-4 py-3">Nombre</th>
-                <th className="text-left px-4 py-3">Proyectos</th>
+                <th className="text-left px-4 py-3">Proyecto</th>
                 <th className="text-left px-4 py-3">Último ingreso</th>
                 <th className="text-right px-4 py-3">Pedidos</th>
                 <th className="text-left px-4 py-3">Estado</th>
@@ -129,14 +121,10 @@ export default function Vendedores() {
                   <td className="px-4 py-3 font-mono text-slate-500">{v.code}</td>
                   <td className="px-4 py-3 font-semibold text-slate-900">{v.name}</td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-1">
-                      {v.proyectos.map(p => (
-                        <span key={p} className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ring-1 ${
-                          p === 'femway' ? 'bg-violet-50 text-violet-700 ring-violet-200' : 'bg-sky-50 text-sky-700 ring-sky-200'}`}>
-                          {NOMBRE_PROYECTO[p]}
-                        </span>
-                      ))}
-                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ring-1 ${
+                      v.proyecto === 'femway' ? 'bg-violet-50 text-violet-700 ring-violet-200' : 'bg-sky-50 text-sky-700 ring-sky-200'}`}>
+                      {NOMBRE_PROYECTO[v.proyecto]}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-slate-600">
                     {fecha(v.last_login_at)}
@@ -195,17 +183,20 @@ export default function Vendedores() {
               </div>
 
               <div>
-                <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Trabaja en</div>
+                <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Proyecto de este código</div>
                 <div className="flex gap-2">
                   {PROYECTOS.map(p => (
-                    <button key={p} type="button" onClick={() => alternarProyecto(p)}
-                      className={`px-3 py-2 rounded-lg text-sm font-bold ring-1 ${borrador.proyectos.includes(p)
+                    <button key={p} type="button" onClick={() => setBorrador(b => b && { ...b, proyecto: p })}
+                      className={`px-3 py-2 rounded-lg text-sm font-bold ring-1 ${borrador.proyecto === p
                         ? (p === 'femway' ? 'bg-violet-600 text-white ring-violet-600' : 'bg-sky-600 text-white ring-sky-600')
                         : 'bg-white text-slate-500 ring-slate-200'}`}>
                       {NOMBRE_PROYECTO[p]}
                     </button>
                   ))}
                 </div>
+                <p className="mt-1 text-[11px] text-slate-400">
+                  Cada código pertenece a un solo proyecto. Si el vendedor trabaja en los dos, se le crea un código para cada uno.
+                </p>
               </div>
 
               <label className="block text-xs font-semibold text-slate-500 uppercase">

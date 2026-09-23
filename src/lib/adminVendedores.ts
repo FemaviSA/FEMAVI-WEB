@@ -9,7 +9,7 @@ export interface VendedorAdmin {
   code: string;
   name: string;
   active: boolean;
-  proyectos: Proyecto[];
+  proyecto: Proyecto;
   last_login_at: string | null;
   locked_until: string | null;
   tiene_pin: boolean;
@@ -26,7 +26,7 @@ export async function listarVendedoresAdmin(): Promise<VendedorAdmin[]> {
 export interface GuardarVendedor {
   code: string;
   name: string;
-  proyectos: Proyecto[];
+  proyecto: Proyecto;
   active: boolean;
   /** Solo si se quiere poner uno nuevo; si no, se deja como está. */
   pin?: string;
@@ -36,7 +36,7 @@ export async function guardarVendedor(v: GuardarVendedor): Promise<{ nuevo: bool
   const { data, error } = await supabase.rpc('admin_guardar_vendedor', {
     p_code: v.code.trim(),
     p_name: v.name.trim(),
-    p_proyectos: v.proyectos,
+    p_proyecto: v.proyecto,
     p_active: v.active,
     p_pin: v.pin?.trim() || null,
   });

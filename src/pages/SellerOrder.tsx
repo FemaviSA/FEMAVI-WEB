@@ -247,13 +247,9 @@ export default function SellerOrder() {
   // formulario sigue montado detrás, así que lo cargado no se pierde.
   const [avisoPin, setAvisoPin] = useState<string | null>(null);
   const [vista, setVista] = useState<'pedido' | 'ventas' | 'clientes'>('pedido');
-  // A qué proyecto va el pedido. El que trabaja en los dos tiene que elegirlo
-  // a mano en cada pedido: sin valor por defecto, para que no se cargue uno en
-  // el proyecto equivocado por inercia.
-  const enLosDos = (seller?.proyectos.length ?? 1) > 1;
-  const [proyecto, setProyecto] = useState<Proyecto | null>(
-    () => (seller && seller.proyectos.length === 1 ? seller.proyectos[0] : null),
-  );
+  // El proyecto sale del código con el que entró: cada vendedor tiene uno para
+  // FEMAVI y otro para FemWay, así no hay nada que elegir ni que equivocar.
+  const proyecto: Proyecto = seller?.proyecto ?? 'femavi';
   const paseVencido = useCallback(() => {
     forgetSeller();
     setSeller(null);
@@ -261,12 +257,11 @@ export default function SellerOrder() {
   }, []);
   useEffect(() => {
     if (!seller) return;
-    setProyecto(seller.proyectos.length === 1 ? seller.proyectos[0] : null);
     let vigente = true;
     perfilDeVendedor(seller.token)
       .then(perfil => {
-        if (vigente && perfil && perfil.proyectos.join() !== seller.proyectos.join()) {
-          setSeller({ ...seller, proyectos: perfil.proyectos });
+        if (vigente && perfil && perfil.proyecto !== seller.proyecto) {
+          setSeller({ ...seller, proyecto: perfil.proyecto });
         }
       })
       .catch(() => { /* si falla, sigue con lo que tenía guardado */ });
@@ -387,7 +382,6 @@ export default function SellerOrder() {
 
     // Lo que administración no puede procesar si falta.
     const faltan: string[] = [];
-    if (!proyecto) faltan.push('el proyecto (' + NOMBRE_PROYECTO.femavi + ' o ' + NOMBRE_PROYECTO.femway + ')');
     if (!f.account) faltan.push('la cuenta (C1 o C2)');
     if (!f.company.trim()) faltan.push('la razón social');
     if (!f.bill_city.trim()) faltan.push('la ciudad y provincia');
@@ -451,7 +445,6 @@ export default function SellerOrder() {
       // order_number no se manda: lo asigna la base con un contador atómico,
       // así dos vendedores simultáneos nunca reciben el mismo número.
       const pedido = await createOrder({
-        proyecto: proyecto ?? 'femavi',
         account: f.account,
         sales_cycle: f.sales_cycle,
         purchase_order: f.purchase_order,
@@ -512,7 +505,6 @@ export default function SellerOrder() {
   const nuevoPedido = () => {
     setEnviado(false);
     setNumero(null);
-    if (enLosDos) setProyecto(null);   // que vuelva a elegirlo, no se hereda del anterior
     setF(p => ({
       ...p,
       account: '', purchase_order: '', ship_date: '', is_new_client: false,
@@ -561,7 +553,7 @@ export default function SellerOrder() {
               }}>N° {numero}</div>
             )}
             <p style={{ fontSize: 15, color: C.textMuted, margin: '0 0 28px', lineHeight: 1.6 }}>
-              Quedó registrado a tu nombre{enLosDos && proyecto ? ' en ' + NOMBRE_PROYECTO[proyecto] : ''} y administración ya lo recibió.
+              Quedó registrado a tu nombre en {NOMBRE_PROYECTO[proyecto]} y administración ya lo recibió.
             </p>
             <button onClick={nuevoPedido} style={{
               padding: '13px 26px', background: C.accent, color: C.white, fontSize: 14,
@@ -609,7 +601,7 @@ export default function SellerOrder() {
           }}>
             <div style={{ display: 'flex', gap: 4, background: C.bg, borderRadius: 8, padding: 3 }}>
               {([['pedido', 'Nuevo pedido'], ['ventas', 'Mis ventas'],
-                ...(seller.proyectos.includes('femavi') ? [['clientes', 'Mis clientes'] as const] : [])] as const).map(([k, r]) => (
+                ...(seller.proyecto === 'femavi' ? [['clientes', 'Mis clientes'] as const] : [])] as const).map(([k, r]) => (
                 <button key={k} type="button" onClick={() => setVista(k)} style={{
                   padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
                   fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
@@ -622,7 +614,13 @@ export default function SellerOrder() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ textAlign: 'right', lineHeight: 1.2 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.dark }}>{seller.name}</div>
-                <div style={{ fontSize: 10, color: C.textLight }}>Agente {seller.code}</div>
+                <div style={{ fontSize: 10, color: C.textLight }}>
+                  Agente {seller.code} ·{' '}
+                  <span style={{
+                    fontWeight: 800,
+                    color: seller.proyecto === 'femway' ? '#7c3aed' : '#0067ac',
+                  }}>{NOMBRE_PROYECTO[seller.proyecto]}</span>
+                </div>
               </div>
               <button
                 type="button" title="Salir"
@@ -640,37 +638,19 @@ export default function SellerOrder() {
         </header>
 
         {vista === 'ventas' ? (
-          <MisVentas token={seller.token} proyectos={seller.proyectos} onPaseVencido={paseVencido} />
+          <MisVentas token={seller.token} proyecto={seller.proyecto} onPaseVencido={paseVencido} />
         ) : vista === 'clientes' ? (
           <MisClientes token={seller.token} vendedor={seller} onPaseVencido={paseVencido} />
         ) : (
         <form onSubmit={submit} style={{ maxWidth: 1000, margin: '0 auto', padding: '20px 16px 60px' }}>
-          {/* Los que trabajan en los dos proyectos eligen acá. Sin esto no se envía. */}
-          {enLosDos && (
+          {/* Deja claro en qué proyecto está cargando: sale del código, no se elige. */}
+          {proyecto === 'femway' && (
             <div style={{
-              marginBottom: 14, padding: '12px 14px', background: C.white, borderRadius: 10,
-              border: '1px solid ' + (proyecto ? C.borderLight : '#fecaca'),
+              marginBottom: 14, padding: '10px 14px', borderRadius: 10,
+              background: '#f5f3ff', border: '1px solid #ddd6fe', color: '#5b21b6',
+              fontSize: 13, fontWeight: 700,
             }}>
-              <div style={{
-                fontSize: 11, fontWeight: 800, textTransform: 'uppercase',
-                letterSpacing: '0.04em', color: C.textMuted, marginBottom: 8,
-              }}>¿Para qué proyecto es este pedido? *</div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {([['femavi', '#0067ac'], ['femway', '#7c3aed']] as const).map(([k, color]) => (
-                  <button key={k} type="button" onClick={() => setProyecto(k)} style={{
-                    padding: '10px 22px', borderRadius: 8, cursor: 'pointer',
-                    fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 800,
-                    background: proyecto === k ? color : C.white,
-                    color: proyecto === k ? C.white : C.textMuted,
-                    border: '2px solid ' + (proyecto === k ? color : C.borderLight),
-                  }}>{NOMBRE_PROYECTO[k]}</button>
-                ))}
-              </div>
-              <div style={{ fontSize: 12, color: proyecto ? C.textLight : '#b91c1c', marginTop: 8 }}>
-                {proyecto
-                  ? 'Las ventas de cada proyecto se miden por separado.'
-                  : 'Elegí uno antes de cargar: las ventas de cada proyecto se miden por separado.'}
-              </div>
+              Estás cargando un pedido de {NOMBRE_PROYECTO.femway}. Para {NOMBRE_PROYECTO.femavi}, salí y entrá con tu otro código.
             </div>
           )}
           {error && (

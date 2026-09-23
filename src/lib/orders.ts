@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import type { Proyecto } from './proyectos';
 
 export interface OrderItem {
   product: string;
@@ -14,8 +13,6 @@ export interface OrderItem {
 
 export interface OrderInput {
   // Cabecera
-  /** A qué proyecto pertenece la venta: FEMAVI o FemWay. Nunca se mezclan. */
-  proyecto?: Proyecto;
   /** C1 o C2: la cuenta a la que va el pedido. */
   account?: string | null;
   sales_cycle?: string | null;
@@ -86,7 +83,6 @@ export async function createOrder(input: OrderInput, sellerToken?: string): Prom
   // y devuelve sólo el id y el número, sin abrir nada más.
   const { data, error } = await supabase.rpc('create_order', {
     p: {
-    proyecto: input.proyecto ?? 'femavi',
     account: txt(input.account),
     sales_cycle: txt(input.sales_cycle),
     purchase_order: txt(input.purchase_order),

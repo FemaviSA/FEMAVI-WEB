@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Loader2, Search, TrendingDown, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Loader2, Search } from 'lucide-react';
 import FichaClienteVista from './FichaClienteVista';
 import { fmtNum } from '../lib/adminOrders';
 import { misClientes, miFichaCliente, POR_PAGINA, type ClienteLista, type FichaCliente, type FiltrosClientes } from '../lib/historial';
@@ -104,7 +104,7 @@ export default function MisClientes({ token, vendedor, onPaseVencido }: Props) {
       <div style={{ display: abierto ? 'none' : undefined }}>
         <h1 className="text-2xl font-extrabold text-slate-900 mb-1">Mis clientes</h1>
         <p className="text-sm text-slate-500 mb-4">
-          Los clientes con tu código en el sistema, con todo su historial de compras desde 1995. Los volúmenes suman litros y kilos juntos.
+          Los clientes con tu código en el sistema. Entrá a cualquiera para ver sus datos y todo su historial de compras.
         </p>
 
         <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -113,16 +113,8 @@ export default function MisClientes({ token, vendedor, onPaseVencido }: Props) {
             <input value={texto} onChange={e => setTexto(e.target.value)}
               placeholder="Nombre, código, CUIT o localidad…" className={campo + ' pl-9 w-full'} />
           </div>
-          <select value={filtros.estado ?? ''} onChange={e => set({ estado: e.target.value as Filtros['estado'] })} className={campo}>
-            <option value="">Todos</option>
-            <option value="activos">Compraron en los últimos 12 meses</option>
-            <option value="inactivos">No compran hace más de 12 meses</option>
-            <option value="sin_compras">Nunca compraron</option>
-          </select>
           <select value={filtros.orden} onChange={e => set({ orden: e.target.value as Filtros['orden'] })} className={campo}>
             <option value="ultima">Última compra más reciente</option>
-            <option value="volumen_12m">Más volumen en 12 meses</option>
-            <option value="volumen">Más volumen histórico</option>
             <option value="nombre">Nombre A-Z</option>
           </select>
         </div>
@@ -136,31 +128,23 @@ export default function MisClientes({ token, vendedor, onPaseVencido }: Props) {
             <div className="p-8 text-center text-sm text-slate-500">No hay clientes con estos filtros.</div>
           ) : (
             <ul>
-              {filas.map(c => {
-                const sube = c.volumen_12m > c.volumen_12m_anterior;
-                const baja = c.volumen_12m < c.volumen_12m_anterior;
-                return (
-                  <li key={c.codigo} className="border-t first:border-t-0 border-slate-100">
-                    <button onClick={() => setAbierto(c.codigo)}
-                      className="w-full text-left flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-slate-50">
-                      <span className="flex-1 min-w-[180px]">
-                        <span className="font-semibold text-slate-900">{c.razon_social ?? '—'}</span>
-                        <span className="block text-xs text-slate-400">Cód. {c.codigo}{c.localidad ? ` · ${c.localidad}` : ''}</span>
+              {filas.map(c => (
+                <li key={c.codigo} className="border-t first:border-t-0 border-slate-100">
+                  <button onClick={() => setAbierto(c.codigo)}
+                    className="w-full text-left flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-slate-50">
+                    <span className="flex-1 min-w-[180px]">
+                      <span className="font-semibold text-slate-900">{c.razon_social ?? '—'}</span>
+                      <span className="block text-xs text-slate-400">
+                        Cód. {c.codigo}{c.cuit ? ` · CUIT ${c.cuit}` : ''}{c.localidad ? ` · ${c.localidad}` : ''}
                       </span>
-                      <span className="w-28 text-sm">
-                        <span className="text-slate-800">{fechaCorta(c.ultima_compra)}</span>
-                        <span className="block text-xs text-slate-400">{hace(c.ultima_compra)}</span>
-                      </span>
-                      <span className="w-32 text-right text-sm whitespace-nowrap">
-                        <span className="font-semibold text-slate-900">{fmtNum(c.volumen_12m)}</span>
-                        {sube && <TrendingUp className="inline w-3.5 h-3.5 ml-1 text-emerald-600" aria-label="más que los 12 meses anteriores" />}
-                        {baja && <TrendingDown className="inline w-3.5 h-3.5 ml-1 text-red-500" aria-label="menos que los 12 meses anteriores" />}
-                        <span className="block text-xs text-slate-400">L/kg 12 meses</span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
+                    </span>
+                    <span className="w-32 text-sm text-right">
+                      <span className="text-slate-800">{fechaCorta(c.ultima_compra)}</span>
+                      <span className="block text-xs text-slate-400">{hace(c.ultima_compra)}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
             </ul>
           )}
         </div>

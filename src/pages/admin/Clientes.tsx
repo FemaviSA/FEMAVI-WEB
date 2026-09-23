@@ -1,22 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Search, TrendingDown, TrendingUp } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { listarVendedores, type Vendedor, fmtNum } from '../../lib/adminOrders';
 import { buscarClientes, codigoVendedorWeb, estadoSincronizacion, POR_PAGINA, type ClienteLista, type FiltrosClientes } from '../../lib/historial';
 
+// Buscador de clientes: se entra por código, razón social, CUIT o localidad y
+// se abre la ficha. Sin análisis: eso va en los reportes.
+
 const fechaCorta = (iso: string | null) =>
   iso ? new Date(iso + 'T12:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—';
-
-/** "hace 3 meses", para ver de un vistazo quién dejó de comprar. */
-function hace(iso: string | null): string {
-  if (!iso) return '';
-  const dias = Math.floor((Date.now() - new Date(iso + 'T12:00:00').getTime()) / 86400000);
-  if (dias < 31) return `hace ${dias} días`;
-  if (dias < 365) return `hace ${Math.round(dias / 30)} meses`;
-  const anios = Math.floor(dias / 365);
-  return `hace ${anios} año${anios > 1 ? 's' : ''}`;
-}
 
 /** La PC de la oficina avisa en cada pasada (cada 15 min): si hace más de una hora que no avisa, algo pasa. */
 function EstadoSync({ sync }: { sync: Awaited<ReturnType<typeof estadoSincronizacion>> }) {
@@ -32,13 +25,12 @@ function EstadoSync({ sync }: { sync: Awaited<ReturnType<typeof estadoSincroniza
 }
 
 export default function Clientes() {
-  const [filtros, setFiltros] = useState<FiltrosClientes>({ orden: 'ultima', estado: '', pagina: 0 });
+  const [filtros, setFiltros] = useState<FiltrosClientes>({ orden: 'ultima', pagina: 0 });
   const [texto, setTexto] = useState('');
   const [filas, setFilas] = useState<ClienteLista[]>([]);
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [sync, setSync] = useState<Awaited<ReturnType<typeof estadoSincronizacion>> | undefined>(undefined);
 
   useEffect(() => { listarVendedores().then(setVendedores).catch(() => {}); }, []);
@@ -78,7 +70,7 @@ export default function Clientes() {
   return (
     <AdminLayout crumbs={[{ label: 'Clientes' }]}>
       <p className="text-sm text-slate-500 mb-4">
-        Historial del sistema de gestión desde 1995. Los volúmenes suman litros y kilos juntos, netos de notas de crédito.
+        Buscá por código, razón social, CUIT o localidad y entrá a la ficha del cliente.
         {sync !== undefined && <EstadoSync sync={sync} />}
       </p>
 
@@ -86,26 +78,16 @@ export default function Clientes() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input autoFocus value={texto} onChange={e => setTexto(e.target.value)}
-            placeholder="Nombre, código, CUIT o localidad…" className={campo + ' pl-9 w-72'} />
+            placeholder="Código, razón social, CUIT o localidad…" className={campo + ' pl-9 w-80'} />
         </div>
         <select value={filtros.vendedor ?? ''} onChange={e => set({ vendedor: e.target.value || undefined })} className={campo}>
           <option value="">Todos los vendedores</option>
           {vendedores.map(v => <option key={v.code} value={v.code.padStart(3, '0')}>{v.name} ({v.code})</option>)}
         </select>
-        <select value={filtros.estado ?? ''} onChange={e => set({ estado: e.target.value as FiltrosClientes['estado'] })} className={campo}>
-          <option value="">Todos</option>
-          <option value="activos">Compraron en los últimos 12 meses</option>
-          <option value="inactivos">No compran hace más de 12 meses</option>
-          <option value="sin_compras">Nunca compraron</option>
-        </select>
         <select value={filtros.orden} onChange={e => set({ orden: e.target.value as FiltrosClientes['orden'] })} className={campo}>
           <option value="ultima">Última compra más reciente</option>
-          <option value="volumen_12m">Más volumen en 12 meses</option>
-          <option value="volumen">Más volumen histórico</option>
           <option value="nombre">Nombre A-Z</option>
         </select>
-        <input value={filtros.zona ?? ''} onChange={e => set({ zona: e.target.value.replace(/\D/g, '').slice(0, 3) || undefined })}
-          placeholder="Zona" className={campo + ' w-20'} />
       </div>
 
       {error && <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -114,50 +96,35 @@ export default function Clientes() {
         {cargando && filas.length === 0 ? (
           <div className="flex items-center gap-2 p-8 text-slate-500 text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Buscando…</div>
         ) : filas.length === 0 ? (
-          <div className="p-8 text-center text-sm text-slate-500">No hay clientes con estos filtros.</div>
+          <div className="p-8 text-center text-sm text-slate-500">No hay clientes con esa búsqueda.</div>
         ) : (
-          <table className={`w-full text-sm min-w-[860px] ${cargando ? 'opacity-60' : ''}`}>
+          <table className={`w-full text-sm min-w-[720px] ${cargando ? 'opacity-60' : ''}`}>
             <thead className="bg-slate-50 text-[11px] text-slate-500 uppercase tracking-wide">
               <tr>
                 <th className="text-left px-4 py-3">Cód.</th>
                 <th className="text-left px-4 py-3">Cliente</th>
+                <th className="text-left px-4 py-3">CUIT</th>
                 <th className="text-left px-4 py-3">Vendedor</th>
                 <th className="text-left px-4 py-3">Última compra</th>
-                <th className="text-right px-4 py-3">Compras</th>
-                <th className="text-right px-4 py-3">L/kg 12 meses</th>
-                <th className="text-right px-4 py-3">L/kg histórico</th>
               </tr>
             </thead>
             <tbody>
-              {filas.map(c => {
-                const sube = c.volumen_12m > c.volumen_12m_anterior;
-                const baja = c.volumen_12m < c.volumen_12m_anterior;
-                return (
-                  <tr key={c.codigo} className="border-t border-slate-100 hover:bg-slate-50">
-                    <td className="px-4 py-3 text-slate-400 font-mono">
-                      <Link to={`/admin/clientes/${c.codigo}`} className="block">{c.codigo}</Link>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link to={`/admin/clientes/${c.codigo}`} className="block">
-                        <span className="font-semibold text-slate-900">{c.razon_social ?? '—'}</span>
-                        <span className="block text-xs text-slate-400">{c.localidad ?? ''}</span>
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">{nombreVendedor(c.vendedor)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-slate-800">{fechaCorta(c.ultima_compra)}</span>
-                      <span className="block text-xs text-slate-400">{hace(c.ultima_compra)}</span>
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-700">{fmtNum(c.compras)}</td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                      <span className="font-semibold text-slate-900">{fmtNum(c.volumen_12m)}</span>
-                      {sube && <TrendingUp className="inline w-3.5 h-3.5 ml-1 text-emerald-600" aria-label="más que los 12 meses anteriores" />}
-                      {baja && <TrendingDown className="inline w-3.5 h-3.5 ml-1 text-red-500" aria-label="menos que los 12 meses anteriores" />}
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-600">{fmtNum(c.volumen)}</td>
-                  </tr>
-                );
-              })}
+              {filas.map(c => (
+                <tr key={c.codigo} className="border-t border-slate-100 hover:bg-slate-50">
+                  <td className="px-4 py-3 text-slate-400 font-mono">
+                    <Link to={`/admin/clientes/${c.codigo}`} className="block">{c.codigo}</Link>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link to={`/admin/clientes/${c.codigo}`} className="block">
+                      <span className="font-semibold text-slate-900">{c.razon_social ?? '—'}</span>
+                      <span className="block text-xs text-slate-400">{c.localidad ?? ''}</span>
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{c.cuit ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-600">{nombreVendedor(c.vendedor)}</td>
+                  <td className="px-4 py-3 text-slate-800 whitespace-nowrap">{fechaCorta(c.ultima_compra)}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}

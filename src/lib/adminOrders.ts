@@ -189,7 +189,19 @@ export interface ControlesPedido {
   duplicados_vivos: number;
   /** Un cliente "nuevo" de FemWay que además sigue comprando en FEMAVI. */
   duplicado_grave: boolean;
-  precio: { estado: string; mensaje: string };
+  precio: {
+    estado: 'ok' | 'alerta' | 'sin_lista';
+    mensaje?: string;
+    /** Mes de la lista cargada, por ejemplo 09-26. */
+    vigencia?: string;
+    alertas?: number;
+    renglones?: {
+      producto: string; envase: string | null; cantidad: number; precio: number;
+      producto_lista: string | null; precio_lista: number | null;
+      parecido: number | null; descuento_pct: number | null;
+      alerta: boolean; sin_referencia: boolean;
+    }[];
+  };
 }
 
 export async function controlesDePedido(orderId: number): Promise<ControlesPedido | null> {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Loader2, XCircle } from 'lucide-react';
-import { controlesDePedido, type ControlesPedido as Controles } from '../lib/adminOrders';
+import { controlesDePedido, fmtPesos, type ControlesPedido as Controles } from '../lib/adminOrders';
 import { NOMBRE_PROYECTO } from '../lib/proyectos';
 
 // Lo que hay que mirar antes de aprobar un pedido. Son avisos: la decisión
@@ -121,9 +121,36 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
         </Fila>
       )}
 
-      <p className="text-xs text-slate-400">
-        Precio contra lista: {c.precio.mensaje}
-      </p>
+      {/* Precios contra la lista */}
+      {c.precio.estado === 'sin_lista' ? (
+        <p className="text-xs text-slate-400">Precios: {c.precio.mensaje}</p>
+      ) : (
+        <Fila tono={c.precio.estado === 'alerta' ? 'mal' : 'ok'}
+          icono={c.precio.estado === 'alerta' ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+          titulo={c.precio.estado === 'alerta'
+            ? `${c.precio.alertas} precio${(c.precio.alertas ?? 0) > 1 ? 's' : ''} por debajo de lo permitido`
+            : 'Precios dentro de lo permitido'}>
+          <p className="text-xs opacity-80 mb-1.5">
+            Se tolera hasta 20% por debajo del precio más barato de la lista {c.precio.vigencia}.
+          </p>
+          <ul className="space-y-1">
+            {(c.precio.renglones ?? []).map((r, i) => (
+              <li key={i} className="text-xs">
+                <b>{r.producto}</b>
+                {r.sin_referencia ? (
+                  <span className="opacity-70"> · no lo encontré en la lista, revisalo a mano</span>
+                ) : (
+                  <span className={r.alerta ? 'font-semibold' : 'opacity-80'}>
+                    {' '}· {fmtPesos.format(r.precio)} contra {fmtPesos.format(r.precio_lista ?? 0)}
+                    {' '}({r.descuento_pct}% de descuento)
+                    {r.producto_lista && r.producto_lista !== r.producto ? ` · en la lista: ${r.producto_lista}` : ''}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Fila>
+      )}
     </div>
   );
 }

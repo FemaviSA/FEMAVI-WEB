@@ -30,6 +30,10 @@ const WSAA = {
   homologacion: "https://wsaahomo.afip.gov.ar/ws/services/LoginCms",
 };
 
+/** La constancia usa getPersona_v2; los padrones, getPersona. */
+const operacion = (servicio: string) =>
+  servicio === "ws_sr_constancia_inscripcion" ? "getPersona_v2" : "getPersona";
+
 const version = (servicio: string) =>
   servicio === "ws_sr_constancia_inscripcion" ? "A5" : servicio.replace("ws_sr_padron_", "").toUpperCase();
 
@@ -243,20 +247,25 @@ Deno.serve(async (req: Request) => {
       try {
         const { token, firma } = await obtenerTicket(supabase, servicio, WSAA[entorno]);
         const ns = version(servicio).toLowerCase();
+        const op = operacion(servicio);
 
         const respuesta = await pedirSoap(
           urlPadron(servicio, entorno),
           "",
           '<?xml version="1.0" encoding="UTF-8"?>' +
             `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:pad="http://${ns}.soap.ws.server.puc.sr/">` +
-            "<soapenv:Header/><soapenv:Body><pad:getPersona>" +
+            `<soapenv:Header/><soapenv:Body><pad:${op}>` +
             `<token>${token}</token><sign>${firma}</sign>` +
             `<cuitRepresentada>${representada}</cuitRepresentada><idPersona>${digitos}</idPersona>` +
-            "</pad:getPersona></soapenv:Body></soapenv:Envelope>",
+            `</pad:${op}></soapenv:Body></soapenv:Envelope>`,
         );
 
         const arbol = parser.parse(respuesta);
-        const devuelto = arbol?.Envelope?.Body?.getPersonaResponse?.personaReturn;
+        // El nombre del nodo depende de la operación (getPersonaResponse o
+        // getPersona_v2Response): se busca el que termine en Response.
+        const cuerpo = arbol?.Envelope?.Body ?? {};
+        const clave = Object.keys(cuerpo).find(k => /Response$/.test(k));
+        const devuelto = clave ? cuerpo[clave]?.personaReturn : undefined;
         const persona = devuelto?.persona ?? devuelto;
         if (!persona || (!persona.razonSocial && !persona.datosGenerales && !persona.apellido)) {
           ultimoError = "ARCA no devolvió datos para ese CUIT.";

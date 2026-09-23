@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X, Loader2, Check, Ban, History, ShieldCheck } from 'lucide-react';
 import ControlesPedido from '../../components/ControlesPedido';
+import ConsultaArca from '../../components/ConsultaArca';
 import {
   type Pedido, type CambioEstado, type Estado, ETIQUETA_ESTADO, SIGUIENTE,
   cambiarEstado, completarDatos, historialDe, volumenDe, fmtNum, fmtPesos,
@@ -109,6 +110,9 @@ export default function PedidoDetalle({
               <ControlesPedido orderId={pedido.id} recargar={pedido.status} />
             </section>
           )}
+
+          {/* Consulta al padrón, para no tener que entrar a la página de ARCA */}
+          <ConsultaArca cuitInicial={pedido.cuit} orderId={pedido.id} razonPedido={pedido.company} />
 
           {/* Acciones */}
           {pedido.status !== 'rechazado' && pedido.status !== 'entregado' && (

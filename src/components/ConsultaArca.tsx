@@ -138,9 +138,16 @@ export default function ConsultaArca({ cuitInicial, orderId, razonPedido }: {
           <div className="grid grid-cols-2 gap-3">
             <Dato rotulo="CUIT" valor={datos.cuit} />
             <Dato rotulo="Condición" valor={datos.condicion} />
-            <Dato rotulo="Tipo" valor={datos.tipo_persona} />
+            <Dato rotulo="Tipo" valor={[datos.tipo_persona, datos.forma_juridica].filter(Boolean).join(' · ')} />
             <Dato rotulo="Domicilio fiscal" valor={[datos.domicilio, datos.codigo_postal].filter(Boolean).join(' · ')} />
           </div>
+
+          {!datos.condicion && (
+            <p className="text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              Este padrón no informa impuestos, así que no puedo decirte si es monotributista o responsable
+              inscripto. Para eso hay que habilitar en ARCA el servicio «Consulta de constancia de inscripción».
+            </p>
+          )}
 
           {datos.impuestos.length > 0 && (
             <Dato rotulo="Impuestos" valor={<span className="text-xs">{datos.impuestos.join(' · ')}</span>} />
@@ -148,7 +155,9 @@ export default function ConsultaArca({ cuitInicial, orderId, razonPedido }: {
           {datos.actividades.length > 0 && (
             <Dato rotulo="Actividad" valor={<span className="text-xs">{datos.actividades.slice(0, 3).join(' · ')}</span>} />
           )}
-          <p className="text-[11px] text-slate-400">Datos de ARCA en este momento. Queda registrado quién consultó y cuándo.</p>
+          <p className="text-[11px] text-slate-400">
+            Datos de ARCA en este momento ({datos.padron}). Queda registrado quién consultó y cuándo.
+          </p>
         </div>
       )}
     </div>

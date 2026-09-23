@@ -7,16 +7,19 @@ export interface PersonaArca {
   cuit: string;
   razon_social: string | null;
   tipo_persona: string | null;
+  forma_juridica: string | null;
   /** ACTIVO / INACTIVO según ARCA. */
   estado: string | null;
-  /** Monotributo (con categoría), responsable inscripto, exento… */
-  condicion: string;
+  /** Monotributo (con categoría), responsable inscripto, exento… null si el padrón no lo informa. */
+  condicion: string | null;
   monotributo: string | null;
   impuestos: string[];
   actividades: string[];
   domicilio: string | null;
   codigo_postal: string | null;
   fecha_contrato_social: string | null;
+  /** Qué padrón contestó: la constancia informa impuestos; el A13, no. */
+  padron: string;
 }
 
 /** Todavía no está cargado el certificado en el servidor. */

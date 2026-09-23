@@ -17,22 +17,29 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// FEMAVI tiene habilitado el padrón A13 (el A5 no figura en su lista de
-// servicios). Devuelven lo mismo; si mañana se habilita otro, se cambia el
-// secreto ARCA_SERVICIO y no hay que tocar el código.
-const SERVICIO = Deno.env.get("ARCA_SERVICIO") ?? "ws_sr_padron_a13";
-const VERSION = SERVICIO.replace("ws_sr_padron_", "").toUpperCase();   // A13, A5, A4…
+// Cada padrón devuelve cosas distintas:
+//  - la constancia de inscripción trae impuestos y monotributo (lo que sirve
+//    para saber si es responsable inscripto o monotributista),
+//  - el A13 solo trae identidad, domicilio y actividad.
+// Se prueban en ese orden y se usa el primero que esté habilitado en ARCA.
+const SERVICIOS = (Deno.env.get("ARCA_SERVICIO") ?? "ws_sr_constancia_inscripcion,ws_sr_padron_a13")
+  .split(",").map(s => s.trim()).filter(Boolean);
 
-const URLS = {
-  produccion: {
-    wsaa: "https://wsaa.afip.gov.ar/ws/services/LoginCms",
-    padron: `https://aws.afip.gov.ar/sr-padron/webservices/personaService${VERSION}`,
-  },
-  homologacion: {
-    wsaa: "https://wsaahomo.afip.gov.ar/ws/services/LoginCms",
-    padron: `https://awshomo.afip.gov.ar/sr-padron/webservices/personaService${VERSION}`,
-  },
+const WSAA = {
+  produccion: "https://wsaa.afip.gov.ar/ws/services/LoginCms",
+  homologacion: "https://wsaahomo.afip.gov.ar/ws/services/LoginCms",
 };
+
+const version = (servicio: string) =>
+  servicio === "ws_sr_constancia_inscripcion" ? "A5" : servicio.replace("ws_sr_padron_", "").toUpperCase();
+
+/** La constancia se consulta por el endpoint A5; los padrones, por el suyo. */
+function urlPadron(servicio: string, entorno: "produccion" | "homologacion") {
+  const base = entorno === "homologacion"
+    ? "https://awshomo.afip.gov.ar/sr-padron/webservices/personaService"
+    : "https://aws.afip.gov.ar/sr-padron/webservices/personaService";
+  return base + version(servicio);
+}
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -47,7 +54,7 @@ function fechaArca(d: Date): string {
 }
 
 /** Arma el pedido de ticket y lo firma con el certificado (CMS / PKCS#7). */
-function firmarPedidoDeTicket(cert: string, key: string): string {
+function firmarPedidoDeTicket(cert: string, key: string, servicio: string): string {
   const ahora = new Date();
   const tra =
     '<?xml version="1.0" encoding="UTF-8"?>' +
@@ -55,7 +62,7 @@ function firmarPedidoDeTicket(cert: string, key: string): string {
     `<uniqueId>${Math.floor(ahora.getTime() / 1000)}</uniqueId>` +
     `<generationTime>${fechaArca(new Date(ahora.getTime() - 10 * 60000))}</generationTime>` +
     `<expirationTime>${fechaArca(new Date(ahora.getTime() + 10 * 60000))}</expirationTime>` +
-    `</header><service>${SERVICIO}</service></loginTicketRequest>`;
+    `</header><service>${servicio}</service></loginTicketRequest>`;
 
   const p7 = forge.pkcs7.createSignedData();
   p7.content = forge.util.createBuffer(tra, "utf8");
@@ -90,9 +97,9 @@ async function pedirSoap(url: string, accion: string, cuerpo: string): Promise<s
 }
 
 /** Ticket de acceso: el guardado si sigue vigente, o uno nuevo. */
-async function obtenerTicket(supabase: any, urls: typeof URLS.produccion) {
+async function obtenerTicket(supabase: any, servicio: string, wsaa: string) {
   const { data: guardado } = await supabase
-    .from("arca_tickets").select("*").eq("servicio", SERVICIO).maybeSingle();
+    .from("arca_tickets").select("*").eq("servicio", servicio).maybeSingle();
 
   // Cinco minutos de margen, para que no venza a mitad de una consulta.
   if (guardado && new Date(guardado.expira_at).getTime() > Date.now() + 5 * 60000) {
@@ -105,9 +112,9 @@ async function obtenerTicket(supabase: any, urls: typeof URLS.produccion) {
     throw new Error("FALTA_CERTIFICADO");
   }
 
-  const cms = firmarPedidoDeTicket(cert, key);
+  const cms = firmarPedidoDeTicket(cert, key, servicio);
   const respuesta = await pedirSoap(
-    urls.wsaa,
+    wsaa,
     "",
     '<?xml version="1.0" encoding="UTF-8"?>' +
       '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsaa="http://wsaa.view.sua.dvadac.desein.afip.gov">' +
@@ -125,7 +132,7 @@ async function obtenerTicket(supabase: any, urls: typeof URLS.produccion) {
   if (!token || !firma) throw new Error("El ticket de ARCA vino incompleto.");
 
   await supabase.from("arca_tickets").upsert({
-    servicio: SERVICIO,
+    servicio,
     token,
     firma,
     expira_at: expira ? new Date(expira).toISOString() : new Date(Date.now() + 11 * 3600 * 1000).toISOString(),
@@ -135,12 +142,19 @@ async function obtenerTicket(supabase: any, urls: typeof URLS.produccion) {
   return { token, firma };
 }
 
-/** Deja la respuesta de ARCA en algo legible para la pantalla. */
-function ordenarPersona(p: any) {
-  const g = p?.datosGenerales ?? {};
-  const mono = p?.datosMonotributo;
-  const general = p?.datosRegimenGeneral;
-  const dom = g.domicilioFiscal ?? {};
+/**
+ * Deja la respuesta de ARCA en algo legible. Cada padrón contesta distinto:
+ * el A5 anida todo en datosGenerales y el A13 lo devuelve plano, y además el
+ * A13 no informa impuestos ni monotributo.
+ */
+function ordenarPersona(p: any, servicioUsado: string) {
+  const g = p?.datosGenerales ?? p ?? {};
+  const mono = p?.datosMonotributo ?? g?.datosMonotributo;
+  const general = p?.datosRegimenGeneral ?? g?.datosRegimenGeneral;
+
+  // El A13 trae varios domicilios (fiscal, legal/real): se toma el fiscal.
+  const domicilios: any[] = [].concat(g.domicilioFiscal ?? g.domicilio ?? []);
+  const dom = domicilios.find((d: any) => /FISCAL/i.test(String(d?.tipoDomicilio ?? ""))) ?? domicilios[0] ?? {};
 
   const impuestos: string[] = []
     .concat(general?.impuesto ?? [])
@@ -151,29 +165,36 @@ function ordenarPersona(p: any) {
     .concat(general?.actividad ?? mono?.actividad ?? [])
     .map((a: any) => String(a?.descripcionActividad ?? "").trim())
     .filter(Boolean);
+  if (actividades.length === 0 && g.descripcionActividadPrincipal) {
+    actividades.push(String(g.descripcionActividadPrincipal).trim());
+  }
 
-  let condicion = "No figura inscripto en IVA";
+  // Sin datos de impuestos no se puede afirmar nada: se devuelve null y la
+  // pantalla avisa que este padrón no lo informa.
+  let condicion: string | null = null;
   if (mono) {
     const cat = mono.categoriaMonotributo?.descripcionCategoria ?? mono.categoriaMonotributo?.idCategoria;
     condicion = cat ? `Monotributo — categoría ${cat}` : "Monotributo";
-  } else if (impuestos.some(i => /IVA/i.test(i) && !/EXENTO|NO ALCANZADO/i.test(i))) {
-    condicion = "Responsable inscripto en IVA";
-  } else if (impuestos.some(i => /EXENTO/i.test(i))) {
-    condicion = "Exento";
+  } else if (impuestos.length > 0) {
+    condicion = impuestos.some(i => /IVA/i.test(i) && !/EXENTO|NO ALCANZADO/i.test(i))
+      ? "Responsable inscripto en IVA"
+      : impuestos.some(i => /EXENTO/i.test(i)) ? "Exento" : "No figura inscripto en IVA";
   }
 
   return {
     cuit: String(g.idPersona ?? ""),
     razon_social: g.razonSocial ?? ([g.apellido, g.nombre].filter(Boolean).join(", ") || null),
     tipo_persona: g.tipoPersona ?? null,
+    forma_juridica: g.formaJuridica ?? null,
     estado: g.estadoClave ?? null,
     condicion,
     monotributo: mono ? (mono.categoriaMonotributo?.descripcionCategoria ?? null) : null,
     impuestos,
     actividades,
     domicilio: [dom.direccion, dom.localidad, dom.descripcionProvincia].filter(Boolean).join(", ") || null,
-    codigo_postal: dom.codPostal ?? null,
-    fecha_contrato_social: g.fechaContratoSocial ?? null,
+    codigo_postal: dom.codigoPostal ?? dom.codPostal ?? null,
+    fecha_contrato_social: g.fechaContratoSocial ? String(g.fechaContratoSocial).slice(0, 10) : null,
+    padron: servicioUsado,
   };
 }
 
@@ -201,7 +222,7 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const urls = Deno.env.get("ARCA_ENTORNO") === "homologacion" ? URLS.homologacion : URLS.produccion;
+    const entorno = Deno.env.get("ARCA_ENTORNO") === "homologacion" ? "homologacion" : "produccion";
     const representada = Deno.env.get("ARCA_CUIT");
     if (!representada) throw new Error("FALTA_CERTIFICADO");
 
@@ -214,40 +235,49 @@ Deno.serve(async (req: Request) => {
         detalle,
       });
 
-    try {
-      const { token, firma } = await obtenerTicket(supabase, urls);
+    const parser = new XMLParser({ ignoreAttributes: true, removeNSPrefix: true, parseTagValue: false });
+    let ultimoError = "";
 
-      const respuesta = await pedirSoap(
-        urls.padron,
-        "",
-        '<?xml version="1.0" encoding="UTF-8"?>' +
-          `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:pad="http://${VERSION.toLowerCase()}.soap.ws.server.puc.sr/">` +
-          "<soapenv:Header/><soapenv:Body><pad:getPersona>" +
-          `<token>${token}</token><sign>${firma}</sign>` +
-          `<cuitRepresentada>${representada}</cuitRepresentada><idPersona>${digitos}</idPersona>` +
-          "</pad:getPersona></soapenv:Body></soapenv:Envelope>",
-      );
+    // Se prueban los padrones en orden y se usa el primero que conteste.
+    for (const servicio of SERVICIOS) {
+      try {
+        const { token, firma } = await obtenerTicket(supabase, servicio, WSAA[entorno]);
+        const ns = version(servicio).toLowerCase();
 
-      const parser = new XMLParser({ ignoreAttributes: true, removeNSPrefix: true, parseTagValue: false });
-      const arbol = parser.parse(respuesta);
-      const devuelto = arbol?.Envelope?.Body?.getPersonaResponse?.personaReturn;
-      const persona = devuelto?.persona ?? devuelto;
-      if (!persona) {
-        await registrar(false, "ARCA no devolvió datos para ese CUIT.");
-        return json({ error: "ARCA no tiene datos para ese CUIT." }, 404);
+        const respuesta = await pedirSoap(
+          urlPadron(servicio, entorno),
+          "",
+          '<?xml version="1.0" encoding="UTF-8"?>' +
+            `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:pad="http://${ns}.soap.ws.server.puc.sr/">` +
+            "<soapenv:Header/><soapenv:Body><pad:getPersona>" +
+            `<token>${token}</token><sign>${firma}</sign>` +
+            `<cuitRepresentada>${representada}</cuitRepresentada><idPersona>${digitos}</idPersona>` +
+            "</pad:getPersona></soapenv:Body></soapenv:Envelope>",
+        );
+
+        const arbol = parser.parse(respuesta);
+        const devuelto = arbol?.Envelope?.Body?.getPersonaResponse?.personaReturn;
+        const persona = devuelto?.persona ?? devuelto;
+        if (!persona || (!persona.razonSocial && !persona.datosGenerales && !persona.apellido)) {
+          ultimoError = "ARCA no devolvió datos para ese CUIT.";
+          continue;
+        }
+
+        const datos = ordenarPersona(persona, servicio);
+        await registrar(true, datos.razon_social ?? "");
+        return json({ ok: true, datos });
+      } catch (e) {
+        const msg = String((e as Error).message ?? e);
+        if (msg === "FALTA_CERTIFICADO") {
+          return json({ error: "FALTA_CERTIFICADO", mensaje: "Todavía no está cargado el certificado de ARCA." }, 412);
+        }
+        // Si el servicio no está habilitado, se intenta con el siguiente.
+        ultimoError = msg;
       }
-
-      const datos = ordenarPersona(persona);
-      await registrar(true, datos.razon_social ?? "");
-      return json({ ok: true, datos });
-    } catch (e) {
-      const msg = String((e as Error).message ?? e);
-      if (msg === "FALTA_CERTIFICADO") {
-        return json({ error: "FALTA_CERTIFICADO", mensaje: "Todavía no está cargado el certificado de ARCA." }, 412);
-      }
-      await registrar(false, msg.slice(0, 300));
-      return json({ error: msg.slice(0, 300) }, 502);
     }
+
+    await registrar(false, ultimoError.slice(0, 300));
+    return json({ error: ultimoError.slice(0, 300) || "ARCA no devolvió datos." }, 502);
   } catch (err) {
     console.error(err);
     return json({ error: String(err) }, 500);

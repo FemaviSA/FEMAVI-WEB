@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import FichaClienteVista from '../../components/FichaClienteVista';
+import ConsultaArca from '../../components/ConsultaArca';
 import { listarVendedores, type Vendedor } from '../../lib/adminOrders';
 import { fichaCliente, codigoVendedorWeb, type FichaCliente } from '../../lib/historial';
 
@@ -54,6 +55,14 @@ export default function ClienteFicha() {
         <ArrowLeft className="w-4 h-4" /> Volver a clientes
       </Link>
       <FichaClienteVista key={codigo} ficha={ficha} nombreVendedor={nombreVendedor} />
+
+      {/* Padrón de ARCA, con el CUIT del cliente ya puesto */}
+      <details className="mt-6">
+        <summary className="text-sm text-slate-500 cursor-pointer">Consultar este CUIT en ARCA</summary>
+        <div className="mt-3">
+          <ConsultaArca key={codigo} cuitInicial={ficha.cliente.cuit} razonPedido={ficha.cliente.razon_social} />
+        </div>
+      </details>
     </AdminLayout>
   );
 }

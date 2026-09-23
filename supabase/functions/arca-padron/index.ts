@@ -17,16 +17,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SERVICIO = "ws_sr_padron_a5";
+// FEMAVI tiene habilitado el padrón A13 (el A5 no figura en su lista de
+// servicios). Devuelven lo mismo; si mañana se habilita otro, se cambia el
+// secreto ARCA_SERVICIO y no hay que tocar el código.
+const SERVICIO = Deno.env.get("ARCA_SERVICIO") ?? "ws_sr_padron_a13";
+const VERSION = SERVICIO.replace("ws_sr_padron_", "").toUpperCase();   // A13, A5, A4…
 
 const URLS = {
   produccion: {
     wsaa: "https://wsaa.afip.gov.ar/ws/services/LoginCms",
-    padron: "https://aws.afip.gov.ar/sr-padron/webservices/personaServiceA5",
+    padron: `https://aws.afip.gov.ar/sr-padron/webservices/personaService${VERSION}`,
   },
   homologacion: {
     wsaa: "https://wsaahomo.afip.gov.ar/ws/services/LoginCms",
-    padron: "https://awshomo.afip.gov.ar/sr-padron/webservices/personaServiceA5",
+    padron: `https://awshomo.afip.gov.ar/sr-padron/webservices/personaService${VERSION}`,
   },
 };
 
@@ -217,16 +221,17 @@ Deno.serve(async (req: Request) => {
         urls.padron,
         "",
         '<?xml version="1.0" encoding="UTF-8"?>' +
-          '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:a5="http://a5.soap.ws.server.puc.sr/">' +
-          "<soapenv:Header/><soapenv:Body><a5:getPersona>" +
+          `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:pad="http://${VERSION.toLowerCase()}.soap.ws.server.puc.sr/">` +
+          "<soapenv:Header/><soapenv:Body><pad:getPersona>" +
           `<token>${token}</token><sign>${firma}</sign>` +
           `<cuitRepresentada>${representada}</cuitRepresentada><idPersona>${digitos}</idPersona>` +
-          "</a5:getPersona></soapenv:Body></soapenv:Envelope>",
+          "</pad:getPersona></soapenv:Body></soapenv:Envelope>",
       );
 
       const parser = new XMLParser({ ignoreAttributes: true, removeNSPrefix: true, parseTagValue: false });
       const arbol = parser.parse(respuesta);
-      const persona = arbol?.Envelope?.Body?.getPersonaResponse?.personaReturn?.persona;
+      const devuelto = arbol?.Envelope?.Body?.getPersonaResponse?.personaReturn;
+      const persona = devuelto?.persona ?? devuelto;
       if (!persona) {
         await registrar(false, "ARCA no devolvió datos para ese CUIT.");
         return json({ error: "ARCA no tiene datos para ese CUIT." }, 404);

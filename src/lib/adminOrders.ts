@@ -164,3 +164,32 @@ export function exportarCsv(pedidos: Pedido[], nombreVendedor: (code: string | n
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// ── Controles al autorizar ──
+// Avisos para mirar antes de aprobar: no bloquean nada.
+
+export interface ControlesPedido {
+  pedido: { id: number; numero: string | null; proyecto: Proyecto; cliente_nuevo: boolean; estado: Estado };
+  cuit: {
+    estado: 'ok' | 'invalido' | 'falta';
+    digitos?: string; formateado?: string; tipo?: string; mensaje?: string;
+  };
+  duplicados_sistema: {
+    codigo: string; razon_social: string | null; cuit: string | null; localidad: string | null;
+    vendedor: string | null; ultima_compra: string | null;
+    coincide_por: 'cuit' | 'nombre'; parecido: number | null;
+  }[];
+  duplicados_web: {
+    id: number; numero: string | null; fecha: string; proyecto: Proyecto;
+    company: string | null; cuit: string | null; vendedor: string | null; estado: Estado;
+  }[];
+  /** Un cliente "nuevo" de FemWay que ya existe en FEMAVI: eso hay que mirarlo sí o sí. */
+  duplicado_grave: boolean;
+  precio: { estado: string; mensaje: string };
+}
+
+export async function controlesDePedido(orderId: number): Promise<ControlesPedido | null> {
+  const { data, error } = await supabase.rpc('admin_controles_pedido', { p_order_id: orderId });
+  if (error) throw new Error(error.message);
+  return (data as ControlesPedido) ?? null;
+}

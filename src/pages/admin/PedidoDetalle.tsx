@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { X, Loader2, Check, Ban, History } from 'lucide-react';
+import { X, Loader2, Check, Ban, History, ShieldCheck } from 'lucide-react';
+import ControlesPedido from '../../components/ControlesPedido';
 import {
   type Pedido, type CambioEstado, type Estado, ETIQUETA_ESTADO, SIGUIENTE,
   cambiarEstado, completarDatos, historialDe, volumenDe, fmtNum, fmtPesos,
@@ -97,6 +98,16 @@ export default function PedidoDetalle({
             <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
               <strong>Cliente nuevo.</strong> Cuando le asignen número, cargalo abajo: así sus próximos pedidos se reconocen como del mismo cliente.
             </div>
+          )}
+
+          {/* Controles: lo que hay que mirar antes de aprobar */}
+          {pedido.status === 'recibido' && (
+            <section className="rounded-xl border border-slate-200 p-4">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+                <ShieldCheck className="w-4 h-4" /> Antes de aprobar
+              </h3>
+              <ControlesPedido orderId={pedido.id} recargar={pedido.status} />
+            </section>
           )}
 
           {/* Acciones */}

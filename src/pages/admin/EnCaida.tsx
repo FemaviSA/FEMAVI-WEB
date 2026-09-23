@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '../../components/AdminLayout';
 import ListaEnCaida, { CAMPO, FiltrosCaidaBase } from '../../components/ListaEnCaida';
 import { listarVendedores, type Vendedor } from '../../lib/adminOrders';
@@ -7,7 +7,27 @@ import { clientesEnCaida, codigoVendedorWeb, type ClienteEnCaida, type FiltrosCa
 
 export default function EnCaida() {
   const navegar = useNavigate();
-  const [filtros, setFiltros] = useState<FiltrosCaida>({ orden: 'perdido', tipo: '', pagina: 0 });
+  // Los filtros viven en la dirección: así un enlace ya trae puesto lo que se
+  // quiere mirar (por ejemplo los dormidos de un vendedor o de una zona).
+  const [params, setParams] = useSearchParams();
+  const [filtros, setFiltros] = useState<FiltrosCaida>(() => ({
+    vendedor: params.get('vendedor')?.padStart(3, '0') || undefined,
+    zona: params.get('zona') || undefined,
+    tipo: (params.get('tipo') as FiltrosCaida['tipo']) || '',
+    min: Number(params.get('min')) || undefined,
+    orden: (params.get('orden') as FiltrosCaida['orden']) || 'perdido',
+    pagina: 0,
+  }));
+
+  useEffect(() => {
+    const p = new URLSearchParams();
+    if (filtros.vendedor) p.set('vendedor', filtros.vendedor);
+    if (filtros.zona) p.set('zona', filtros.zona);
+    if (filtros.tipo) p.set('tipo', filtros.tipo);
+    if (filtros.min) p.set('min', String(filtros.min));
+    if (filtros.orden && filtros.orden !== 'perdido') p.set('orden', filtros.orden);
+    setParams(p, { replace: true });
+  }, [filtros, setParams]);
   const [filas, setFilas] = useState<ClienteEnCaida[]>([]);
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [cargando, setCargando] = useState(true);

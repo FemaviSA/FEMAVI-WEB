@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, TrendingDown } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { listarVendedores, type Vendedor, fmtNum } from '../../lib/adminOrders';
 import { buscarClientes, codigoVendedorWeb, estadoSincronizacion, POR_PAGINA, type ClienteLista, type FiltrosClientes } from '../../lib/historial';
@@ -141,6 +141,13 @@ export default function Clientes() {
           </div>
         </div>
       )}
+      {/* Análisis: no ocupa lugar, está acá para cuando haga falta. */}
+      <div className="mt-8 pt-4 border-t border-slate-200">
+        <Link to="/admin/se-caen" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-700">
+          <TrendingDown className="w-3.5 h-3.5" />
+          Clientes dormidos o que bajaron
+        </Link>
+      </div>
     </AdminLayout>
   );
 }

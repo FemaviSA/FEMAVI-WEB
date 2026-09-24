@@ -3,7 +3,8 @@ import { useParams } from 'react-router-dom';
 import { Loader2, Plus, Trash2, CheckCircle2, Lock, LogOut, Copy } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
 import { createOrder, sendOrderNotification, SesionVencidaError } from '../lib/orders';
-import { verifySellerPin, rememberedSeller, forgetSeller, perfilDeVendedor, type Seller } from '../lib/sellers';
+import { verifySellerPin, rememberedSeller, forgetSeller, perfilDeVendedor, PaseVencidoError, type Seller } from '../lib/sellers';
+import { datosDeCliente, type DatosCliente } from '../lib/historial';
 import { SEO, SITE_URL } from '../components/SEO';
 import MisVentas from '../components/MisVentas';
 import MisClientes from '../components/MisClientes';
@@ -305,6 +306,75 @@ export default function SellerOrder() {
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setF(p => ({ ...p, [k]: e.target.value }));
 
+  // --- Autocompletado del cliente -----------------------------------------
+  // Se escribe el código y la planilla se llena con lo que ya está cargado en
+  // el sistema viejo. La condición de IVA y la de pago quedan a mano: en el
+  // sistema viejo son números sin tabla que los explique.
+  const [cliente, setCliente] = useState<DatosCliente | null>(null);
+  const [buscandoCliente, setBuscandoCliente] = useState(false);
+  const [clienteNoEsta, setClienteNoEsta] = useState(false);
+  // El último código que se completó, para no volver a pisar los campos si el
+  // vendedor corrigió algo a mano y el código no cambió.
+  const ultimoCompletado = useRef('');
+  // Lo que se completó solo. Si después se cambia el código y el nuevo no
+  // existe, estos campos se vacían: un pedido con el código de un cliente y
+  // los datos de otro es peor que un pedido en blanco. Lo que el vendedor
+  // haya corregido a mano no se toca, porque ya no coincide con lo completado.
+  const completadoPorNosotros = useRef<Partial<typeof f>>({});
+
+  useEffect(() => {
+    const codigo = f.client_code.trim();
+    const olvidar = () => {
+      // La copia es a propósito: React corre el actualizador más tarde, y para
+      // entonces la referencia ya está vacía.
+      const completado = completadoPorNosotros.current;
+      completadoPorNosotros.current = {};
+      ultimoCompletado.current = '';
+      setF(p => {
+        const limpio = { ...p };
+        for (const [k, v] of Object.entries(completado)) {
+          if (p[k as keyof typeof f] === v) (limpio as Record<string, unknown>)[k] = '';
+        }
+        return limpio;
+      });
+      setCliente(null);
+    };
+
+    if (!seller || f.is_new_client || codigo.length < 2) {
+      if (ultimoCompletado.current) olvidar();
+      setClienteNoEsta(false);
+      return;
+    }
+    if (codigo === ultimoCompletado.current) return;
+
+    let vigente = true;
+    setBuscandoCliente(true);
+    const t = setTimeout(() => {
+      datosDeCliente(seller.token, codigo)
+        .then(d => {
+          if (!vigente) return;
+          setClienteNoEsta(d === null);
+          if (!d) { olvidar(); return; }
+          const completado = {
+            company: d.company ?? '', cuit: d.cuit ?? '',
+            bill_address: d.bill_address ?? '', bill_city: d.bill_city ?? '',
+            phone: d.phone ?? '', client_name: d.client_name ?? '',
+            delivery_address: d.delivery_address ?? '', ship_city: d.ship_city ?? '',
+            ship_phone: d.ship_phone ?? '', zone: d.zone ?? '',
+          };
+          setCliente(d);
+          ultimoCompletado.current = codigo;
+          completadoPorNosotros.current = completado;
+          setF(p => ({ ...p, ...completado }));
+        })
+        .catch(e => { if (vigente && e instanceof PaseVencidoError) paseVencido(); })
+        .finally(() => { if (vigente) setBuscandoCliente(false); });
+    }, 400);   // se espera a que termine de tipear el código
+
+    return () => { vigente = false; clearTimeout(t); setBuscandoCliente(false); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [f.client_code, f.is_new_client, seller]);
+
   const setRenglon = (id: number, campo: CampoTexto, valor: string) => {
     setRenglonesMal([]);
     setRenglones(rs => {
@@ -505,6 +575,10 @@ export default function SellerOrder() {
   const nuevoPedido = () => {
     setEnviado(false);
     setNumero(null);
+    setCliente(null);
+    setClienteNoEsta(false);
+    ultimoCompletado.current = '';
+    completadoPorNosotros.current = {};
     setF(p => ({
       ...p,
       account: '', purchase_order: '', ship_date: '', is_new_client: false,
@@ -706,6 +780,19 @@ export default function SellerOrder() {
 
               <Casilla rot="N° de cliente *" span={4}>
                 <input style={campo} value={f.client_code} onChange={set('client_code')} placeholder="o tildá cliente nuevo" />
+                {buscandoCliente && (
+                  <span style={{ fontSize: 10, color: C.textLight }}>buscando…</span>
+                )}
+                {!buscandoCliente && cliente && (
+                  <span style={{ fontSize: 10, color: C.ok, fontWeight: 700 }}>
+                    ✓ {cliente.company}
+                  </span>
+                )}
+                {!buscandoCliente && clienteNoEsta && (
+                  <span style={{ fontSize: 10, color: C.textLight }}>
+                    no está entre tus clientes; completá a mano
+                  </span>
+                )}
               </Casilla>
 
               <Casilla rot="N° de orden de compra" span={4}>
@@ -716,6 +803,18 @@ export default function SellerOrder() {
                 <input type="date" style={campo} value={f.ship_date} onChange={set('ship_date')} />
               </Casilla>
             </div>
+
+            {/* La observación que el cliente tiene cargada en el sistema viejo
+                ("BAJA 9/2011", "NO VENDER"). Se muestra y nada más: no entra
+                en el pedido, pero conviene leerla antes de cargarlo. */}
+            {cliente?.nota && (
+              <div style={{
+                padding: '7px 12px', background: '#fffbeb', borderBottom: BORDE,
+                fontSize: 12, color: '#92400e',
+              }}>
+                <b>Observación del sistema:</b> {cliente.nota}
+              </div>
+            )}
 
             {/* ---------- Facturar a ---------- */}
             <div className="planilla" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)' }}>

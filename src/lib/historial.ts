@@ -260,3 +260,33 @@ export async function misArticulosSugeridos(token: string, q: string): Promise<A
   if (error) return [];
   return normalizarArticulos(data);
 }
+
+// ── Datos del cliente para llenar la planilla ──
+
+/** Lo que se vuelca en el formulario; las claves son las del propio formulario. */
+export interface DatosCliente {
+  codigo: string;
+  company: string | null;
+  cuit: string | null;
+  bill_address: string | null;
+  bill_city: string | null;
+  phone: string | null;
+  client_name: string | null;
+  delivery_address: string | null;
+  ship_city: string | null;
+  ship_phone: string | null;
+  zone: string | null;
+  /** Observación del sistema viejo ("BAJA 9/2011"): se muestra, no se carga. */
+  nota: string | null;
+}
+
+/**
+ * Datos del cliente para autocompletar el pedido. Devuelve null si el código
+ * no existe, si no es cliente de ese vendedor, o si su código todavía no tiene
+ * habilitado el autocompletado (hoy, solo el 10).
+ */
+export async function datosDeCliente(token: string, codigo: string): Promise<DatosCliente | null> {
+  const { data, error } = await supabase.rpc('seller_datos_cliente', { p_token: token, p_codigo: codigo });
+  if (error) throw errorDeVendedor(error);
+  return (data as DatosCliente) ?? null;
+}

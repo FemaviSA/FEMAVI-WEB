@@ -478,8 +478,8 @@ export default function SellerOrder() {
       ship_contact: p.client_name,
     }));
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setError(null);
 
     // Lo que administración no puede procesar si falta.
@@ -750,7 +750,20 @@ export default function SellerOrder() {
         ) : vista === 'clientes' ? (
           <MisClientes token={seller.token} vendedor={seller} onPaseVencido={paseVencido} />
         ) : (
-        <form onSubmit={submit} style={{ maxWidth: 1000, margin: '0 auto', padding: '20px 16px 60px' }}>
+        <form
+          onSubmit={submit}
+          // El pedido se manda solo con el botón. Enter no lo envía: se pasa de
+          // campo en campo con Enter sin querer y se iba un pedido a medias.
+          onKeyDown={e => {
+            if (e.key !== 'Enter') return;
+            const destino = e.target as HTMLElement;
+            // En las observaciones Enter es un renglón nuevo, y en un botón
+            // (el de agregar renglón, el de copiar dirección) es el clic.
+            if (destino.tagName === 'TEXTAREA' || destino.tagName === 'BUTTON') return;
+            e.preventDefault();
+          }}
+          style={{ maxWidth: 1000, margin: '0 auto', padding: '20px 16px 60px' }}
+        >
           {/* Deja claro en qué proyecto está cargando: sale del código, no se elige. */}
           {proyecto === 'femway' && (
             <div style={{
@@ -1101,7 +1114,7 @@ export default function SellerOrder() {
             <span style={{ fontSize: 11, color: C.textLight }}>* campos obligatorios</span>
           </div>
 
-          <button type="submit" disabled={enviando} style={{
+          <button type="button" onClick={() => void submit()} disabled={enviando} style={{
             width: '100%', marginTop: 16, padding: 15,
             background: enviando ? C.textLight : C.accent,
             color: C.white, fontSize: 15, fontWeight: 700, borderRadius: 9,

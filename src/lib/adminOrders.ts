@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { NOMBRE_PROYECTO, type Proyecto } from './proyectos';
+import type { OrderCreated, OrderInput } from './orders';
 
 export const ESTADOS = ['recibido', 'aprobado', 'ingresado', 'facturado', 'entregado', 'rechazado'] as const;
 export type Estado = (typeof ESTADOS)[number];
@@ -69,6 +70,8 @@ export interface Vendedor {
   code: string;
   name: string;
   active: boolean;
+  /** FEMAVI o FemWay: cada código pertenece a uno solo. */
+  proyecto: Proyecto;
 }
 
 export interface CambioEstado {
@@ -90,7 +93,7 @@ export async function listarPedidos(): Promise<Pedido[]> {
 }
 
 export async function listarVendedores(): Promise<Vendedor[]> {
-  const { data, error } = await supabase.from('sellers').select('code, name, active');
+  const { data, error } = await supabase.from('sellers').select('code, name, active, proyecto');
   if (error) throw error;
   return ((data ?? []) as Vendedor[]).sort((a, b) => Number(a.code) - Number(b.code));
 }
@@ -208,4 +211,28 @@ export async function controlesDePedido(orderId: number): Promise<ControlesPedid
   const { data, error } = await supabase.rpc('admin_controles_pedido', { p_order_id: orderId });
   if (error) throw new Error(error.message);
   return (data as ControlesPedido) ?? null;
+}
+
+/**
+ * Carga un pedido desde el admin, a nombre de un vendedor. El proyecto sale de
+ * la ficha del vendedor, igual que cuando lo carga él: no se elige acá.
+ */
+export async function crearPedidoAdmin(input: OrderInput, vendedor: string): Promise<OrderCreated> {
+  const items = input.items.filter(i => i.product.trim());
+  const total = items.reduce((acc, i) => acc + (i.quantity || 0) * (i.unit_price || 0), 0);
+
+  const { data, error } = await supabase.rpc('admin_crear_pedido', {
+    p: {
+      ...input,
+      items: items.map(i => ({ ...i, line_total: (i.quantity || 0) * (i.unit_price || 0) })),
+      total,
+    },
+    p_vendedor: vendedor,
+  });
+  if (error || !data) {
+    throw new Error(error?.message?.includes('vendedor_inexistente')
+      ? 'Ese vendedor no existe o está dado de baja.'
+      : 'No se pudo guardar el pedido. Probá de nuevo.');
+  }
+  return data as OrderCreated;
 }

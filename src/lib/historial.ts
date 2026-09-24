@@ -266,6 +266,8 @@ export async function misArticulosSugeridos(token: string, q: string): Promise<A
 /** Lo que se vuelca en el formulario; las claves son las del propio formulario. */
 export interface DatosCliente {
   codigo: string;
+  /** Solo cuando mira el admin: a qué vendedor está asignado. */
+  vendedor?: string | null;
   company: string | null;
   cuit: string | null;
   bill_address: string | null;
@@ -294,6 +296,8 @@ export async function datosDeCliente(token: string, codigo: string): Promise<Dat
 /** Un cliente de la lista que se despliega al escribir el nombre. */
 export interface ClienteSugerido {
   codigo: string;
+  /** Solo cuando busca el admin. */
+  vendedor?: string | null;
   razon_social: string | null;
   localidad: string | null;
   cuit: string | null;
@@ -306,5 +310,21 @@ export interface ClienteSugerido {
 export async function buscarMiCliente(token: string, q: string): Promise<ClienteSugerido[]> {
   const { data, error } = await supabase.rpc('seller_buscar_cliente', { p_token: token, p_q: q });
   if (error) throw errorDeVendedor(error);
+  return (data ?? []) as ClienteSugerido[];
+}
+
+// ── Lo mismo para administración ──
+// Sin filtro de cartera: se cargan pedidos de cualquier cliente, y la base
+// devuelve además a qué vendedor está asignado para proponerlo.
+
+export async function datosDeClienteAdmin(codigo: string): Promise<DatosCliente | null> {
+  const { data, error } = await supabase.rpc('admin_datos_cliente', { p_codigo: codigo });
+  if (error) throw new Error(error.message);
+  return (data as DatosCliente) ?? null;
+}
+
+export async function buscarClienteAdmin(q: string): Promise<ClienteSugerido[]> {
+  const { data, error } = await supabase.rpc('admin_buscar_cliente', { p_q: q });
+  if (error) throw new Error(error.message);
   return (data ?? []) as ClienteSugerido[];
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { NOMBRE_PROYECTO, PROYECTOS, type Proyecto } from '../../lib/proyectos';
-import { Download, Loader2, RefreshCw, Search } from 'lucide-react';
+import { Download, Loader2, Plus, RefreshCw, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { AdminLayout } from '../../components/AdminLayout';
 import PedidoDetalle, { ChipEstado } from './PedidoDetalle';
 import {
@@ -106,6 +107,11 @@ export default function Pedidos() {
       crumbs={[{ label: 'Pedidos' }]}
       actions={
         <div className="flex gap-2">
+          {/* Los pedidos que llegan por mail se cargan a mano desde acá. */}
+          <Link to="/admin/pedidos/nuevo"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 hover:bg-slate-50">
+            <Plus className="w-4 h-4" /> Cargar pedido
+          </Link>
           <button onClick={() => { setCargando(true); cargar(); }}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 hover:bg-slate-50">
             <RefreshCw className="w-4 h-4" /> Actualizar

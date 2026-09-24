@@ -290,3 +290,21 @@ export async function datosDeCliente(token: string, codigo: string): Promise<Dat
   if (error) throw errorDeVendedor(error);
   return (data as DatosCliente) ?? null;
 }
+
+/** Un cliente de la lista que se despliega al escribir el nombre. */
+export interface ClienteSugerido {
+  codigo: string;
+  razon_social: string | null;
+  localidad: string | null;
+  cuit: string | null;
+}
+
+/**
+ * Clientes del vendedor cuyo nombre (o CUIT) se parece a lo escrito. Devuelve
+ * vacío si el código no tiene habilitado el autocompletado.
+ */
+export async function buscarMiCliente(token: string, q: string): Promise<ClienteSugerido[]> {
+  const { data, error } = await supabase.rpc('seller_buscar_cliente', { p_token: token, p_q: q });
+  if (error) throw errorDeVendedor(error);
+  return (data ?? []) as ClienteSugerido[];
+}

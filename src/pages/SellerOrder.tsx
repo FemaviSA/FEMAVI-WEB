@@ -4,7 +4,7 @@ import { Loader2, Plus, Trash2, CheckCircle2, Lock, LogOut, Copy } from 'lucide-
 import { useProducts } from '../hooks/useProducts';
 import { createOrder, sendOrderNotification, SesionVencidaError } from '../lib/orders';
 import { verifySellerPin, rememberedSeller, forgetSeller, perfilDeVendedor, PaseVencidoError, type Seller } from '../lib/sellers';
-import { datosDeCliente, type DatosCliente } from '../lib/historial';
+import { buscarMiCliente, datosDeCliente, type ClienteSugerido, type DatosCliente } from '../lib/historial';
 import { SEO, SITE_URL } from '../components/SEO';
 import MisVentas from '../components/MisVentas';
 import MisClientes from '../components/MisClientes';
@@ -375,6 +375,38 @@ export default function SellerOrder() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [f.client_code, f.is_new_client, seller]);
 
+  // --- La otra puerta: buscar por razón social -----------------------------
+  // Si no se acuerda el código, se escribe el nombre y se elige de la lista.
+  // Al elegir se completa el código y de ahí en más es el mismo camino.
+  const [sugerencias, setSugerencias] = useState<ClienteSugerido[]>([]);
+  // Lo tipeado en "Nombre / Razón social". Vive aparte del formulario para que
+  // la lista aparezca solo cuando escribe el vendedor, no cuando completamos
+  // ese campo nosotros.
+  const [nombreTipeado, setNombreTipeado] = useState('');
+
+  useEffect(() => {
+    if (!seller || f.is_new_client || nombreTipeado.trim().length < 3) {
+      setSugerencias([]);
+      return;
+    }
+    let vigente = true;
+    const t = setTimeout(() => {
+      buscarMiCliente(seller.token, nombreTipeado.trim())
+        .then(r => { if (vigente) setSugerencias(r); })
+        .catch(e => { if (vigente && e instanceof PaseVencidoError) paseVencido(); });
+    }, 350);
+    return () => { vigente = false; clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nombreTipeado, f.is_new_client, seller]);
+
+  /** Se eligió uno de la lista: alcanza con poner el código, el resto se completa solo. */
+  const elegirCliente = (c: ClienteSugerido) => {
+    setSugerencias([]);
+    setNombreTipeado('');
+    // "00119" se muestra como 119, igual que lo escribiría a mano.
+    setF(p => ({ ...p, client_code: String(Number(c.codigo)) }));
+  };
+
   const setRenglon = (id: number, campo: CampoTexto, valor: string) => {
     setRenglonesMal([]);
     setRenglones(rs => {
@@ -577,6 +609,8 @@ export default function SellerOrder() {
     setNumero(null);
     setCliente(null);
     setClienteNoEsta(false);
+    setSugerencias([]);
+    setNombreTipeado('');
     ultimoCompletado.current = '';
     completadoPorNosotros.current = {};
     setF(p => ({
@@ -823,7 +857,41 @@ export default function SellerOrder() {
               </div>
 
               <Casilla rot="Nombre / Razón social *" span={7}>
-                <input style={campo} value={f.company} onChange={set('company')} />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    style={campo} value={f.company}
+                    onChange={e => { setF(p => ({ ...p, company: e.target.value })); setNombreTipeado(e.target.value); }}
+                    // Se cierra al salir del campo, pero recién después del clic
+                    // en la lista: si no, el clic no llega a registrarse.
+                    onBlur={() => setTimeout(() => setSugerencias([]), 150)}
+                  />
+                  {sugerencias.length > 0 && (
+                    <ul style={{
+                      position: 'absolute', zIndex: 20, top: '100%', left: 0, minWidth: '100%',
+                      margin: '2px 0 0', padding: 0, listStyle: 'none', background: C.white,
+                      border: `1px solid ${C.borderLight}`, borderRadius: 8,
+                      boxShadow: '0 8px 24px rgba(0,48,88,0.14)', maxHeight: 240, overflowY: 'auto',
+                    }}>
+                      {sugerencias.map(c => (
+                        <li key={c.codigo}>
+                          <button
+                            type="button" onMouseDown={() => elegirCliente(c)}
+                            style={{
+                              display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer',
+                              padding: '7px 10px', background: 'transparent', border: 'none',
+                              fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: C.text,
+                            }}
+                          >
+                            {c.razon_social}
+                            <span style={{ display: 'block', fontSize: 11, color: C.textLight }}>
+                              Cód. {String(Number(c.codigo))}{c.localidad ? ` · ${c.localidad}` : ''}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </Casilla>
 
               <div style={{ ...celda, gridColumn: 'span 3', display: 'flex', alignItems: 'center' }}>

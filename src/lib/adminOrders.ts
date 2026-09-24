@@ -190,7 +190,14 @@ export interface ControlesPedido {
   }[];
   /** Cuántos de los encontrados le compraron a FEMAVI en el último año. */
   duplicados_vivos: number;
-  /** Un cliente "nuevo" de FemWay que además sigue comprando en FEMAVI. */
+  /**
+   * El cliente está registrado como un pase de FEMAVI a FemWay: que aparezca en
+   * los dos lados es a propósito, no un error.
+   */
+  pase_femway: {
+    codigo: string; razon_social: string; vendedor: string | null; pasado_el: string | null;
+  } | null;
+  /** Un cliente "nuevo" de FemWay que además sigue comprando en FEMAVI, sin pase registrado. */
   duplicado_grave: boolean;
   precio: {
     estado: 'ok' | 'alerta' | 'sin_lista';

@@ -79,10 +79,15 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
 
       {/* Cliente que ya existe en el sistema */}
       {dup.length > 0 && (
-        <Fila tono={c.duplicado_grave ? 'mal' : 'aviso'} icono={<AlertTriangle className="w-4 h-4" />}
-          titulo={c.duplicado_grave
-            ? `Ojo: ya es cliente de FEMAVI y compró en el último año`
-            : 'Ya existe en el sistema, pero no compra hace más de un año'}>
+        <Fila
+          tono={c.duplicado_grave ? 'mal' : c.pase_femway ? 'ok' : 'aviso'}
+          icono={<AlertTriangle className="w-4 h-4" />}
+          titulo={c.pase_femway
+            // Que esté en los dos lados es a propósito: alguien lo pasó a FemWay.
+            ? `Pasado a FemWay el ${fecha(c.pase_femway.pasado_el)}: es el mismo cliente en los dos proyectos`
+            : c.duplicado_grave
+              ? 'Ojo: ya es cliente de FEMAVI y compró en el último año'
+              : 'Ya existe en el sistema, pero no compra hace más de un año'}>
           <ul className="mt-1.5 space-y-1">
             {dup.map(d => (
               <li key={d.codigo} className="text-xs">

@@ -5,6 +5,8 @@ import { AdminLayout } from '../../components/AdminLayout';
 import { listarVendedores, type Vendedor, fmtNum } from '../../lib/adminOrders';
 import { buscarClientes, codigoVendedorWeb, estadoSincronizacion, sugerirArticulos, POR_PAGINA, type ClienteLista, type FiltrosClientes } from '../../lib/historial';
 import FiltrosAvanzados from '../../components/FiltrosClientes';
+import ClientesFemway from '../../components/ClientesFemway';
+import { NOMBRE_PROYECTO, PROYECTOS, type Proyecto } from '../../lib/proyectos';
 
 // Buscador de clientes: se entra por código, razón social, CUIT o localidad y
 // se abre la ficha. Sin análisis: eso va en los reportes.
@@ -26,6 +28,9 @@ function EstadoSync({ sync }: { sync: Awaited<ReturnType<typeof estadoSincroniza
 }
 
 export default function Clientes() {
+  // Los dos proyectos se miran por separado, igual que en Pedidos. Los de
+  // FEMAVI salen del sistema viejo; los de FemWay tienen su registro propio.
+  const [proyecto, setProyecto] = useState<Proyecto>('femavi');
   const [filtros, setFiltros] = useState<FiltrosClientes>({ orden: 'ultima', pagina: 0 });
   const [texto, setTexto] = useState('');
   const [filas, setFilas] = useState<ClienteLista[]>([]);
@@ -44,6 +49,7 @@ export default function Clientes() {
   }, [texto]);
 
   useEffect(() => {
+    if (proyecto !== 'femavi') return;
     let vigente = true;
     setCargando(true);
     setError(null);
@@ -52,7 +58,7 @@ export default function Clientes() {
       .catch(e => { if (vigente) setError(e.message); })
       .finally(() => { if (vigente) setCargando(false); });
     return () => { vigente = false; };
-  }, [filtros]);
+  }, [filtros, proyecto]);
 
   const nombreVendedor = useMemo(() => {
     const m = new Map(vendedores.map(v => [v.code, v.name]));
@@ -70,6 +76,21 @@ export default function Clientes() {
 
   return (
     <AdminLayout crumbs={[{ label: 'Clientes' }]}>
+      <div className="flex gap-2 mb-4">
+        {PROYECTOS.map(k => (
+          <button key={k} type="button" onClick={() => setProyecto(k)}
+            className={`px-4 py-2 rounded-lg text-sm font-bold ring-1 ${proyecto === k
+              ? (k === 'femway' ? 'bg-violet-600 text-white ring-violet-600' : 'bg-sky-600 text-white ring-sky-600')
+              : 'bg-white text-slate-600 ring-slate-200 hover:bg-slate-50'}`}>
+            {NOMBRE_PROYECTO[k]}
+          </button>
+        ))}
+      </div>
+
+      {proyecto === 'femway' ? (
+        <ClientesFemway vendedores={vendedores} />
+      ) : (
+      <>
       <p className="text-sm text-slate-500 mb-4">
         Buscá por código, razón social, CUIT o localidad y entrá a la ficha del cliente.
         {sync !== undefined && <EstadoSync sync={sync} />}
@@ -155,6 +176,9 @@ export default function Clientes() {
           </div>
         </div>
       )}
+      </>
+      )}
+
       {/* Análisis: no ocupa lugar, está acá para cuando haga falta. */}
       <div className="mt-8 pt-4 border-t border-slate-200">
         <Link to="/admin/se-caen" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-700">

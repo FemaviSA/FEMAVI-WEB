@@ -14,9 +14,12 @@ interface OrderItem {
   line_total?: number | null;
 }
 
-// === PALETA (la misma que usa la planilla de cotizaciones) ===
+// === PALETA ===
+// La planilla se imprime, así que no se rellena nada con el azul oscuro: se usa
+// para el texto y para las líneas. El único relleno con color es AZUL_SUAVE, y
+// es apenas un tono: pintar bandas enteras se come el toner.
 const AZUL_OSCURO = "FF1B3A6B";
-const AZUL_CLARO = "FFD6E4F7";
+const AZUL_SUAVE = "FFEAF1FA";
 const GRIS_FILA = "FFF5F7FA";
 const GRIS_BORDE = "FFBFCAD4";
 const BLANCO = "FFFFFFFF";
@@ -118,6 +121,20 @@ Deno.serve(async (req: Request) => {
     const pintarFila = (r: number, color: string) => {
       for (let c = 1; c <= ANCHO; c++) ws.getCell(r, c).fill = solid(color);
     };
+    /** Una línea azul de lado a lado, en vez de una banda pintada. */
+    const rayaDebajo = (fila: number) => {
+      for (let c = 2; c <= 7; c++) {
+        ws.getCell(fila, c).border = { ...ws.getCell(fila, c).border, bottom: B("medium", AZUL_OSCURO) };
+      }
+    };
+    /**
+     * Recuadro de una celda combinada. Va sobre la celda de arriba a la
+     * izquierda, que es la que manda: escribir en las otras del rango combinado
+     * termina pisando el estilo de esa misma, y quedaba media caja dibujada.
+     */
+    const recuadro = (fila: number, col: number) => {
+      ws.getCell(fila, col).border = { top: B(), bottom: B(), left: B(), right: B() };
+    };
 
     // ── Logo y dirección ──
     ws.getRow(1).height = 6;
@@ -133,7 +150,18 @@ Deno.serve(async (req: Request) => {
       if (resLogo.ok) {
         const bytes = new Uint8Array(await resLogo.arrayBuffer());
         const logoId = wb.addImage({ buffer: bytes.buffer as ArrayBuffer, extension: "png" });
-        ws.addImage(logoId, { tl: { col: 1, row: 1 }, br: { col: 4.2, row: 3 }, editAs: "oneCell" });
+        // Antes el logo se estiraba para llenar un recuadro y salía deformado.
+        // Ahora se le da un alto fijo y el ancho sale de su propia proporción,
+        // que se lee del PNG (bytes 16 a 24 de la cabecera IHDR).
+        const anchoReal = bytes.length > 24 ? new DataView(bytes.buffer).getUint32(16) : 0;
+        const altoReal = bytes.length > 24 ? new DataView(bytes.buffer).getUint32(20) : 0;
+        const proporcion = anchoReal > 0 && altoReal > 0 ? anchoReal / altoReal : 1;
+        const alto = 50;
+        ws.addImage(logoId, {
+          tl: { col: 1, row: 1.1 },
+          ext: { width: Math.round(alto * proporcion), height: alto },
+          editAs: "oneCell",
+        });
       }
     } catch {
       // El logo es decorativo: si el sitio no responde, la planilla sale igual.
@@ -145,23 +173,23 @@ Deno.serve(async (req: Request) => {
     dir.font = F(false, 9, "FF444444");
     dir.alignment = { horizontal: "right", vertical: "middle", wrapText: true };
 
-    ws.getRow(4).height = 4;
-    pintarFila(4, AZUL_OSCURO);
+    ws.getRow(4).height = 6;
+    rayaDebajo(3);
 
-    // ── Barra de título ──
+    // ── Título ──
     ws.getRow(5).height = 30;
-    pintarFila(5, AZUL_OSCURO);
     ws.mergeCells("B5:E5");
     const titulo = ws.getCell("B5");
     titulo.value = (esFemway ? "FEMWAY  ·  " : "") + "P E D I D O   N°  " + dato(o.order_number);
-    titulo.font = F(true, 15, BLANCO);
+    titulo.font = F(true, 15, AZUL_OSCURO);
     titulo.alignment = { horizontal: "left", vertical: "middle" };
 
     ws.mergeCells("F5:G5");
     const cuenta = ws.getCell("F5");
     cuenta.value = "CUENTA  " + dato(o.account);
-    cuenta.font = F(true, 13, BLANCO);
+    cuenta.font = F(true, 13, AZUL_OSCURO);
     cuenta.alignment = { horizontal: "right", vertical: "middle" };
+    rayaDebajo(5);
 
     // ── Datos de cabecera, en dos columnas de pares etiqueta/valor ──
     let r = 7;
@@ -193,7 +221,7 @@ Deno.serve(async (req: Request) => {
     // ── Bloques FACTURAR A / ENTREGAR A ──
     const barra = (texto: string) => {
       ws.getRow(r).height = 20;
-      pintarFila(r, AZUL_CLARO);
+      pintarFila(r, AZUL_SUAVE);
       ws.mergeCells(r, 2, r, 7);
       const c = ws.getCell(r, 2);
       c.value = texto;
@@ -234,18 +262,19 @@ Deno.serve(async (req: Request) => {
 
     // ── Tabla de productos ──
     ws.getRow(r).height = 22;
-    pintarFila(r, AZUL_OSCURO);
+    pintarFila(r, AZUL_SUAVE);
     ["CANTIDAD", "ENVASE", "DESCRIPCIÓN DEL PRODUCTO", "P. UNITARIO", "TOTAL"].forEach((t, i) => {
       const c = ws.getCell(r, i + 2);
       c.value = t;
-      c.font = F(true, 10, BLANCO);
+      c.font = F(true, 10, AZUL_OSCURO);
       c.alignment = { horizontal: i >= 3 ? "right" : "left", vertical: "middle" };
     });
     ws.mergeCells(r, 6, r, 7);
     const encTotal = ws.getCell(r, 6);
     encTotal.value = "TOTAL";
-    encTotal.font = F(true, 10, BLANCO);
+    encTotal.font = F(true, 10, AZUL_OSCURO);
     encTotal.alignment = { horizontal: "right", vertical: "middle" };
+    rayaDebajo(r);
     r++;
 
     const filaPrimerItem = r;
@@ -285,7 +314,7 @@ Deno.serve(async (req: Request) => {
 
     // ── Total ──
     ws.getRow(r).height = 26;
-    pintarFila(r, AZUL_CLARO);
+    pintarFila(r, AZUL_SUAVE);
     ws.mergeCells(r, 2, r, 5);
     const etiquetaTotal = ws.getCell(r, 2);
     etiquetaTotal.value = "TOTAL DEL PEDIDO";
@@ -303,19 +332,22 @@ Deno.serve(async (req: Request) => {
     r += 2;
 
     // ── Observaciones ──
-    if (o.notes) {
-      ws.getRow(r).height = 17;
-      const e = ws.getCell(r, 2);
-      e.value = "OBSERVACIONES";
-      e.font = F(true, 9, "FF5A6F80");
-      r++;
-      ws.mergeCells(r, 2, r, 7);
-      const c = ws.getCell(r, 2);
-      c.value = o.notes;
-      c.font = F(false, 10);
-      c.alignment = { horizontal: "left", vertical: "top", wrapText: true };
-      ws.getRow(r).height = 34;
-    }
+    // El recuadro va siempre, tenga o no observaciones el pedido: la planilla
+    // se imprime y administración anota ahí a mano lo que haga falta.
+    ws.getRow(r).height = 17;
+    const rotuloObs = ws.getCell(r, 2);
+    rotuloObs.value = "OBSERVACIONES";
+    rotuloObs.font = F(true, 9, "FF5A6F80");
+    r++;
+
+    const ALTO_OBS = 3;
+    ws.mergeCells(r, 2, r + ALTO_OBS - 1, 7);
+    const cajaObs = ws.getCell(r, 2);
+    cajaObs.value = o.notes ?? "";
+    cajaObs.font = F(false, 10);
+    cajaObs.alignment = { horizontal: "left", vertical: "top", wrapText: true };
+    for (let i = 0; i < ALTO_OBS; i++) ws.getRow(r + i).height = 18;
+    recuadro(r, 2);
 
     // ── Serializar ──
     const buffer = await wb.xlsx.writeBuffer();

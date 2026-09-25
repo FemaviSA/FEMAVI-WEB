@@ -168,3 +168,11 @@ export async function cuitDeOtroVendedor(token: string, cuit: string): Promise<{
   if (error) return null;   // si falla la consulta, no se traba la carga: la base frena igual
   return (data as { codigo: string; razon_social: string }) ?? null;
 }
+
+/** El vendedor deja una nota en la ficha de su cliente. Solo la nota. */
+export async function guardarMiNotaFemway(token: string, codigo: string, notas: string): Promise<void> {
+  const { error } = await supabase.rpc('seller_femway_guardar_nota', {
+    p_token: token, p_codigo: codigo, p_notas: notas,
+  });
+  if (error) throw errorDeVendedor(error);
+}

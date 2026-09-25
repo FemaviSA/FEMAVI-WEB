@@ -27,13 +27,18 @@ interface Props {
    * de FemWay no le aporta y lo confunde, así que solo se muestra en el admin.
    */
   mostrarFemavi?: boolean;
+  /**
+   * Deja al vendedor escribir la nota del cliente. Es lo único que puede tocar
+   * de la ficha; el resto de los datos los maneja administración.
+   */
+  guardarNota?: (notas: string) => Promise<void>;
   /** Solo administración edita los datos del cliente. */
   vendedores?: Vendedor[];
   alGuardar?: () => void;
 }
 
 /** Montarla con key={codigo} para que el estado se reinicie al cambiar de cliente. */
-export default function FichaFemwayVista({ ficha, nombreVendedor, mostrarFemavi, vendedores, alGuardar }: Props) {
+export default function FichaFemwayVista({ ficha, nombreVendedor, mostrarFemavi, guardarNota, vendedores, alGuardar }: Props) {
   const [editando, setEditando] = useState(false);
   const [abiertos, setAbiertos] = useState<Set<number>>(new Set());
   const [anio, setAnio] = useState<number | 'todos'>('todos');
@@ -94,9 +99,12 @@ export default function FichaFemwayVista({ ficha, nombreVendedor, mostrarFemavi,
             <Dato rotulo="Teléfono de entrega" valor={c.entrega_telefono} />
             <Dato rotulo="Zona" valor={c.zona} />
             {mostrarFemavi && c.origen === 'femavi' && <Dato rotulo="Código en FEMAVI" valor={c.cliente_femavi} />}
-            <Dato rotulo="Notas" valor={c.notas} />
+            {/* Con guardarNota la nota va aparte, para poder escribirla. */}
+            {!guardarNota && <Dato rotulo="Notas" valor={c.notas} />}
           </div>
         )}
+
+        {guardarNota && !editando && <Notas notas={c.notas} guardar={guardarNota} />}
       </section>
 
       {/* Historial de compras */}
@@ -258,5 +266,51 @@ function FormularioDatos({ cliente, vendedores, onListo }: {
         {guardando && <Loader2 className="w-4 h-4 animate-spin" />} Guardar
       </button>
     </>
+  );
+}
+
+// ── Notas del vendedor ──
+// Lo único que el vendedor puede escribir en la ficha. Es la misma nota que ve
+// administración: si anota algo, del otro lado se lee.
+
+function Notas({ notas, guardar }: { notas: string | null; guardar: (n: string) => Promise<void> }) {
+  const [texto, setTexto] = useState(notas ?? '');
+  const [guardando, setGuardando] = useState(false);
+  const [guardado, setGuardado] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const cambiado = texto !== (notas ?? '');
+
+  const alGuardar = async () => {
+    setGuardando(true);
+    setError(null);
+    try {
+      await guardar(texto);
+      setGuardado(true);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 pt-4 border-t border-slate-100">
+      <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1">Notas</div>
+      <textarea
+        value={texto}
+        onChange={e => { setTexto(e.target.value); setGuardado(false); }}
+        rows={3}
+        placeholder="Lo que quieras recordar de este cliente: con quién hablar, cuándo pasar, qué le interesa…"
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700"
+      />
+      <div className="flex items-center gap-3 mt-2">
+        <button onClick={alGuardar} disabled={!cambiado || guardando}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-40">
+          {guardando && <Loader2 className="w-4 h-4 animate-spin" />} Guardar nota
+        </button>
+        {guardado && !cambiado && <span className="text-xs text-emerald-700 font-semibold">Guardada</span>}
+        {error && <span className="text-xs text-red-700">{error}</span>}
+      </div>
+    </div>
   );
 }

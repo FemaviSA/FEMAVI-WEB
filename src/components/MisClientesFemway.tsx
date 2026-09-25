@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, Loader2, Search } from 'lucide-react';
 import FichaFemwayVista from './FichaFemwayVista';
 import { fmtNum, fmtPesos } from '../lib/adminOrders';
-import { misClientesFemway, miFichaClienteFemway, type FichaFemway, type MiClienteFemway } from '../lib/femway';
+import { guardarMiNotaFemway, misClientesFemway, miFichaClienteFemway, type FichaFemway, type MiClienteFemway } from '../lib/femway';
 import { PaseVencidoError } from '../lib/sellers';
 
 // Clientes del vendedor de FemWay. Igual que la solapa de FEMAVI: se entra a
@@ -84,8 +84,15 @@ export default function MisClientesFemway({ token, vendedor, onPaseVencido }: Pr
           ) : errorFicha || !ficha ? (
             <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{errorFicha}</div>
           ) : (
-            <FichaFemwayVista key={abierto} ficha={ficha}
-              nombreVendedor={() => `${vendedor.name} (${vendedor.code})`} />
+            <FichaFemwayVista
+              key={abierto}
+              ficha={ficha}
+              nombreVendedor={() => `${vendedor.name} (${vendedor.code})`}
+              guardarNota={async n => {
+                await guardarMiNotaFemway(token, abierto, n);
+                setFicha(f => (f ? { ...f, cliente: { ...f.cliente, notas: n.trim() || null } } : f));
+              }}
+            />
           )}
         </div>
       )}

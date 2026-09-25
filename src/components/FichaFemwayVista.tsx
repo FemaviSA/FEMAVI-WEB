@@ -44,16 +44,7 @@ export default function FichaFemwayVista({ ficha, nombreVendedor, vendedores, al
   return (
     <>
       <div className="mb-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold text-slate-900">{c.razon_social}</h1>
-          {c.origen === 'femavi' && (
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ring-1 ${c.pasado_el
-              ? 'bg-sky-50 text-sky-700 ring-sky-200'
-              : 'bg-amber-50 text-amber-800 ring-amber-200'}`}>
-              También en FEMAVI{c.pasado_el ? '' : ' · sin confirmar'}
-            </span>
-          )}
-        </div>
+        <h1 className="text-2xl font-bold text-slate-900">{c.razon_social}</h1>
         <div className="text-sm text-slate-500">
           Cód. {c.codigo} · CUIT {c.cuit ?? '—'} · {nombreVendedor(c.vendedor)} · Zona {c.zona ?? '—'}
         </div>

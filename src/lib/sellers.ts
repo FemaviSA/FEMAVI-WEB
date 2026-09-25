@@ -119,13 +119,20 @@ export function forgetSeller(token?: string): void {
 // resumen, así que no hay forma de pedir el de otro vendedor.
 // ---------------------------------------------------------------------------
 
+/** Los períodos con los que miden los vendedores: por ciclo, no por mes. */
+export type PeriodoVentas = 'ciclo' | 'ciclo_pasado' | 'ultimos3' | 'anio';
+
 export interface ResumenVentas {
+  /** Los ciclos que entran en el período elegido. */
+  ciclos: { nombre: string; desde: string; hasta: string }[];
   totales: {
     pedidos: number; clientes: number; pesos: number;
     /** Litros y kilos juntos (1 L = 1 kg), neto de bonificaciones. */
     volumen: number;
     bonificado: number;
   };
+  /** Cargados y todavía sin aprobar: no suman, solo avisan que llegaron. */
+  esperando: number;
   por_estado: Record<string, number>;
   pedidos: {
     numero: string | null; fecha: string; cliente: string | null; cuenta: string | null;
@@ -140,8 +147,8 @@ export class PaseVencidoError extends Error {
   }
 }
 
-export async function resumenDeVentas(token: string, desde: string, hasta: string): Promise<ResumenVentas> {
-  const { data, error } = await supabase.rpc('seller_summary', { p_token: token, p_desde: desde, p_hasta: hasta });
+export async function resumenDeVentas(token: string, periodo: PeriodoVentas): Promise<ResumenVentas> {
+  const { data, error } = await supabase.rpc('seller_resumen', { p_token: token, p_periodo: periodo });
   if (error?.message?.includes('sesion_vencida')) throw new PaseVencidoError();
   if (error || !data) throw new Error('No se pudo cargar el resumen. Revisá la conexión.');
   return data as ResumenVentas;

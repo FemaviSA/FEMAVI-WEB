@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { resumenDeVentas, PaseVencidoError, type ResumenVentas } from '../lib/sellers';
+import { resumenDeVentas, PaseVencidoError, type PeriodoVentas, type ResumenVentas } from '../lib/sellers';
 import { NOMBRE_PROYECTO, type Proyecto } from '../lib/proyectos';
 
 const ETIQUETA: Record<string, string> = {
@@ -19,23 +19,19 @@ const COLOR: Record<string, string> = {
 const pesos = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
 const num = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
 
-// Fechas en hora argentina, AAAA-MM-DD.
-const dia = (d: Date) => d.toLocaleDateString('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires' });
+const fechaCorta = (iso: string) =>
+  new Date(iso + 'T12:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
 
-type Periodo = 'mes' | 'mes_pasado' | '90' | 'anio';
-
-function rango(p: Periodo): [string, string] {
-  const hoy = new Date(dia(new Date()) + 'T12:00:00');
-  const y = hoy.getFullYear();
-  const m = hoy.getMonth();
-  if (p === 'mes') return [dia(new Date(y, m, 1, 12)), dia(hoy)];
-  if (p === 'mes_pasado') return [dia(new Date(y, m - 1, 1, 12)), dia(new Date(y, m, 0, 12))];
-  if (p === '90') return [dia(new Date(hoy.getTime() - 89 * 86400000)), dia(hoy)];
-  return [dia(new Date(y, 0, 1, 12)), dia(hoy)];
-}
+// Los vendedores miden por ciclo, no por mes calendario.
+const PERIODOS: [PeriodoVentas, string][] = [
+  ['ciclo', 'Este ciclo'],
+  ['ciclo_pasado', 'Ciclo pasado'],
+  ['ultimos3', 'Últimos 3 ciclos'],
+  ['anio', 'Este año'],
+];
 
 export default function MisVentas({ token, proyecto, onPaseVencido }: { token: string; proyecto: Proyecto; onPaseVencido: () => void }) {
-  const [periodo, setPeriodo] = useState<Periodo>('mes');
+  const [periodo, setPeriodo] = useState<PeriodoVentas>('ciclo');
   const [datos, setDatos] = useState<ResumenVentas | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,8 +40,7 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
     let vigente = true;
     setCargando(true);
     setError(null);
-    const [desde, hasta] = rango(periodo);
-    resumenDeVentas(token, desde, hasta)
+    resumenDeVentas(token, periodo)
       .then(r => { if (vigente) setDatos(r); })
       .catch(e => {
         if (!vigente) return;
@@ -63,9 +58,20 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900">Mis ventas</h1>
+          {/* Qué ciclos está mirando, con sus fechas: el nombre solo no alcanza. */}
+          {datos && datos.ciclos.length > 0 && (
+            <p className="text-sm text-slate-500">
+              {datos.ciclos.length === 1
+                ? `${datos.ciclos[0].nombre} · del ${fechaCorta(datos.ciclos[0].desde)} al ${fechaCorta(datos.ciclos[0].hasta)}`
+                : `${datos.ciclos.map(c => c.nombre).join(', ')} · del ${fechaCorta(datos.ciclos[0].desde)} al ${fechaCorta(datos.ciclos[datos.ciclos.length - 1].hasta)}`}
+            </p>
+          )}
+          {datos && datos.ciclos.length === 0 && (
+            <p className="text-sm text-amber-700">Todavía no hay ciclos cargados para este período.</p>
+          )}
         </div>
         <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
-          {([['mes', 'Este mes'], ['mes_pasado', 'Mes pasado'], ['90', '90 días'], ['anio', 'Este año']] as [Periodo, string][]).map(([k, r]) => (
+          {PERIODOS.map(([k, r]) => (
             <button key={k} onClick={() => setPeriodo(k)}
               className={`px-3 py-1.5 rounded-md text-sm font-medium ${periodo === k ? 'bg-white shadow text-slate-900' : 'text-slate-500'}`}>
               {r}
@@ -75,6 +81,15 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
       </div>
 
       {error && <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
+
+      {/* Un pedido cargado todavía no es una venta: cuenta cuando administración
+          lo aprueba. Acá solo se avisa que llegó, para que no quede la duda. */}
+      {!!datos?.esperando && (
+        <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
+          Tenés {datos.esperando} pedido{datos.esperando > 1 ? 's' : ''} esperando la aprobación de
+          administración. Van a aparecer acá cuando los aprueben.
+        </div>
+      )}
 
       {cargando && !datos ? (
         <div className="flex items-center gap-2 text-slate-500 text-sm py-10"><Loader2 className="w-4 h-4 animate-spin" /> Cargando…</div>

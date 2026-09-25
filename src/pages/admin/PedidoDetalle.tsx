@@ -6,6 +6,7 @@ import {
   type Pedido, type CambioEstado, type Estado, ETIQUETA_ESTADO, SIGUIENTE,
   cambiarEstado, completarDatos, historialDe, volumenDe, fmtNum, fmtPesos,
 } from '../../lib/adminOrders';
+import { listarCiclos, type Ciclo } from '../../lib/ciclos';
 
 const COLOR_ESTADO: Record<Estado, string> = {
   recibido: 'bg-amber-50 text-amber-700 ring-amber-200',
@@ -48,6 +49,9 @@ export default function PedidoDetalle({
   const [motivo, setMotivo] = useState('');
   const [ciclo, setCiclo] = useState(pedido.sales_cycle ?? '');
   const [nroCliente, setNroCliente] = useState(pedido.client_code ?? '');
+  const [ciclos, setCiclos] = useState<Ciclo[]>([]);
+
+  useEffect(() => { listarCiclos().then(setCiclos).catch(() => setCiclos([])); }, []);
 
   useEffect(() => {
     historialDe(pedido.id).then(setHistorial).catch(() => setHistorial([]));
@@ -70,6 +74,8 @@ export default function PedidoDetalle({
   };
 
   const datosCambiados = ciclo !== (pedido.sales_cycle ?? '') || nroCliente !== (pedido.client_code ?? '');
+  // Aprobar (y todo lo que sigue) necesita el ciclo. Rechazar no.
+  const faltaCiclo = !!siguiente && !ciclo.trim();
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -127,13 +133,29 @@ export default function PedidoDetalle({
                 <div className="flex flex-wrap gap-2">
                   {siguiente && (
                     <button
-                      disabled={trabajando}
-                      onClick={() => hacer(() => cambiarEstado(pedido.id, siguiente.estado))}
+                      // Sin ciclo no se aprueba: la base lo rechaza igual, pero
+                      // conviene que el botón lo diga antes de apretarlo.
+                      disabled={trabajando || faltaCiclo}
+                      title={faltaCiclo ? 'Elegí primero a qué ciclo pertenece el pedido' : undefined}
+                      onClick={() => hacer(async () => {
+                        // Si se eligió el ciclo y no se guardó, se guarda ahora.
+                        if (datosCambiados) {
+                          await completarDatos(pedido.id, {
+                            sales_cycle: ciclo.trim() || null, client_code: nroCliente.trim() || null,
+                          });
+                        }
+                        await cambiarEstado(pedido.id, siguiente.estado);
+                      })}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-50"
                     >
                       {trabajando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                       {siguiente.accion}
                     </button>
+                  )}
+                  {faltaCiclo && (
+                    <span className="self-center text-xs text-amber-800">
+                      Elegí abajo a qué ciclo pertenece el pedido.
+                    </span>
                   )}
                   <button
                     disabled={trabajando}
@@ -172,9 +194,22 @@ export default function PedidoDetalle({
           <section className="rounded-xl bg-slate-50 border border-slate-200 p-4">
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
-                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Ciclo de ventas</span>
-                <input value={ciclo} onChange={e => setCiclo(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white" />
+                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
+                  Ciclo de ventas {pedido.status === 'recibido' && <span className="text-red-600">· obligatorio para aprobar</span>}
+                </span>
+                {/* Sale de los ciclos dados de alta: el vendedor mide por ciclo,
+                    así que un ciclo escrito a mano y mal no se puede permitir. */}
+                <select value={ciclo} onChange={e => setCiclo(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white">
+                  <option value="">— sin ciclo —</option>
+                  {ciclos.map(c => (
+                    <option key={c.id} value={c.nombre}>
+                      {c.nombre}{c.es_actual ? ' (en curso)' : ''}
+                    </option>
+                  ))}
+                  {/* Si el pedido trae un ciclo viejo que ya no está en la lista. */}
+                  {ciclo && !ciclos.some(c => c.nombre === ciclo) && <option value={ciclo}>{ciclo}</option>}
+                </select>
               </label>
               <label className="block">
                 <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">N° de cliente</span>

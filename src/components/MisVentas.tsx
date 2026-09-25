@@ -16,6 +16,9 @@ const COLOR: Record<string, string> = {
   rechazado: 'bg-red-50 text-red-700 ring-red-200',
 };
 
+/** Qué recuadro se abrió: cada uno muestra lo suyo, sin mezclar. */
+type Desglose = 'volumen' | 'bonificado' | null;
+
 const pesos = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
 const num = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
 
@@ -44,8 +47,8 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
   const [datos, setDatos] = useState<ResumenVentas | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // El desglose del volumen por producto. Por ahora solo en FemWay.
-  const [desglose, setDesglose] = useState(false);
+  // Cuál de los dos desgloses está abierto. Por ahora solo en FemWay.
+  const [desglose, setDesglose] = useState<Desglose>(null);
 
   useEffect(() => {
     let vigente = true;
@@ -108,25 +111,26 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
       ) : datos && t && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
-            {[
-              { r: 'Facturación', v: pesos.format(t.pesos), abre: false },
-              { r: 'Volumen L/kg', v: num.format(t.volumen), abre: true },
-              { r: 'Bonificado L/kg', v: num.format(t.bonificado), abre: true },
-              { r: 'Pedidos · Clientes', v: `${t.pedidos} · ${t.clientes}`, abre: false },
-            ].map(x => {
-              // El volumen se abre para ver de qué está hecho, producto por producto.
-              const clickeable = x.abre && hayDesglose;
+            {([
+              { k: null, r: 'Facturación', v: pesos.format(t.pesos) },
+              { k: 'volumen', r: 'Volumen L/kg', v: num.format(t.volumen) },
+              { k: 'bonificado', r: 'Bonificado L/kg', v: num.format(t.bonificado) },
+              { k: null, r: 'Pedidos · Clientes', v: `${t.pedidos} · ${t.clientes}` },
+            ] as { k: Desglose; r: string; v: string }[]).map(x => {
+              // Cada uno abre su propio desglose, producto por producto.
+              const clickeable = !!x.k && hayDesglose;
+              const abierto = clickeable && desglose === x.k;
               return (
                 <button
                   key={x.r} type="button" disabled={!clickeable}
-                  onClick={() => setDesglose(d => !d)}
+                  onClick={() => setDesglose(d => (d === x.k ? null : x.k))}
                   className={`text-left rounded-xl bg-white border px-4 py-3 ${clickeable
                     ? 'border-slate-200 hover:border-slate-300 cursor-pointer'
                     : 'border-slate-200 cursor-default'}`}
                 >
                   <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide flex items-center gap-1">
                     {x.r}
-                    {clickeable && (desglose ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                    {clickeable && (abierto ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                   </div>
                   <div className="text-xl font-bold text-slate-900">{x.v}</div>
                 </button>
@@ -136,36 +140,22 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
 
           {desglose && hayDesglose && (
             <div className="mb-2 rounded-xl bg-white border border-slate-200 p-4">
-              <h2 className="text-sm font-bold text-slate-700 mb-2">De qué está hecho el volumen</h2>
+              <h2 className="text-sm font-bold text-slate-700 mb-2">
+                {desglose === 'volumen' ? 'Volumen por producto' : 'Bonificado por producto'}
+              </h2>
               <table className="w-full text-sm">
-                <thead className="text-[11px] text-slate-500 uppercase">
-                  <tr>
-                    <th className="text-left py-1">Producto</th>
-                    <th className="text-right py-1">Vendido</th>
-                    <th className="text-right py-1">Bonificado</th>
-                    <th className="text-right py-1">Neto</th>
-                  </tr>
-                </thead>
                 <tbody>
-                  {datos.productos.map(p => (
-                    <tr key={p.producto} className="border-t border-slate-100">
-                      <td className="py-1.5 font-medium text-slate-800">{p.producto}</td>
-                      <td className="py-1.5 text-right">{num.format(p.vendido)}</td>
-                      <td className="py-1.5 text-right text-emerald-700">
-                        {p.bonificado ? `− ${num.format(p.bonificado)}` : '—'}
-                      </td>
-                      <td className="py-1.5 text-right font-semibold">{num.format(p.vendido - p.bonificado)}</td>
-                    </tr>
-                  ))}
+                  {datos.productos
+                    .filter(p => (desglose === 'volumen' ? p.vendido : p.bonificado) > 0)
+                    .map(p => (
+                      <tr key={p.producto} className="border-t border-slate-100 first:border-t-0">
+                        <td className="py-1.5 font-medium text-slate-800">{p.producto}</td>
+                        <td className="py-1.5 text-right font-semibold text-slate-900">
+                          {num.format(desglose === 'volumen' ? p.vendido : p.bonificado)}
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-slate-200 font-bold text-slate-900">
-                    <td className="py-1.5">Total</td>
-                    <td className="py-1.5 text-right">{num.format(t.volumen + t.bonificado)}</td>
-                    <td className="py-1.5 text-right text-emerald-700">− {num.format(t.bonificado)}</td>
-                    <td className="py-1.5 text-right">{num.format(t.volumen)}</td>
-                  </tr>
-                </tfoot>
               </table>
             </div>
           )}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { X, Loader2, Check, Ban, History, ShieldCheck } from 'lucide-react';
 import ControlesPedido from '../../components/ControlesPedido';
 import ConsultaArca from '../../components/ConsultaArca';
@@ -6,7 +6,9 @@ import {
   type Pedido, type CambioEstado, type Estado, ETIQUETA_ESTADO, SIGUIENTE,
   cambiarEstado, completarDatos, historialDe, volumenDe, fmtNum, fmtPesos,
 } from '../../lib/adminOrders';
-import { listarCiclos, type Ciclo } from '../../lib/ciclos';
+
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio',
+  'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 const COLOR_ESTADO: Record<Estado, string> = {
   recibido: 'bg-amber-50 text-amber-700 ring-amber-200',
@@ -49,9 +51,6 @@ export default function PedidoDetalle({
   const [motivo, setMotivo] = useState('');
   const [ciclo, setCiclo] = useState(pedido.sales_cycle ?? '');
   const [nroCliente, setNroCliente] = useState(pedido.client_code ?? '');
-  const [ciclos, setCiclos] = useState<Ciclo[]>([]);
-
-  useEffect(() => { listarCiclos().then(setCiclos).catch(() => setCiclos([])); }, []);
 
   useEffect(() => {
     historialDe(pedido.id).then(setHistorial).catch(() => setHistorial([]));
@@ -78,6 +77,12 @@ export default function PedidoDetalle({
   // cargan a mano y hay que decir a cuál pertenece el pedido. FemWay se mide por
   // mes calendario y no necesita nada.
   const usaCiclos = pedido.proyecto === 'femavi';
+  // Los doce meses del año del pedido: el ciclo de FEMAVI es un mes, y cuál le
+  // toca lo decide administración porque el corte va variando.
+  const mesesDelPedido = useMemo(() => {
+    const anio = new Date(pedido.created_at).getFullYear();
+    return MESES.map(m => m + ' ' + anio);
+  }, [pedido.created_at]);
   const faltaCiclo = usaCiclos && !!siguiente && !ciclo.trim();
 
   return (
@@ -203,18 +208,16 @@ export default function PedidoDetalle({
                     ? pedido.status === 'recibido' && <span className="text-red-600"> · obligatorio para aprobar</span>
                     : <span className="text-slate-400"> · FemWay mide por mes</span>}
                 </span>
-                {/* Sale de los ciclos dados de alta: el vendedor mide por ciclo,
-                    así que un ciclo escrito a mano y mal no se puede permitir. */}
+                {/* Se elige de los meses: el corte del ciclo va variando, así que
+                    a qué mes pertenece el pedido lo decide administración. */}
                 <select value={ciclo} onChange={e => setCiclo(e.target.value)} disabled={!usaCiclos}
                   className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white disabled:bg-slate-100 disabled:text-slate-400">
-                  <option value="">{usaCiclos ? '— sin ciclo —' : '— no aplica —'}</option>
-                  {ciclos.map(c => (
-                    <option key={c.id} value={c.nombre}>
-                      {c.nombre}{c.es_actual ? ' (en curso)' : ''}
-                    </option>
+                  <option value="">{usaCiclos ? '— elegir el ciclo —' : '— no aplica —'}</option>
+                  {mesesDelPedido.map(m => (
+                    <option key={m} value={m}>{m}</option>
                   ))}
-                  {/* Si el pedido trae un ciclo viejo que ya no está en la lista. */}
-                  {ciclo && !ciclos.some(c => c.nombre === ciclo) && <option value={ciclo}>{ciclo}</option>}
+                  {/* Si el pedido quedó con un ciclo de otro año. */}
+                  {ciclo && !mesesDelPedido.includes(ciclo) && <option value={ciclo}>{ciclo}</option>}
                 </select>
               </label>
               <label className="block">

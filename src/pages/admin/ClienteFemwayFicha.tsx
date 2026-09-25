@@ -72,6 +72,7 @@ export default function ClienteFemwayFicha() {
         key={codigo}
         ficha={ficha}
         nombreVendedor={nombreVendedor}
+        mostrarFemavi
         vendedores={vendedores}
         alGuardar={cargar}
       />

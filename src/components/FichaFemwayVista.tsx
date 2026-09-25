@@ -22,13 +22,18 @@ function Dato({ rotulo, valor }: { rotulo: string; valor: React.ReactNode }) {
 interface Props {
   ficha: FichaFemway;
   nombreVendedor: (cod: string | null) => string;
+  /**
+   * Si el cliente también es de FEMAVI. Es cosa de administración: al vendedor
+   * de FemWay no le aporta y lo confunde, así que solo se muestra en el admin.
+   */
+  mostrarFemavi?: boolean;
   /** Solo administración edita los datos del cliente. */
   vendedores?: Vendedor[];
   alGuardar?: () => void;
 }
 
 /** Montarla con key={codigo} para que el estado se reinicie al cambiar de cliente. */
-export default function FichaFemwayVista({ ficha, nombreVendedor, vendedores, alGuardar }: Props) {
+export default function FichaFemwayVista({ ficha, nombreVendedor, mostrarFemavi, vendedores, alGuardar }: Props) {
   const [editando, setEditando] = useState(false);
   const [abiertos, setAbiertos] = useState<Set<number>>(new Set());
   const [anio, setAnio] = useState<number | 'todos'>('todos');
@@ -44,7 +49,16 @@ export default function FichaFemwayVista({ ficha, nombreVendedor, vendedores, al
   return (
     <>
       <div className="mb-5">
-        <h1 className="text-2xl font-bold text-slate-900">{c.razon_social}</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-bold text-slate-900">{c.razon_social}</h1>
+          {mostrarFemavi && c.origen === 'femavi' && (
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ring-1 ${c.pasado_el
+              ? 'bg-sky-50 text-sky-700 ring-sky-200'
+              : 'bg-amber-50 text-amber-800 ring-amber-200'}`}>
+              También en FEMAVI{c.pasado_el ? '' : ' · sin confirmar'}
+            </span>
+          )}
+        </div>
         <div className="text-sm text-slate-500">
           Cód. {c.codigo} · CUIT {c.cuit ?? '—'} · {nombreVendedor(c.vendedor)} · Zona {c.zona ?? '—'}
         </div>
@@ -79,7 +93,7 @@ export default function FichaFemwayVista({ ficha, nombreVendedor, vendedores, al
             <Dato rotulo="Entrega" valor={[c.entrega_domicilio, c.entrega_localidad].filter(Boolean).join(', ')} />
             <Dato rotulo="Teléfono de entrega" valor={c.entrega_telefono} />
             <Dato rotulo="Zona" valor={c.zona} />
-            {c.origen === 'femavi' && <Dato rotulo="Código en FEMAVI" valor={c.cliente_femavi} />}
+            {mostrarFemavi && c.origen === 'femavi' && <Dato rotulo="Código en FEMAVI" valor={c.cliente_femavi} />}
             <Dato rotulo="Notas" valor={c.notas} />
           </div>
         )}

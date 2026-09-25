@@ -74,8 +74,11 @@ export default function PedidoDetalle({
   };
 
   const datosCambiados = ciclo !== (pedido.sales_cycle ?? '') || nroCliente !== (pedido.client_code ?? '');
-  // Aprobar (y todo lo que sigue) necesita el ciclo. Rechazar no.
-  const faltaCiclo = !!siguiente && !ciclo.trim();
+  // El ciclo es de FEMAVI: son mensuales pero el corte va variando, así que se
+  // cargan a mano y hay que decir a cuál pertenece el pedido. FemWay se mide por
+  // mes calendario y no necesita nada.
+  const usaCiclos = pedido.proyecto === 'femavi';
+  const faltaCiclo = usaCiclos && !!siguiente && !ciclo.trim();
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -195,13 +198,16 @@ export default function PedidoDetalle({
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
-                  Ciclo de ventas {pedido.status === 'recibido' && <span className="text-red-600">· obligatorio para aprobar</span>}
+                  Ciclo de ventas
+                  {usaCiclos
+                    ? pedido.status === 'recibido' && <span className="text-red-600"> · obligatorio para aprobar</span>
+                    : <span className="text-slate-400"> · FemWay mide por mes</span>}
                 </span>
                 {/* Sale de los ciclos dados de alta: el vendedor mide por ciclo,
                     así que un ciclo escrito a mano y mal no se puede permitir. */}
-                <select value={ciclo} onChange={e => setCiclo(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white">
-                  <option value="">— sin ciclo —</option>
+                <select value={ciclo} onChange={e => setCiclo(e.target.value)} disabled={!usaCiclos}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white disabled:bg-slate-100 disabled:text-slate-400">
+                  <option value="">{usaCiclos ? '— sin ciclo —' : '— no aplica —'}</option>
                   {ciclos.map(c => (
                     <option key={c.id} value={c.nombre}>
                       {c.nombre}{c.es_actual ? ' (en curso)' : ''}

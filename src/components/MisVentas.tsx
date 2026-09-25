@@ -22,13 +22,22 @@ const num = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
 const fechaCorta = (iso: string) =>
   new Date(iso + 'T12:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
 
-// Los vendedores miden por ciclo, no por mes calendario.
-const PERIODOS: [PeriodoVentas, string][] = [
-  ['ciclo', 'Este ciclo'],
-  ['ciclo_pasado', 'Ciclo pasado'],
-  ['ultimos3', 'Últimos 3 ciclos'],
-  ['anio', 'Este año'],
-];
+// FEMAVI mide por ciclo: son mensuales pero el corte va variando, así que los
+// carga administración. FemWay mide por mes calendario, del 1 al último día.
+const PERIODOS: Record<Proyecto, [PeriodoVentas, string][]> = {
+  femavi: [
+    ['ciclo', 'Este ciclo'],
+    ['ciclo_pasado', 'Ciclo pasado'],
+    ['ultimos3', 'Últimos 3 ciclos'],
+    ['anio', 'Este año'],
+  ],
+  femway: [
+    ['ciclo', 'Este mes'],
+    ['ciclo_pasado', 'Mes pasado'],
+    ['ultimos3', 'Últimos 3 meses'],
+    ['anio', 'Este año'],
+  ],
+};
 
 export default function MisVentas({ token, proyecto, onPaseVencido }: { token: string; proyecto: Proyecto; onPaseVencido: () => void }) {
   const [periodo, setPeriodo] = useState<PeriodoVentas>('ciclo');
@@ -71,7 +80,7 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
           )}
         </div>
         <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
-          {PERIODOS.map(([k, r]) => (
+          {PERIODOS[proyecto].map(([k, r]) => (
             <button key={k} onClick={() => setPeriodo(k)}
               className={`px-3 py-1.5 rounded-md text-sm font-medium ${periodo === k ? 'bg-white shadow text-slate-900' : 'text-slate-500'}`}>
               {r}

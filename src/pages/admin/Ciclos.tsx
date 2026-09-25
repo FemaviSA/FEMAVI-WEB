@@ -4,10 +4,12 @@ import { AdminLayout } from '../../components/AdminLayout';
 import { fmtNum, fmtPesos } from '../../lib/adminOrders';
 import { borrarCiclo, guardarCiclo, listarCiclos, type Ciclo } from '../../lib/ciclos';
 
-// Los ciclos de venta, que son con los que miden los vendedores. Se cargan a
-// mano porque no siguen una regla fija. Sin ciclo cargado no se puede aprobar
-// ningún pedido, así que conviene tener el siguiente dado de alta antes de que
-// empiece.
+// Los ciclos de venta de FEMAVI. Son mensuales pero el corte va variando, por
+// eso se cargan a mano. Sin ciclo cargado no se puede aprobar ningún pedido de
+// FEMAVI, así que conviene tener el siguiente dado de alta antes de que empiece.
+//
+// FemWay no usa esto: se mide por mes calendario, del 1 al último día, y el día
+// 1 arranca en cero sin que haya que cargar nada.
 
 const campo = 'rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700';
 const fecha = (iso: string) =>
@@ -53,14 +55,15 @@ export default function Ciclos() {
       }
     >
       <p className="text-sm text-slate-500 mb-4">
-        Los vendedores miden por ciclo, no por mes. Cada pedido entra al ciclo que le pongas
-        al aprobarlo, y sin ciclo cargado no se puede aprobar nada.
+Son los de <b>FEMAVI</b>: mensuales, pero como el corte va variando se cargan a mano. Cada
+        pedido de FEMAVI entra al ciclo que le pongas al aprobarlo, y sin ciclo no se puede aprobar.
+        <b>FemWay no usa ciclos</b>: mide por mes calendario y arranca en cero el día 1.
       </p>
 
       {!cargando && !hayActual && (
         <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
-          Hoy no cae dentro de ningún ciclo cargado. Da de alta el ciclo en curso, o no vas a
-          poder aprobar pedidos.
+Hoy no cae dentro de ningún ciclo cargado. Da de alta el ciclo en curso, o no vas a poder
+          aprobar pedidos de FEMAVI.
         </div>
       )}
 

@@ -114,7 +114,13 @@ export default function ClientesFemway({ vendedores }: { vendedores: Vendedor[] 
                     {c.vendedor ? (vendedores.find(v => v.code === c.vendedor)?.name ?? '') + ` (${c.vendedor})` : '—'}
                   </td>
                   <td className="px-4 py-3">
-                    {c.origen === 'femavi' ? (
+                    {c.origen === 'femavi' && !c.pasado_el ? (
+                      /* Se dio de alta solo con un pedido y todavía nadie miró
+                         si conviene que le compre a los dos. */
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 ring-1 ring-amber-200">
+                        También en FEMAVI · sin confirmar
+                      </span>
+                    ) : c.origen === 'femavi' ? (
                       <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 ring-1 ring-sky-200">
                         También en FEMAVI
                       </span>

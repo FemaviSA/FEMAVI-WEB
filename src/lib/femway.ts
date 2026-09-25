@@ -66,3 +66,56 @@ export async function borrarClienteFemway(codigo: string): Promise<void> {
   const { error } = await supabase.rpc('admin_femway_borrar_cliente', { p_codigo: codigo });
   if (error) throw new Error(error.message);
 }
+
+// ── Ficha de un cliente de FemWay ──
+// El ABM con sus datos y lo que compró. En FEMAVI la historia sale del sistema
+// viejo; acá la historia son los pedidos de la web, que es todo lo que hay.
+
+export interface DatosClienteFemway {
+  codigo: string;
+  razon_social: string;
+  cuit: string | null;
+  domicilio: string | null;
+  localidad: string | null;
+  telefonos: string | null;
+  resp_compras: string | null;
+  entrega_domicilio: string | null;
+  entrega_localidad: string | null;
+  entrega_telefono: string | null;
+  zona: string | null;
+  vendedor: string | null;
+  origen: 'femavi' | 'nuevo';
+  cliente_femavi: string | null;
+  pasado_el: string | null;
+  notas: string | null;
+}
+
+export interface PedidoFemway {
+  id: number;
+  numero: string | null;
+  fecha: string;
+  estado: string;
+  total: number | null;
+  vendedor: string | null;
+  cuenta: string | null;
+  items: { product: string; presentation?: string | null; quantity: number; unit_price?: number | null; line_total?: number | null }[] | null;
+  /** El pedido se cargó como cliente nuevo: se le atribuye por el CUIT. */
+  sin_codigo: boolean;
+}
+
+export interface FichaFemway {
+  cliente: DatosClienteFemway;
+  resumen: {
+    pedidos: number; pesos: number; volumen: number;
+    primera_compra: string | null; ultima_compra: string | null;
+  } | null;
+  por_anio: { anio: number; pedidos: number; pesos: number; volumen: number }[];
+  productos: { producto: string; volumen: number; veces: number; pesos: number; ultima_vez: string | null }[];
+  pedidos: PedidoFemway[];
+}
+
+export async function fichaClienteFemway(codigo: string): Promise<FichaFemway | null> {
+  const { data, error } = await supabase.rpc('admin_femway_ficha_cliente', { p_codigo: codigo });
+  if (error) throw new Error(error.message);
+  return (data as FichaFemway) ?? null;
+}

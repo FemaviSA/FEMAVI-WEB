@@ -26,6 +26,7 @@ const Clientes = lazy(() => import('./pages/admin/Clientes'));
 const EnCaida = lazy(() => import('./pages/admin/EnCaida'));
 const Vendedores = lazy(() => import('./pages/admin/Vendedores'));
 const ClienteFicha = lazy(() => import('./pages/admin/ClienteFicha'));
+const ClienteFemwayFicha = lazy(() => import('./pages/admin/ClienteFemwayFicha'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Blog = lazy(() => import('./pages/Blog'));
 const BlogPost = lazy(() => import('./pages/BlogPost'));
@@ -108,6 +109,7 @@ export default function App() {
           <Route path="/admin/clientes" element={<RequireAuth><Clientes /></RequireAuth>} />
           <Route path="/admin/se-caen" element={<RequireAuth><EnCaida /></RequireAuth>} />
           <Route path="/admin/vendedores" element={<RequireAuth><Vendedores /></RequireAuth>} />
+          <Route path="/admin/clientes/femway/:codigo" element={<RequireAuth><ClienteFemwayFicha /></RequireAuth>} />
           <Route path="/admin/clientes/:codigo" element={<RequireAuth><ClienteFicha /></RequireAuth>} />
           <Route path="/admin/cotizaciones/:id" element={<RequireAuth><QuoteDetail /></RequireAuth>} />
           <Route path="/admin/blog" element={<RequireAuth><Articles /></RequireAuth>} />

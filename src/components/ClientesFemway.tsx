@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowRightLeft, Loader2, Plus, Search, Trash2, X } from 'lucide-react';
 import { buscarClienteAdmin, type ClienteSugerido } from '../lib/historial';
 import {
@@ -99,10 +100,14 @@ export default function ClientesFemway({ vendedores }: { vendedores: Vendedor[] 
             <tbody>
               {filas.map(c => (
                 <tr key={c.codigo} className="border-t border-slate-100 hover:bg-slate-50">
-                  <td className="px-4 py-3 text-slate-400 font-mono">{c.codigo}</td>
+                  <td className="px-4 py-3 text-slate-400 font-mono">
+                    <Link to={`/admin/clientes/femway/${c.codigo}`} className="block">{c.codigo}</Link>
+                  </td>
                   <td className="px-4 py-3">
-                    <span className="font-semibold text-slate-900">{c.razon_social}</span>
-                    <span className="block text-xs text-slate-400">{c.localidad ?? ''}</span>
+                    <Link to={`/admin/clientes/femway/${c.codigo}`} className="block">
+                      <span className="font-semibold text-slate-900">{c.razon_social}</span>
+                      <span className="block text-xs text-slate-400">{c.localidad ?? ''}</span>
+                    </Link>
                   </td>
                   <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{c.cuit ?? '—'}</td>
                   <td className="px-4 py-3 text-slate-600">

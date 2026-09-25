@@ -7,6 +7,7 @@ import { buscarMiCliente, datosDeCliente } from '../lib/historial';
 import { SEO, SITE_URL } from '../components/SEO';
 import MisVentas from '../components/MisVentas';
 import MisClientes from '../components/MisClientes';
+import MisClientesFemway from '../components/MisClientesFemway';
 import { NOMBRE_PROYECTO, type Proyecto } from '../lib/proyectos';
 import PlanillaPedido, { C, Casilla, campo, type FuentesDeCliente } from '../components/PlanillaPedido';
 
@@ -255,7 +256,7 @@ export default function SellerOrder() {
           }}>
             <div style={{ display: 'flex', gap: 4, background: C.bg, borderRadius: 8, padding: 3 }}>
               {([['pedido', 'Nuevo pedido'], ['ventas', 'Mis ventas'],
-                ...(seller.proyecto === 'femavi' ? [['clientes', 'Mis clientes'] as const] : [])] as const).map(([k, r]) => (
+                ['clientes', 'Mis clientes']] as const).map(([k, r]) => (
                 <button key={k} type="button" onClick={() => setVista(k)} style={{
                   padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
                   fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
@@ -294,7 +295,11 @@ export default function SellerOrder() {
         {vista === 'ventas' ? (
           <MisVentas token={seller.token} proyecto={seller.proyecto} onPaseVencido={paseVencido} />
         ) : vista === 'clientes' ? (
-          <MisClientes token={seller.token} vendedor={seller} onPaseVencido={paseVencido} />
+          // Cada proyecto tiene su propia cartera: la de FEMAVI sale del sistema
+          // viejo y la de FemWay de su registro nuevo.
+          proyecto === 'femway'
+            ? <MisClientesFemway token={seller.token} vendedor={seller} onPaseVencido={paseVencido} />
+            : <MisClientes token={seller.token} vendedor={seller} onPaseVencido={paseVencido} />
         ) : (
           <PlanillaPedido
             key={intento}

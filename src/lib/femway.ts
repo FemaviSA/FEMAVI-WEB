@@ -1,4 +1,9 @@
 import { supabase } from './supabase';
+import { PaseVencidoError } from './sellers';
+
+function errorDeVendedor(error: { message?: string }): Error {
+  return error.message?.includes('sesion_vencida') ? new PaseVencidoError() : new Error(error.message);
+}
 
 // Clientes de FemWay. Son de dos clases: los que se pasaron desde FEMAVI —el
 // mismo cliente existe en los dos lados, con el mismo código— y los que nacen
@@ -117,5 +122,39 @@ export interface FichaFemway {
 export async function fichaClienteFemway(codigo: string): Promise<FichaFemway | null> {
   const { data, error } = await supabase.rpc('admin_femway_ficha_cliente', { p_codigo: codigo });
   if (error) throw new Error(error.message);
+  return (data as FichaFemway) ?? null;
+}
+
+// ── Lo que ve el vendedor de FemWay ──
+// Sus clientes y nada más: el código sale del pase de sesión, no de acá.
+
+export interface MiClienteFemway {
+  codigo: string;
+  razon_social: string;
+  cuit: string | null;
+  localidad: string | null;
+  telefonos: string | null;
+  pedidos: number;
+  ultima_compra: string | null;
+  comprado: number;
+  volumen: number;
+}
+
+export async function misClientesFemway(token: string, q?: string): Promise<MiClienteFemway[]> {
+  const { data, error } = await supabase.rpc('seller_femway_clientes', {
+    p_token: token, p_q: q?.trim() || null,
+  });
+  if (error) throw errorDeVendedor(error);
+  return ((data ?? []) as MiClienteFemway[]).map(c => ({
+    ...c, pedidos: Number(c.pedidos), comprado: Number(c.comprado), volumen: Number(c.volumen),
+  }));
+}
+
+/** Ficha de un cliente del vendedor; null si no existe o no es suyo. */
+export async function miFichaClienteFemway(token: string, codigo: string): Promise<FichaFemway | null> {
+  const { data, error } = await supabase.rpc('seller_femway_ficha_cliente', {
+    p_token: token, p_codigo: codigo,
+  });
+  if (error) throw errorDeVendedor(error);
   return (data as FichaFemway) ?? null;
 }

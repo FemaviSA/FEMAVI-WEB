@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { resumenDeVentas, PaseVencidoError, type PeriodoVentas, type ResumenVentas } from '../lib/sellers';
 import { NOMBRE_PROYECTO, type Proyecto } from '../lib/proyectos';
 
@@ -44,6 +44,8 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
   const [datos, setDatos] = useState<ResumenVentas | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // El desglose del volumen por producto. Por ahora solo en FemWay.
+  const [desglose, setDesglose] = useState(false);
 
   useEffect(() => {
     let vigente = true;
@@ -61,6 +63,7 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
   }, [token, periodo, onPaseVencido]);
 
   const t = datos?.totales;
+  const hayDesglose = proyecto === 'femway' && !!datos?.productos?.length;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
@@ -106,17 +109,66 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
             {[
-              { r: 'Facturación', v: pesos.format(t.pesos) },
-              { r: 'Volumen L/kg', v: num.format(t.volumen) },
-              { r: 'Bonificado L/kg', v: num.format(t.bonificado) },
-              { r: 'Pedidos · Clientes', v: `${t.pedidos} · ${t.clientes}` },
-            ].map(x => (
-              <div key={x.r} className="rounded-xl bg-white border border-slate-200 px-4 py-3">
-                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{x.r}</div>
-                <div className="text-xl font-bold text-slate-900">{x.v}</div>
-              </div>
-            ))}
+              { r: 'Facturación', v: pesos.format(t.pesos), abre: false },
+              { r: 'Volumen L/kg', v: num.format(t.volumen), abre: true },
+              { r: 'Bonificado L/kg', v: num.format(t.bonificado), abre: true },
+              { r: 'Pedidos · Clientes', v: `${t.pedidos} · ${t.clientes}`, abre: false },
+            ].map(x => {
+              // El volumen se abre para ver de qué está hecho, producto por producto.
+              const clickeable = x.abre && hayDesglose;
+              return (
+                <button
+                  key={x.r} type="button" disabled={!clickeable}
+                  onClick={() => setDesglose(d => !d)}
+                  className={`text-left rounded-xl bg-white border px-4 py-3 ${clickeable
+                    ? 'border-slate-200 hover:border-slate-300 cursor-pointer'
+                    : 'border-slate-200 cursor-default'}`}
+                >
+                  <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide flex items-center gap-1">
+                    {x.r}
+                    {clickeable && (desglose ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                  </div>
+                  <div className="text-xl font-bold text-slate-900">{x.v}</div>
+                </button>
+              );
+            })}
           </div>
+
+          {desglose && hayDesglose && (
+            <div className="mb-2 rounded-xl bg-white border border-slate-200 p-4">
+              <h2 className="text-sm font-bold text-slate-700 mb-2">De qué está hecho el volumen</h2>
+              <table className="w-full text-sm">
+                <thead className="text-[11px] text-slate-500 uppercase">
+                  <tr>
+                    <th className="text-left py-1">Producto</th>
+                    <th className="text-right py-1">Vendido</th>
+                    <th className="text-right py-1">Bonificado</th>
+                    <th className="text-right py-1">Neto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {datos.productos.map(p => (
+                    <tr key={p.producto} className="border-t border-slate-100">
+                      <td className="py-1.5 font-medium text-slate-800">{p.producto}</td>
+                      <td className="py-1.5 text-right">{num.format(p.vendido)}</td>
+                      <td className="py-1.5 text-right text-emerald-700">
+                        {p.bonificado ? `− ${num.format(p.bonificado)}` : '—'}
+                      </td>
+                      <td className="py-1.5 text-right font-semibold">{num.format(p.vendido - p.bonificado)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-slate-200 font-bold text-slate-900">
+                    <td className="py-1.5">Total</td>
+                    <td className="py-1.5 text-right">{num.format(t.volumen + t.bonificado)}</td>
+                    <td className="py-1.5 text-right text-emerald-700">− {num.format(t.bonificado)}</td>
+                    <td className="py-1.5 text-right">{num.format(t.volumen)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
           <p className="text-xs text-slate-400 mb-6">
             Ventas de {NOMBRE_PROYECTO[proyecto]}. No incluye pedidos rechazados. El volumen suma litros y kilos juntos.
           </p>

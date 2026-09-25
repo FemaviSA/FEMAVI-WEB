@@ -131,6 +131,8 @@ export interface ResumenVentas {
     volumen: number;
     bonificado: number;
   };
+  /** De qué está hecho el volumen: producto por producto. */
+  productos: { producto: string; vendido: number; bonificado: number }[];
   /** Cargados y todavía sin aprobar: no suman, solo avisan que llegaron. */
   esperando: number;
   por_estado: Record<string, number>;

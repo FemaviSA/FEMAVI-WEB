@@ -158,3 +158,13 @@ export async function miFichaClienteFemway(token: string, codigo: string): Promi
   if (error) throw errorDeVendedor(error);
   return (data as FichaFemway) ?? null;
 }
+
+/**
+ * Si ese CUIT ya es de otro vendedor de FemWay. Un cliente es de uno solo: si
+ * está ocupado, el pedido no sale. Devuelve null cuando está libre o es suyo.
+ */
+export async function cuitDeOtroVendedor(token: string, cuit: string): Promise<{ codigo: string; razon_social: string } | null> {
+  const { data, error } = await supabase.rpc('seller_cuit_de_otro', { p_token: token, p_cuit: cuit });
+  if (error) return null;   // si falla la consulta, no se traba la carga: la base frena igual
+  return (data as { codigo: string; razon_social: string }) ?? null;
+}

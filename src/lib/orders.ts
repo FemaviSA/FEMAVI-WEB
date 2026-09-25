@@ -119,6 +119,12 @@ export async function createOrder(input: OrderInput, sellerToken?: string): Prom
 
   if (error?.message?.includes('sesion_vencida')) throw new SesionVencidaError();
 
+  // Un cliente de FemWay es de un solo vendedor: la base no deja cargarle un
+  // pedido a un cliente de otro.
+  if (error?.message?.includes('cliente_de_otro_vendedor')) {
+    throw new Error('Ese CUIT ya es de otro vendedor de FemWay. Hablá con administración.');
+  }
+
   if (error || !data) {
     console.warn('[orders] insert error:', error?.message);
     throw new Error('No se pudo enviar el pedido. Intentá de nuevo o contactanos por WhatsApp.');

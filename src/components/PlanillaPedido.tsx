@@ -143,13 +143,18 @@ interface Props {
   alEncontrarCliente?: (c: DatosCliente) => void;
   /** Se eligió este de la lista de razones sociales. */
   alElegirSugerencia?: (c: ClienteSugerido) => void;
+  /**
+   * Revisa si el CUIT ya es de otro vendedor. Devuelve el cliente ocupado o
+   * null. Sin esto no se revisa nada: es cosa de FemWay.
+   */
+  revisarCuit?: (cuit: string) => Promise<{ razon_social: string } | null>;
   /** Un cartel arriba del formulario. */
   aviso?: React.ReactNode;
 }
 
 export default function PlanillaPedido({
   casillasAgente, cliente, guardar, alGuardar,
-  validar, alFallar, alEncontrarCliente, alElegirSugerencia, aviso,
+  validar, alFallar, alEncontrarCliente, alElegirSugerencia, revisarCuit, aviso,
 }: Props) {
   const { products } = useProducts();
 
@@ -255,6 +260,19 @@ export default function PlanillaPedido({
   // --- La otra puerta: buscar por razón social -----------------------------
   // Si no se acuerda el código, se escribe el nombre y se elige de la lista.
   // Al elegir se completa el código y de ahí en más es el mismo camino.
+  // Si el CUIT que se escribió ya es de otro vendedor: el pedido no sale.
+  const [cuitOcupado, setCuitOcupado] = useState<{ razon_social: string } | null>(null);
+
+  useEffect(() => {
+    if (!revisarCuit || f.cuit.replace(/[^0-9]/g, '').length !== 11) { setCuitOcupado(null); return; }
+    let vigente = true;
+    const t = setTimeout(() => {
+      revisarCuit(f.cuit).then(r => { if (vigente) setCuitOcupado(r); }).catch(() => {});
+    }, 350);
+    return () => { vigente = false; clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [f.cuit, revisarCuit]);
+
   const [sugerencias, setSugerencias] = useState<ClienteSugerido[]>([]);
   // Lo tipeado en "Nombre / Razón social". Vive aparte del formulario para que
   // la lista aparezca solo cuando escribe el vendedor, no cuando completamos
@@ -362,6 +380,12 @@ export default function PlanillaPedido({
 
     // Lo que administración no puede procesar si falta.
     const faltan: string[] = [...(validar?.() ?? [])];
+    if (cuitOcupado) {
+      setError(`Ese CUIT es de ${cuitOcupado.razon_social}, que es cliente de otro vendedor. `
+        + 'Si te corresponde a vos, pedíselo a administración.');
+      window.scrollTo(0, 0);
+      return;
+    }
     if (!f.account) faltan.push('la cuenta (C1 o C2)');
     if (!f.company.trim()) faltan.push('la razón social');
     if (!f.bill_city.trim()) faltan.push('la ciudad y provincia');
@@ -677,6 +701,12 @@ export default function PlanillaPedido({
               </Casilla>
               <Casilla rot={`CUIT${obligNuevo}`} span={3}>
                 <input style={campo} value={f.cuit} onChange={set('cuit')} placeholder="30-12345678-9" />
+                {/* Un cliente es de un solo vendedor: si es de otro, el pedido no sale. */}
+                {cuitOcupado && (
+                  <span style={{ fontSize: 10, color: '#b91c1c', fontWeight: 700, display: 'block' }}>
+                    Es cliente de otro vendedor
+                  </span>
+                )}
               </Casilla>
               <Casilla rot={`Cond. de pago${obligNuevo}`} span={3}>
                 <input style={campo} value={f.payment_terms} onChange={set('payment_terms')} />

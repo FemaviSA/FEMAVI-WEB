@@ -4,6 +4,7 @@ import { CheckCircle2, Loader2, Lock, LogOut } from 'lucide-react';
 import { createOrder, SesionVencidaError } from '../lib/orders';
 import { verifySellerPin, rememberedSeller, forgetSeller, perfilDeVendedor, PaseVencidoError, type Seller } from '../lib/sellers';
 import { buscarMiCliente, datosDeCliente } from '../lib/historial';
+import { cuitDeOtroVendedor } from '../lib/femway';
 import { SEO, SITE_URL } from '../components/SEO';
 import MisVentas from '../components/MisVentas';
 import MisClientes from '../components/MisClientes';
@@ -181,6 +182,13 @@ export default function SellerOrder() {
     [token],
   );
 
+  // En FemWay un cliente es de un solo vendedor: si el CUIT es de otro, el
+  // pedido no sale. En FEMAVI la cartera la maneja el sistema viejo.
+  const revisarCuit = useMemo(
+    () => (token && proyecto === 'femway' ? (cuit: string) => cuitDeOtroVendedor(token, cuit) : undefined),
+    [token, proyecto],
+  );
+
   const alFallar = useCallback((e: unknown) => {
     if (e instanceof SesionVencidaError) {
       forgetSeller();
@@ -314,6 +322,7 @@ export default function SellerOrder() {
               </>
             }
             cliente={fuentesCliente}
+            revisarCuit={revisarCuit}
             guardar={(input) => createOrder(input, seller.token)}
             alGuardar={(pedido) => { setNumero(pedido.order_number ?? ''); window.scrollTo(0, 0); }}
             alFallar={alFallar}

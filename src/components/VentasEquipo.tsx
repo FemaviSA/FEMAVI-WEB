@@ -4,7 +4,7 @@ import { resumenDelEquipo, PaseVencidoError, type PeriodoVentas, type ResumenEqu
 import { miFichaClienteFemway, type FichaFemway } from '../lib/femway';
 import FichaFemwayVista from './FichaFemwayVista';
 import { NOMBRE_PROYECTO, type Proyecto } from '../lib/proyectos';
-import { COLOR, PERIODOS, pesos, num, fechaCorta } from './MisVentas';
+import { COLOR, PERIODOS, pesos, num, fechaCorta, DesgloseProductos } from './MisVentas';
 
 type Desglose = 'volumen' | 'bonificado' | null;
 type Lista = 'vendedores' | 'clientes' | 'pedidos';
@@ -164,27 +164,7 @@ export default function VentasEquipo({ token, proyecto, onPaseVencido }: { token
             })}
           </div>
 
-          {desglose && datos.productos.length > 0 && (
-            <div className="mb-2 rounded-xl bg-white border border-slate-200 p-4">
-              <h2 className="text-sm font-bold text-slate-700 mb-2">
-                {desglose === 'volumen' ? 'Volumen por producto' : 'Bonificado por producto'}
-              </h2>
-              <table className="w-full text-sm">
-                <tbody>
-                  {datos.productos
-                    .filter(p => (desglose === 'volumen' ? p.vendido : p.bonificado) > 0)
-                    .map(p => (
-                      <tr key={p.producto} className="border-t border-slate-100 first:border-t-0">
-                        <td className="py-1.5 font-medium text-slate-800">{p.producto}</td>
-                        <td className="py-1.5 text-right font-semibold text-slate-900">
-                          {num.format(desglose === 'volumen' ? p.vendido : p.bonificado)}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {desglose && datos.productos.length > 0 && <DesgloseProductos que={desglose} productos={datos.productos} />}
           <p className="text-xs text-slate-400 mb-6">
             Todo {NOMBRE_PROYECTO[proyecto]}, contando lo aprobado por administración. El volumen suma litros y kilos juntos.
           </p>

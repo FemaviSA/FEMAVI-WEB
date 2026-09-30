@@ -42,6 +42,39 @@ export const PERIODOS: Record<Proyecto, [PeriodoVentas, string][]> = {
   ],
 };
 
+/**
+ * De qué está hecho el volumen o el bonificado, producto por producto. El
+ * volumen va neto de bonificaciones, igual que el total: si se vendieron 60 y
+ * se bonificaron 10, se facturaron 50, y la lista tiene que sumar lo mismo.
+ */
+export function DesgloseProductos({ que, productos }: {
+  que: 'volumen' | 'bonificado';
+  productos: ResumenVentas['productos'];
+}) {
+  const valor = (p: ResumenVentas['productos'][number]) =>
+    que === 'volumen' ? p.vendido - p.bonificado : p.bonificado;
+  return (
+    <div className="mb-2 rounded-xl bg-white border border-slate-200 p-4">
+      <h2 className="text-sm font-bold text-slate-700 mb-2">
+        {que === 'volumen' ? 'Volumen facturado por producto' : 'Bonificado por producto'}
+      </h2>
+      <table className="w-full text-sm">
+        <tbody>
+          {productos
+            .filter(p => valor(p) !== 0)
+            .sort((a, b) => valor(b) - valor(a))
+            .map(p => (
+              <tr key={p.producto} className="border-t border-slate-100 first:border-t-0">
+                <td className="py-1.5 font-medium text-slate-800">{p.producto}</td>
+                <td className="py-1.5 text-right font-semibold text-slate-900">{num.format(valor(p))}</td>
+              </tr>
+            ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function MisVentas({ token, proyecto, onPaseVencido }: { token: string; proyecto: Proyecto; onPaseVencido: () => void }) {
   const [periodo, setPeriodo] = useState<PeriodoVentas>('ciclo');
   const [datos, setDatos] = useState<ResumenVentas | null>(null);
@@ -138,27 +171,7 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
             })}
           </div>
 
-          {desglose && hayDesglose && (
-            <div className="mb-2 rounded-xl bg-white border border-slate-200 p-4">
-              <h2 className="text-sm font-bold text-slate-700 mb-2">
-                {desglose === 'volumen' ? 'Volumen por producto' : 'Bonificado por producto'}
-              </h2>
-              <table className="w-full text-sm">
-                <tbody>
-                  {datos.productos
-                    .filter(p => (desglose === 'volumen' ? p.vendido : p.bonificado) > 0)
-                    .map(p => (
-                      <tr key={p.producto} className="border-t border-slate-100 first:border-t-0">
-                        <td className="py-1.5 font-medium text-slate-800">{p.producto}</td>
-                        <td className="py-1.5 text-right font-semibold text-slate-900">
-                          {num.format(desglose === 'volumen' ? p.vendido : p.bonificado)}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {desglose && hayDesglose && <DesgloseProductos que={desglose} productos={datos.productos} />}
           <p className="text-xs text-slate-400 mb-6">
             Ventas de {NOMBRE_PROYECTO[proyecto]}. No incluye pedidos rechazados. El volumen suma litros y kilos juntos.
           </p>

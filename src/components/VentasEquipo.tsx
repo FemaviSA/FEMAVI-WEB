@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, Loader2, X } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, Loader2, X } from 'lucide-react';
 import { resumenDelEquipo, PaseVencidoError, type PeriodoVentas, type ResumenEquipo } from '../lib/sellers';
+import { miFichaClienteFemway, type FichaFemway } from '../lib/femway';
+import FichaFemwayVista from './FichaFemwayVista';
 import { NOMBRE_PROYECTO, type Proyecto } from '../lib/proyectos';
 import { ETIQUETA, COLOR, PERIODOS, pesos, num, fechaCorta } from './MisVentas';
 
@@ -24,6 +26,30 @@ export default function VentasEquipo({ token, proyecto, onPaseVencido }: { token
   const [lista, setLista] = useState<Lista>('vendedores');
   // Al tocar un vendedor, clientes y pedidos quedan filtrados por él.
   const [vendedor, setVendedor] = useState<string | null>(null);
+  // Ficha del cliente abierta. El gerente la ve de cualquier cliente del
+  // proyecto, pero sin tocar nada: la nota es del vendedor dueño.
+  const [abierto, setAbierto] = useState<string | null>(null);
+  const [ficha, setFicha] = useState<FichaFemway | null>(null);
+  const [cargandoFicha, setCargandoFicha] = useState(false);
+  const [errorFicha, setErrorFicha] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!abierto) return;
+    let vigente = true;
+    setCargandoFicha(true);
+    setErrorFicha(null);
+    setFicha(null);
+    window.scrollTo(0, 0);
+    miFichaClienteFemway(token, abierto)
+      .then(f => { if (vigente) f ? setFicha(f) : setErrorFicha('No se encontró la ficha de ese cliente.'); })
+      .catch(e => {
+        if (!vigente) return;
+        if (e instanceof PaseVencidoError) onPaseVencido();
+        else setErrorFicha(e?.message ?? 'No se pudo cargar la ficha.');
+      })
+      .finally(() => { if (vigente) setCargandoFicha(false); });
+    return () => { vigente = false; };
+  }, [token, abierto, onPaseVencido]);
 
   useEffect(() => {
     let vigente = true;
@@ -50,8 +76,35 @@ export default function VentasEquipo({ token, proyecto, onPaseVencido }: { token
   const clientes = datos?.clientes.filter(c => !vendedor || c.vendedor === vendedor) ?? [];
   const pedidos = datos?.pedidos.filter(p => !vendedor || p.vendedor === vendedor) ?? [];
 
+  // Las fichas son del registro de FemWay: en otro proyecto no se abren.
+  const abrir = (codigo: string | null) => (proyecto === 'femway' && codigo ? () => setAbierto(codigo) : undefined);
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
+      {abierto && (
+        <div>
+          <button onClick={() => setAbierto(null)}
+            className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 mb-3">
+            <ArrowLeft className="w-4 h-4" /> Volver al equipo
+          </button>
+          {cargandoFicha ? (
+            <div className="flex items-center gap-2 text-slate-500 text-sm py-10">
+              <Loader2 className="w-4 h-4 animate-spin" /> Cargando la ficha…
+            </div>
+          ) : errorFicha || !ficha ? (
+            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{errorFicha}</div>
+          ) : (
+            <FichaFemwayVista
+              key={abierto}
+              ficha={ficha}
+              nombreVendedor={cod => (cod ? `${nombre(cod)} (${cod})` : '—')}
+            />
+          )}
+        </div>
+      )}
+
+      {/* El resumen queda montado mientras se ve una ficha, para volver al mismo lugar. */}
+      <div style={{ display: abierto ? 'none' : undefined }}>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900">Equipo {NOMBRE_PROYECTO[proyecto]}</h1>
@@ -201,7 +254,8 @@ export default function VentasEquipo({ token, proyecto, onPaseVencido }: { token
                 </thead>
                 <tbody>
                   {clientes.map((c, i) => (
-                    <tr key={i} className="border-t border-slate-100">
+                    <tr key={i} onClick={abrir(c.codigo)}
+                      className={`border-t border-slate-100 ${abrir(c.codigo) ? 'hover:bg-slate-50 cursor-pointer' : ''}`}>
                       <td className="px-4 py-2.5">
                         <div className="font-semibold text-slate-900">
                           {c.cliente ?? '—'} {c.codigo && <span className="text-xs text-slate-400 font-semibold ml-1">{c.codigo}</span>}
@@ -222,7 +276,8 @@ export default function VentasEquipo({ token, proyecto, onPaseVencido }: { token
             ) : (
               <ul>
                 {pedidos.map((p, i) => (
-                  <li key={i} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 border-t first:border-t-0 border-slate-100">
+                  <li key={i} onClick={abrir(p.codigo)}
+                    className={`flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 border-t first:border-t-0 border-slate-100 ${abrir(p.codigo) ? 'hover:bg-slate-50 cursor-pointer' : ''}`}>
                     <span className="font-bold text-slate-900 w-16">{p.numero ?? '—'}</span>
                     <span className="text-sm text-slate-500 w-12">{fechaDelPedido(p.fecha)}</span>
                     <span className="flex-1 min-w-[160px] text-sm text-slate-800">
@@ -240,6 +295,7 @@ export default function VentasEquipo({ token, proyecto, onPaseVencido }: { token
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }

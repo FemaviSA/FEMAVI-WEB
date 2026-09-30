@@ -190,8 +190,14 @@ usó: exponer temporalmente la ruta sin `RequireAuth` en `App.tsx`, mirar, y
   ciclos / Este año" en FEMAVI; "Este mes / Mes pasado / Últimos 3 meses / Este
   año" en FemWay.
 - En FemWay, el recuadro de **Volumen** y el de **Bonificado** se abren y muestran
-  el desglose **por separado**: volumen lista lo vendido (60 CITRIFEM, 60 ULTRA
-  SKIN) y bonificado lista lo bonificado (10 y 10). Solo producto y número.
+  el desglose **por separado**: volumen lista **lo facturado, neto de
+  bonificaciones** (50 CITRIFEM, 50 ULTRA SKIN), así la lista suma lo mismo que
+  la tarjeta; bonificado lista lo bonificado (10 y 10). Solo producto y número.
+  (Hasta el 30/09 mostraba lo vendido bruto, 60, y no cerraba: lo pidió Santiago.)
+- **El 57 (Mariano Vega) es gerente de FemWay** (`sellers.es_gerente`): solapa
+  "Equipo" con el proyecto entero —por vendedor, por cliente, pedido por pedido,
+  sin rechazados y sin estados— y la ficha de cualquier cliente de FemWay, solo
+  para ver. Funciones `seller_equipo` y `seller_femway_ficha_cliente` (0045, 0046).
 
 ### 5.5 Los tres controles antes de aprobar
 

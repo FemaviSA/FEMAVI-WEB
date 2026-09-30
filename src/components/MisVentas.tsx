@@ -3,11 +3,11 @@ import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { resumenDeVentas, PaseVencidoError, type PeriodoVentas, type ResumenVentas } from '../lib/sellers';
 import { NOMBRE_PROYECTO, type Proyecto } from '../lib/proyectos';
 
-const ETIQUETA: Record<string, string> = {
+export const ETIQUETA: Record<string, string> = {
   recibido: 'Recibido', aprobado: 'Aprobado', ingresado: 'Ingresado',
   facturado: 'Facturado', entregado: 'Entregado', rechazado: 'Rechazado',
 };
-const COLOR: Record<string, string> = {
+export const COLOR: Record<string, string> = {
   recibido: 'bg-amber-50 text-amber-700 ring-amber-200',
   aprobado: 'bg-sky-50 text-sky-700 ring-sky-200',
   ingresado: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
@@ -19,15 +19,15 @@ const COLOR: Record<string, string> = {
 /** Qué recuadro se abrió: cada uno muestra lo suyo, sin mezclar. */
 type Desglose = 'volumen' | 'bonificado' | null;
 
-const pesos = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
-const num = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
+export const pesos = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
+export const num = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
 
-const fechaCorta = (iso: string) =>
+export const fechaCorta = (iso: string) =>
   new Date(iso + 'T12:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
 
 // FEMAVI mide por ciclo: son mensuales pero el corte va variando, así que los
 // carga administración. FemWay mide por mes calendario, del 1 al último día.
-const PERIODOS: Record<Proyecto, [PeriodoVentas, string][]> = {
+export const PERIODOS: Record<Proyecto, [PeriodoVentas, string][]> = {
   femavi: [
     ['ciclo', 'Este ciclo'],
     ['ciclo_pasado', 'Ciclo pasado'],

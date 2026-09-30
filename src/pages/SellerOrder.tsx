@@ -7,6 +7,7 @@ import { buscarMiCliente, datosDeCliente } from '../lib/historial';
 import { cuitDeOtroVendedor } from '../lib/femway';
 import { SEO, SITE_URL } from '../components/SEO';
 import MisVentas from '../components/MisVentas';
+import VentasEquipo from '../components/VentasEquipo';
 import MisClientes from '../components/MisClientes';
 import MisClientesFemway from '../components/MisClientesFemway';
 import { NOMBRE_PROYECTO, type Proyecto } from '../lib/proyectos';
@@ -139,7 +140,10 @@ export default function SellerOrder() {
   // Si el pase vence a mitad de un pedido, se vuelve al PIN con este aviso. El
   // formulario sigue montado detrás, así que lo cargado no se pierde.
   const [avisoPin, setAvisoPin] = useState<string | null>(null);
-  const [vista, setVista] = useState<'pedido' | 'ventas' | 'clientes'>('pedido');
+  const [vista, setVista] = useState<'pedido' | 'ventas' | 'clientes' | 'equipo'>('pedido');
+  // El gerente del proyecto ve además a todo el equipo. Lo dice la base, que
+  // es también la que decide qué le devuelve.
+  const [esGerente, setEsGerente] = useState(false);
   // El proyecto sale del código con el que entró: cada vendedor tiene uno para
   // FEMAVI y otro para FemWay, así no hay nada que elegir ni que equivocar.
   const proyecto: Proyecto = seller?.proyecto ?? 'femavi';
@@ -153,7 +157,9 @@ export default function SellerOrder() {
     let vigente = true;
     perfilDeVendedor(seller.token)
       .then(perfil => {
-        if (vigente && perfil && perfil.proyecto !== seller.proyecto) {
+        if (!vigente || !perfil) return;
+        setEsGerente(perfil.esGerente);
+        if (perfil.proyecto !== seller.proyecto) {
           setSeller({ ...seller, proyecto: perfil.proyecto });
         }
       })
@@ -264,7 +270,8 @@ export default function SellerOrder() {
           }}>
             <div style={{ display: 'flex', gap: 4, background: C.bg, borderRadius: 8, padding: 3 }}>
               {([['pedido', 'Nuevo pedido'], ['ventas', 'Mis ventas'],
-                ['clientes', 'Mis clientes']] as const).map(([k, r]) => (
+                ['clientes', 'Mis clientes'], ...(esGerente ? [['equipo', 'Equipo']] : [])] as
+                [typeof vista, string][]).map(([k, r]) => (
                 <button key={k} type="button" onClick={() => setVista(k)} style={{
                   padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
                   fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
@@ -287,7 +294,7 @@ export default function SellerOrder() {
               </div>
               <button
                 type="button" title="Salir"
-                onClick={() => { forgetSeller(seller.token); setSeller(null); }}
+                onClick={() => { forgetSeller(seller.token); setSeller(null); setEsGerente(false); setVista('pedido'); }}
                 style={{
                   width: 32, height: 32, borderRadius: 7, background: C.bg,
                   border: `1px solid ${C.borderLight}`, color: C.textMuted, cursor: 'pointer',
@@ -300,7 +307,9 @@ export default function SellerOrder() {
           </div>
         </header>
 
-        {vista === 'ventas' ? (
+        {vista === 'equipo' && esGerente ? (
+          <VentasEquipo token={seller.token} proyecto={seller.proyecto} onPaseVencido={paseVencido} />
+        ) : vista === 'ventas' ? (
           <MisVentas token={seller.token} proyecto={seller.proyecto} onPaseVencido={paseVencido} />
         ) : vista === 'clientes' ? (
           // Cada proyecto tiene su propia cartera: la de FEMAVI sale del sistema

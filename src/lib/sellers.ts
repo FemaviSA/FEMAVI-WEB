@@ -161,9 +161,45 @@ export async function resumenDeVentas(token: string, periodo: PeriodoVentas): Pr
  * sesiones abiertas antes de que existiera FemWay, y para que un cambio se note
  * sin tener que volver a poner el PIN.
  */
-export async function perfilDeVendedor(token: string): Promise<{ name: string; proyecto: Proyecto } | null> {
+export async function perfilDeVendedor(token: string): Promise<{ name: string; proyecto: Proyecto; esGerente: boolean } | null> {
   const { data, error } = await supabase.rpc('seller_perfil', { p_token: token });
   if (error?.message?.includes('sesion_vencida')) throw new PaseVencidoError();
   if (error || !data) return null;
-  return { name: String(data.name), proyecto: unProyecto(data.proyecto) };
+  return { name: String(data.name), proyecto: unProyecto(data.proyecto), esGerente: data.es_gerente === true };
+}
+
+// ---------------------------------------------------------------------------
+// Resumen del equipo, para el gerente del proyecto.
+//
+// Igual que "Mis ventas" pero de todos los vendedores de su proyecto. La base
+// decide si es gerente mirando el pase: si no lo es, no devuelve nada.
+// ---------------------------------------------------------------------------
+
+export interface ResumenEquipo {
+  ciclos: ResumenVentas['ciclos'];
+  totales: ResumenVentas['totales'];
+  productos: ResumenVentas['productos'];
+  /** Todos los vendedores del proyecto, también los que están en cero. */
+  vendedores: {
+    code: string; name: string; pedidos: number; clientes: number;
+    pesos: number; volumen: number; esperando: number;
+  }[];
+  clientes: {
+    cliente: string | null; codigo: string | null; vendedor: string;
+    pedidos: number; pesos: number; ultimo: string;
+  }[];
+  /** Pedidos del proyecto esperando aprobación: no suman. */
+  esperando: number;
+  pedidos: {
+    numero: string | null; fecha: string; vendedor: string; cliente: string | null;
+    codigo: string | null; total: number | null; estado: string;
+  }[];
+}
+
+export async function resumenDelEquipo(token: string, periodo: PeriodoVentas): Promise<ResumenEquipo> {
+  const { data, error } = await supabase.rpc('seller_equipo', { p_token: token, p_periodo: periodo });
+  if (error?.message?.includes('sesion_vencida')) throw new PaseVencidoError();
+  if (error?.message?.includes('no_es_gerente')) throw new Error('Esta vista es solo para el gerente del proyecto.');
+  if (error || !data) throw new Error('No se pudo cargar el resumen del equipo. Revisá la conexión.');
+  return data as ResumenEquipo;
 }

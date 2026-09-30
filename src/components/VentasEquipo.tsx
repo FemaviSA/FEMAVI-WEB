@@ -4,7 +4,7 @@ import { resumenDelEquipo, PaseVencidoError, type PeriodoVentas, type ResumenEqu
 import { miFichaClienteFemway, type FichaFemway } from '../lib/femway';
 import FichaFemwayVista from './FichaFemwayVista';
 import { NOMBRE_PROYECTO, type Proyecto } from '../lib/proyectos';
-import { ETIQUETA, COLOR, PERIODOS, pesos, num, fechaCorta } from './MisVentas';
+import { COLOR, PERIODOS, pesos, num, fechaCorta } from './MisVentas';
 
 type Desglose = 'volumen' | 'bonificado' | null;
 type Lista = 'vendedores' | 'clientes' | 'pedidos';
@@ -285,9 +285,13 @@ export default function VentasEquipo({ token, proyecto, onPaseVencido }: { token
                       <span className="block text-xs text-slate-400">{nombre(p.vendedor)}</span>
                     </span>
                     <span className="text-sm font-semibold text-slate-900">{pesos.format(Number(p.total) || 0)}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ring-1 ${COLOR[p.estado] ?? ''}`}>
-                      {p.estado === 'recibido' ? 'Esperando aprobación' : (ETIQUETA[p.estado] ?? p.estado)}
-                    </span>
+                    {/* El estado no se muestra: todo lo de la lista ya cuenta. Solo
+                        se marca lo que todavía no suma. */}
+                    {p.estado === 'recibido' && (
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ring-1 ${COLOR.recibido}`}>
+                        Esperando aprobación
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>

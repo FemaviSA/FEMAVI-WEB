@@ -310,7 +310,7 @@ export default function SellerOrder() {
         {vista === 'equipo' && esGerente ? (
           <VentasEquipo token={seller.token} proyecto={seller.proyecto} onPaseVencido={paseVencido} />
         ) : vista === 'ventas' ? (
-          <MisVentas token={seller.token} proyecto={seller.proyecto} onPaseVencido={paseVencido} />
+          <MisVentas token={seller.token} proyecto={seller.proyecto} esGerente={esGerente} onPaseVencido={paseVencido} />
         ) : vista === 'clientes' ? (
           // Cada proyecto tiene su propia cartera: la de FEMAVI sale del sistema
           // viejo y la de FemWay de su registro nuevo.

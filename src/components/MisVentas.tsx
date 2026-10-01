@@ -62,7 +62,13 @@ export function DesgloseProductos({ que, productos }: {
   );
 }
 
-export default function MisVentas({ token, proyecto, onPaseVencido }: { token: string; proyecto: Proyecto; onPaseVencido: () => void }) {
+// El vendedor ve solo el mes (o ciclo) actual y el anterior; el gerente, todo.
+// La base frena igual a quien pida otro período sin ser gerente.
+const SOLO_VENDEDOR: PeriodoVentas[] = ['ciclo', 'ciclo_pasado'];
+
+export default function MisVentas({ token, proyecto, esGerente = false, onPaseVencido }: {
+  token: string; proyecto: Proyecto; esGerente?: boolean; onPaseVencido: () => void;
+}) {
   const [periodo, setPeriodo] = useState<PeriodoVentas>('ciclo');
   const [datos, setDatos] = useState<ResumenVentas | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -106,7 +112,7 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
           )}
         </div>
         <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
-          {PERIODOS[proyecto].map(([k, r]) => (
+          {PERIODOS[proyecto].filter(([k]) => esGerente || SOLO_VENDEDOR.includes(k)).map(([k, r]) => (
             <button key={k} onClick={() => setPeriodo(k)}
               className={`px-3 py-1.5 rounded-md text-sm font-medium ${periodo === k ? 'bg-white shadow text-slate-900' : 'text-slate-500'}`}>
               {r}

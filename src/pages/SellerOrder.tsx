@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { CheckCircle2, Loader2, Lock, LogOut } from 'lucide-react';
 import { createOrder, SesionVencidaError } from '../lib/orders';
-import { verifySellerPin, rememberedSeller, forgetSeller, perfilDeVendedor, PaseVencidoError, type Seller } from '../lib/sellers';
+import { verifySellerPin, rememberedSeller, forgetSeller, perfilDeVendedor, companerosDe, PaseVencidoError, type Seller } from '../lib/sellers';
 import { buscarMiCliente, datosDeCliente } from '../lib/historial';
 import { cuitDeOtroVendedor } from '../lib/femway';
 import { SEO, SITE_URL } from '../components/SEO';
@@ -144,6 +144,8 @@ export default function SellerOrder() {
   // El gerente del proyecto ve además a todo el equipo. Lo dice la base, que
   // es también la que decide qué le devuelve.
   const [esGerente, setEsGerente] = useState(false);
+  // Duplas: los otros vendedores de su proyecto, para el "Comparto con".
+  const [companeros, setCompaneros] = useState<{ code: string; name: string }[]>([]);
   // El proyecto sale del código con el que entró: cada vendedor tiene uno para
   // FEMAVI y otro para FemWay, así no hay nada que elegir ni que equivocar.
   const proyecto: Proyecto = seller?.proyecto ?? 'femavi';
@@ -164,6 +166,9 @@ export default function SellerOrder() {
         }
       })
       .catch(() => { /* si falla, sigue con lo que tenía guardado */ });
+    companerosDe(seller.token)
+      .then(c => { if (vigente) setCompaneros(c); })
+      .catch(() => { /* sin lista, el pedido sale igual sin dupla */ });
     return () => { vigente = false; };
   }, [seller]);
 
@@ -332,6 +337,7 @@ export default function SellerOrder() {
             }
             cliente={fuentesCliente}
             revisarCuit={revisarCuit}
+            companeros={companeros}
             guardar={(input) => createOrder(input, seller.token)}
             alGuardar={(pedido) => { setNumero(pedido.order_number ?? ''); window.scrollTo(0, 0); }}
             alFallar={alFallar}

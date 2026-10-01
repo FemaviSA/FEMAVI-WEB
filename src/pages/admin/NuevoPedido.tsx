@@ -25,6 +25,11 @@ export default function NuevoPedido() {
   }, []);
 
   const elegido = vendedores.find(v => v.code === vendedor);
+  // Duplas: los otros vendedores del mismo proyecto que el elegido.
+  const companeros = useMemo(
+    () => (elegido ? vendedores.filter(v => v.proyecto === elegido.proyecto && v.code !== elegido.code) : []),
+    [vendedores, elegido],
+  );
 
   // Memorizado: la planilla lo tiene como dependencia de sus efectos y un
   // objeto nuevo en cada dibujo la haría buscar sin parar.
@@ -96,6 +101,7 @@ export default function NuevoPedido() {
           </>
         }
         cliente={fuentes}
+        companeros={companeros}
         guardar={(input) => crearPedidoAdmin(input, vendedor)}
         alGuardar={(pedido) => { setNumero(pedido.order_number ?? ''); window.scrollTo(0, 0); }}
         validar={() => (vendedor ? [] : ['el código del agente al que corresponde el pedido'])}

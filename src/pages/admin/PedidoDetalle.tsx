@@ -34,10 +34,12 @@ function Dato({ rotulo, valor }: { rotulo: string; valor: React.ReactNode }) {
 }
 
 export default function PedidoDetalle({
-  pedido, vendedor, onCerrar, onCambio,
+  pedido, vendedor, compartidoCon, onCerrar, onCambio,
 }: {
   pedido: Pedido;
   vendedor: string;
+  /** Con quién salió en dupla, ya con nombre. Solo para la liquidación. */
+  compartidoCon?: string | null;
   onCerrar: () => void;
   onCambio: () => void;
 }) {
@@ -93,7 +95,11 @@ export default function PedidoDetalle({
               <ChipEstado estado={pedido.status} />
               {pedido.account && <span className="text-xs font-bold text-slate-500">{pedido.account}</span>}
             </div>
-            <div className="text-sm text-slate-500">{vendedor} · {new Date(pedido.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}</div>
+            <div className="text-sm text-slate-500">
+              {vendedor}
+              {compartidoCon && <span className="font-semibold text-violet-700"> · compartido con {compartidoCon}</span>}
+              {' · '}{new Date(pedido.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}
+            </div>
           </div>
           <button onClick={onCerrar} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500" aria-label="Cerrar">
             <X className="w-5 h-5" />

@@ -226,7 +226,12 @@ export default function Pedidos() {
                   <tr key={p.id} onClick={() => setAbierto(p.id)} className="border-t border-slate-100 hover:bg-slate-50 cursor-pointer">
                     <td className="px-4 py-3 font-semibold text-slate-900">{p.order_number ?? '—'}</td>
                     <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{fmtFecha(p.created_at)}</td>
-                    <td className="px-4 py-3 text-slate-700">{nombreVendedor(p.seller_code)}</td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {nombreVendedor(p.seller_code)}
+                      {p.compartido_con && (
+                        <span className="block text-[11px] font-semibold text-violet-700">con {nombreVendedor(p.compartido_con)}</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-slate-900">
                       {p.company ?? '—'}
                       {p.is_new_client
@@ -251,6 +256,7 @@ export default function Pedidos() {
         <PedidoDetalle
           pedido={pedidoAbierto}
           vendedor={nombreVendedor(pedidoAbierto.seller_code)}
+          compartidoCon={pedidoAbierto.compartido_con ? nombreVendedor(pedidoAbierto.compartido_con) : null}
           onCerrar={() => setAbierto(null)}
           onCambio={cargar}
         />

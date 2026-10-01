@@ -40,6 +40,8 @@ export interface Pedido {
   sales_cycle: string | null;
   purchase_order: string | null;
   ship_date: string | null;
+  /** Con quién salió en dupla. El pedido es entero de seller_code. */
+  compartido_con: string | null;
   is_new_client: boolean;
   client_code: string | null;
   company: string | null;
@@ -146,12 +148,12 @@ export function exportarCsv(pedidos: Pedido[], nombreVendedor: (code: string | n
     const s = String(v ?? '');
     return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
-  const cabecera = ['Pedido', 'Fecha', 'Proyecto', 'Estado', 'Vendedor', 'Cuenta', 'N° cliente', 'Cliente nuevo', 'Razón social',
+  const cabecera = ['Pedido', 'Fecha', 'Proyecto', 'Estado', 'Vendedor', 'Comparte con', 'Cuenta', 'N° cliente', 'Cliente nuevo', 'Razón social',
     'Ciudad', 'Zona', 'Transporte', 'Volumen L/kg', 'Bonificado L/kg', 'Total $', 'Motivo rechazo'];
   const filas = pedidos.map(p => {
     const v = volumenDe(p.items);
     return [p.order_number, fmtFecha(p.created_at), NOMBRE_PROYECTO[p.proyecto] ?? p.proyecto, ETIQUETA_ESTADO[p.status] ?? p.status,
-      nombreVendedor(p.seller_code), p.account, p.client_code, p.is_new_client ? 'sí' : '', p.company,
+      nombreVendedor(p.seller_code), p.compartido_con ? nombreVendedor(p.compartido_con) : '', p.account, p.client_code, p.is_new_client ? 'sí' : '', p.company,
       p.bill_city, p.zone, p.carrier,
       String(v.volumen).replace('.', ','), String(v.bonificado).replace('.', ','), String(p.total ?? 0).replace('.', ','), p.rejection_reason];
   });
@@ -235,7 +237,9 @@ export async function crearPedidoAdmin(input: OrderInput, vendedor: string): Pro
   if (error || !data) {
     throw new Error(error?.message?.includes('vendedor_inexistente')
       ? 'Ese vendedor no existe o está dado de baja.'
-      : 'No se pudo guardar el pedido. Probá de nuevo.');
+      : error?.message?.includes('compartido_invalido')
+        ? 'El de "Comparto con" tiene que ser otro vendedor activo del mismo proyecto.'
+        : 'No se pudo guardar el pedido. Probá de nuevo.');
   }
   return data as OrderCreated;
 }

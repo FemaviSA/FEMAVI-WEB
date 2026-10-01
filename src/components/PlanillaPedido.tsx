@@ -150,11 +150,17 @@ interface Props {
   revisarCuit?: (cuit: string) => Promise<{ razon_social: string } | null>;
   /** Un cartel arriba del formulario. */
   aviso?: React.ReactNode;
+  /**
+   * Con quién puede compartir el pedido (duplas): los otros vendedores del
+   * proyecto. Es solo un dato para la liquidación; el pedido, la facturación
+   * y el cliente quedan enteros de quien lo carga.
+   */
+  companeros?: { code: string; name: string }[];
 }
 
 export default function PlanillaPedido({
   casillasAgente, cliente, guardar, alGuardar,
-  validar, alFallar, alEncontrarCliente, alElegirSugerencia, revisarCuit, aviso,
+  validar, alFallar, alEncontrarCliente, alElegirSugerencia, revisarCuit, aviso, companeros = [],
 }: Props) {
   const { products } = useProducts();
 
@@ -172,7 +178,7 @@ export default function PlanillaPedido({
   const [renglonesMal, setRenglonesMal] = useState<number[]>([]);
 
   const [f, setF] = useState({
-    account: '', sales_cycle: '', purchase_order: '', ship_date: '', is_new_client: false,
+    account: '', sales_cycle: '', purchase_order: '', ship_date: '', compartido_con: '', is_new_client: false,
     company: '', client_code: '', bill_address: '', bill_city: '',
     phone: '', client_name: '', email: '', tax_condition: '', cuit: '', payment_terms: '',
     delivery_address: '', ship_city: '', ship_phone: '', ship_contact: '',
@@ -453,6 +459,8 @@ export default function PlanillaPedido({
         sales_cycle: f.sales_cycle,
         purchase_order: f.purchase_order,
         ship_date: f.ship_date || null,
+        // Si cambió el vendedor (admin) y el elegido ya no está en la lista, no va.
+        compartido_con: companeros.some(c => c.code === f.compartido_con) ? f.compartido_con : null,
         is_new_client: f.is_new_client,
 
         client_name: f.client_name || f.company,
@@ -573,15 +581,30 @@ export default function PlanillaPedido({
                 <span style={{ ...campo, display: 'block' }}>{hoy}</span>
               </Casilla>
 
-              <div style={{ ...celda, gridColumn: 'span 5', fontSize: 11, color: C.textMuted, lineHeight: 1.45 }}>
-                Ibarrola 7071 — CABA (CP 1408)<br />Cel: +54 9 11 6228 4649 · ventas@femavi.com.ar
+              <div style={{ ...celda, gridColumn: 'span 4', fontSize: 11, color: C.textMuted, lineHeight: 1.45 }}>
+                Ibarrola 7071 — CABA (CP 1408)<br />Cel: +54 9 11 6228 4649<br />ventas@femavi.com.ar
               </div>
 
-              <Casilla rot="Ciclo de ventas" span={3}>
-                <input style={campo} value={f.sales_cycle} onChange={set('sales_cycle')} placeholder="lo completa administración" />
+              <Casilla rot="Ciclo de ventas" span={2}>
+                <input style={campo} value={f.sales_cycle} onChange={set('sales_cycle')} placeholder="administración" />
               </Casilla>
 
               {casillasAgente}
+
+              {/* Duplas: con quién salió. El pedido sigue siendo entero de quien lo carga. */}
+              <Casilla rot="Comparto con" span={2}>
+                <select
+                  value={companeros.some(c => c.code === f.compartido_con) ? f.compartido_con : ''}
+                  onChange={set('compartido_con')}
+                  disabled={companeros.length === 0}
+                  style={{ ...campo, cursor: companeros.length ? 'pointer' : 'default' }}
+                >
+                  <option value="">nadie</option>
+                  {companeros.map(c => (
+                    <option key={c.code} value={c.code}>{c.code} · {c.name}</option>
+                  ))}
+                </select>
+              </Casilla>
 
               <Casilla rot="N° de cliente *" span={4}>
                 <input style={campo} value={f.client_code} onChange={set('client_code')} placeholder="o tildá cliente nuevo" />

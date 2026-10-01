@@ -165,6 +165,17 @@ export async function perfilDeVendedor(token: string): Promise<{ name: string; p
   return { name: String(data.name), proyecto: unProyecto(data.proyecto), esGerente: data.es_gerente === true };
 }
 
+/**
+ * Con quién puede compartir un pedido: los otros vendedores activos de su
+ * proyecto. Si falla, la lista queda vacía y el pedido sale igual sin dupla.
+ */
+export async function companerosDe(token: string): Promise<{ code: string; name: string }[]> {
+  const { data, error } = await supabase.rpc('seller_companeros', { p_token: token });
+  if (error?.message?.includes('sesion_vencida')) throw new PaseVencidoError();
+  if (error || !Array.isArray(data)) return [];
+  return data as { code: string; name: string }[];
+}
+
 // ---------------------------------------------------------------------------
 // Resumen del equipo, para el gerente del proyecto.
 //

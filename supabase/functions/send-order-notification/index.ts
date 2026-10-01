@@ -97,6 +97,16 @@ Deno.serve(async (req: Request) => {
       if (s?.name) vendedor = s.name + " (" + o.seller_code + ")";
     }
 
+    // Duplas: con quién salió. Es solo para la liquidación; el pedido sigue
+    // siendo entero de quien lo cargó.
+    if (o.compartido_con) {
+      let companero = "Agente " + o.compartido_con;
+      const { data: s2 } = await supabase
+        .from("sellers").select("name").eq("code", o.compartido_con).maybeSingle();
+      if (s2?.name) companero = s2.name + " (" + o.compartido_con + ")";
+      vendedor += " · con " + companero;
+    }
+
     // FemWay es otra unidad de negocio: tiene que verse de una en el asunto,
     // en la planilla y en el nombre del archivo, para que administración no
     // mezcle un pedido con el otro.

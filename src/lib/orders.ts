@@ -18,6 +18,8 @@ export interface OrderInput {
   sales_cycle?: string | null;
   purchase_order?: string | null;
   ship_date?: string | null;
+  /** Con quién salió en dupla. Solo un dato: el pedido es entero de quien lo carga. */
+  compartido_con?: string | null;
   seller_code?: string | null;
   is_new_client?: boolean;
 
@@ -87,6 +89,7 @@ export async function createOrder(input: OrderInput, sellerToken?: string): Prom
     sales_cycle: txt(input.sales_cycle),
     purchase_order: txt(input.purchase_order),
     ship_date: txt(input.ship_date),
+    compartido_con: txt(input.compartido_con),
     is_new_client: input.is_new_client ?? false,
 
     client_name: input.client_name.trim(),
@@ -123,6 +126,9 @@ export async function createOrder(input: OrderInput, sellerToken?: string): Prom
   // pedido a un cliente de otro.
   if (error?.message?.includes('cliente_de_otro_vendedor')) {
     throw new Error('Ese CUIT ya es de otro vendedor de FemWay. Hablá con administración.');
+  }
+  if (error?.message?.includes('compartido_invalido')) {
+    throw new Error('El compañero elegido en "Comparto con" no es un vendedor de tu proyecto. Elegí otro o dejalo vacío.');
   }
 
   if (error || !data) {

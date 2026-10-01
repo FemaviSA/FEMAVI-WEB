@@ -605,7 +605,9 @@ export default function PlanillaPedido({
               </Casilla>
 
               <Casilla rot="Fecha de envío" span={4}>
-                <input type="date" style={campo} value={f.ship_date} onChange={set('ship_date')} />
+                {/* Texto libre: "N" (normal), "URG" (urgente) o una fecha si es diferido. */}
+                <input style={campo} value={f.ship_date} onChange={set('ship_date')}
+                  maxLength={60} placeholder="N, URG o fecha" />
               </Casilla>
             </div>
 

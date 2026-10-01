@@ -146,7 +146,7 @@ export default function Pedidos() {
 
       {/* Pestañas por estado */}
       <div className="flex gap-1 overflow-x-auto pb-1 mb-4">
-        {(['recibido', 'aprobado', 'ingresado', 'facturado', 'entregado', 'rechazado', 'todos'] as Pestaña[]).map(e => (
+        {(['recibido', 'aprobado', 'rechazado', 'todos'] as Pestaña[]).map(e => (
           <button key={e} onClick={() => setPestaña(e)}
             className={`whitespace-nowrap px-3 py-2 rounded-lg text-sm font-medium transition ${
               pestaña === e ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>

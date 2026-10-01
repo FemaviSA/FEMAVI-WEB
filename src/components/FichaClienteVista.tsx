@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { fmtNum, fmtPesos, ETIQUETA_ESTADO, type Estado } from '../lib/adminOrders';
+import { fmtNum, fmtPesos } from '../lib/adminOrders';
 import { etiquetaTipo, signoTipo, IVA, type FichaCliente } from '../lib/historial';
 
 // Ficha de un cliente del sistema viejo: los datos del ABM y el historial de
@@ -92,7 +92,8 @@ export default function FichaClienteVista({ ficha, nombreVendedor }: Props) {
                   <td className="py-1.5 font-semibold">{p.numero}</td>
                   <td className="py-1.5 text-slate-500">{fecha(p.fecha)}</td>
                   <td className="py-1.5 text-slate-600">{p.vendedor ? nombreVendedor(p.vendedor.padStart(3, '0')) : 'Web'}</td>
-                  <td className="py-1.5">{ETIQUETA_ESTADO[p.estado as Estado] ?? p.estado}</td>
+                  {/* Solo lo ve administración: al vendedor no le llegan los sin aprobar. */}
+                  <td className="py-1.5">{p.estado === 'recibido' && <span className="text-[11px] font-semibold text-amber-700">Recibido</span>}</td>
                   <td className="py-1.5 text-right font-semibold">{fmtPesos.format(Number(p.total) || 0)}</td>
                 </tr>
               ))}

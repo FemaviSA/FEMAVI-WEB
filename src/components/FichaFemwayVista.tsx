@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { ChevronDown, ChevronRight, Loader2, Pencil, X } from 'lucide-react';
-import { fmtNum, fmtPesos, ETIQUETA_ESTADO, type Estado, type Vendedor } from '../lib/adminOrders';
+import { fmtNum, fmtPesos, type Vendedor } from '../lib/adminOrders';
 import { guardarClienteFemway, type DatosClienteFemway, type FichaFemway } from '../lib/femway';
 
 // La ficha de un cliente de FemWay, armada igual que la de FEMAVI: los datos
@@ -128,7 +128,6 @@ export default function FichaFemwayVista({ ficha, nombreVendedor, mostrarFemavi,
                   <th className="w-6" />
                   <th className="text-left py-2">Fecha</th>
                   <th className="text-left py-2">Pedido</th>
-                  <th className="text-left py-2">Estado</th>
                   <th className="text-right py-2">L/kg</th>
                   <th className="text-right py-2">Total</th>
                 </tr>
@@ -146,15 +145,16 @@ export default function FichaFemwayVista({ ficha, nombreVendedor, mostrarFemavi,
                           {p.numero}
                           {/* Se cargó como cliente nuevo: se le atribuye por el CUIT. */}
                           {p.sin_codigo && <span className="ml-1.5 text-[10px] text-slate-400">por CUIT</span>}
+                          {/* Solo lo ve administración: al vendedor no le llegan los sin aprobar. */}
+                          {p.estado === 'recibido' && <span className="ml-1.5 text-[10px] font-semibold text-amber-700">Recibido</span>}
                         </td>
-                        <td className="py-2">{ETIQUETA_ESTADO[p.estado as Estado] ?? p.estado}</td>
                         <td className="py-2 text-right font-semibold">{fmtNum(kilos)}</td>
                         <td className="py-2 text-right">{fmtPesos.format(Number(p.total) || 0)}</td>
                       </tr>
                       {abierto && (
                         <tr className="bg-slate-50">
                           <td />
-                          <td colSpan={5} className="py-2">
+                          <td colSpan={4} className="py-2">
                             <table className="w-full text-xs">
                               <thead className="text-slate-400 uppercase">
                                 <tr>

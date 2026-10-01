@@ -3,19 +3,6 @@ import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { resumenDeVentas, PaseVencidoError, type PeriodoVentas, type ResumenVentas } from '../lib/sellers';
 import { NOMBRE_PROYECTO, type Proyecto } from '../lib/proyectos';
 
-export const ETIQUETA: Record<string, string> = {
-  recibido: 'Recibido', aprobado: 'Aprobado', ingresado: 'Ingresado',
-  facturado: 'Facturado', entregado: 'Entregado', rechazado: 'Rechazado',
-};
-export const COLOR: Record<string, string> = {
-  recibido: 'bg-amber-50 text-amber-700 ring-amber-200',
-  aprobado: 'bg-sky-50 text-sky-700 ring-sky-200',
-  ingresado: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
-  facturado: 'bg-violet-50 text-violet-700 ring-violet-200',
-  entregado: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  rechazado: 'bg-red-50 text-red-700 ring-red-200',
-};
-
 /** Qué recuadro se abrió: cada uno muestra lo suyo, sin mezclar. */
 type Desglose = 'volumen' | 'bonificado' | null;
 
@@ -190,13 +177,8 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
                     <span className="flex-1 min-w-[140px] text-sm text-slate-800">
                       {p.cliente ?? '—'} {p.cuenta && <span className="text-xs text-slate-400 font-semibold ml-1">{p.cuenta}</span>}
                     </span>
+                    {/* Sin estado: acá solo llegan los aprobados. */}
                     <span className="text-sm font-semibold text-slate-900">{pesos.format(Number(p.total) || 0)}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ring-1 ${COLOR[p.estado] ?? ''}`}>
-                      {ETIQUETA[p.estado] ?? p.estado}
-                    </span>
-                    {p.estado === 'rechazado' && p.motivo && (
-                      <span className="basis-full text-xs text-red-700">Motivo: {p.motivo}</span>
-                    )}
                   </li>
                 ))}
               </ul>

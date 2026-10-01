@@ -2,25 +2,21 @@ import { supabase } from './supabase';
 import { NOMBRE_PROYECTO, type Proyecto } from './proyectos';
 import type { OrderCreated, OrderInput } from './orders';
 
-export const ESTADOS = ['recibido', 'aprobado', 'ingresado', 'facturado', 'entregado', 'rechazado'] as const;
+// Tres estados y nada más. Ingresado, facturado y entregado se sacaron el
+// 01/10/2026: no se usan, y la base ya no los acepta.
+export const ESTADOS = ['recibido', 'aprobado', 'rechazado'] as const;
 export type Estado = (typeof ESTADOS)[number];
 export type { Proyecto };
 
 export const ETIQUETA_ESTADO: Record<Estado, string> = {
   recibido: 'Recibido',
   aprobado: 'Aprobado',
-  ingresado: 'Ingresado',
-  facturado: 'Facturado',
-  entregado: 'Entregado',
   rechazado: 'Rechazado',
 };
 
 /** El paso siguiente de cada estado, y cómo se llama el botón que lo da. */
 export const SIGUIENTE: Partial<Record<Estado, { estado: Estado; accion: string }>> = {
   recibido: { estado: 'aprobado', accion: 'Aprobar' },
-  aprobado: { estado: 'ingresado', accion: 'Marcar ingresado' },
-  ingresado: { estado: 'facturado', accion: 'Marcar facturado' },
-  facturado: { estado: 'entregado', accion: 'Marcar entregado' },
 };
 
 export interface ItemPedido {

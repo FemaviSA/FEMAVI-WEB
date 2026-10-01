@@ -13,9 +13,6 @@ const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio',
 const COLOR_ESTADO: Record<Estado, string> = {
   recibido: 'bg-amber-50 text-amber-700 ring-amber-200',
   aprobado: 'bg-sky-50 text-sky-700 ring-sky-200',
-  ingresado: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
-  facturado: 'bg-violet-50 text-violet-700 ring-violet-200',
-  entregado: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
   rechazado: 'bg-red-50 text-red-700 ring-red-200',
 };
 
@@ -135,7 +132,7 @@ export default function PedidoDetalle({
           )}
 
           {/* Acciones */}
-          {pedido.status !== 'rechazado' && pedido.status !== 'entregado' && (
+          {pedido.status !== 'rechazado' && (
             <section className="rounded-xl border border-slate-200 p-4">
               {!rechazando ? (
                 <div className="flex flex-wrap gap-2">

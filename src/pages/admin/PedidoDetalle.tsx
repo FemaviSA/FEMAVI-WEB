@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, Loader2, Check, Ban, History, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { X, Loader2, Check, Ban, History, ShieldCheck, Pencil } from 'lucide-react';
 import ControlesPedido from '../../components/ControlesPedido';
 import ConsultaArca from '../../components/ConsultaArca';
 import {
@@ -101,9 +102,16 @@ export default function PedidoDetalle({
               {' · '}{new Date(pedido.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}
             </div>
           </div>
-          <button onClick={onCerrar} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500" aria-label="Cerrar">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Corregir el pedido, aunque esté aprobado. Solo administración llega acá. */}
+            <Link to={`/admin/pedidos/${pedido.id}/editar`}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              <Pencil className="w-4 h-4" /> Editar pedido
+            </Link>
+            <button onClick={onCerrar} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500" aria-label="Cerrar">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </header>
 
         <div className="p-6 space-y-6">

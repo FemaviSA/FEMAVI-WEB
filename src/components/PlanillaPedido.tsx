@@ -156,11 +156,34 @@ interface Props {
    * y el cliente quedan enteros de quien lo carga.
    */
   companeros?: { code: string; name: string }[];
+  /**
+   * Para editar un pedido ya cargado (solo admin): la planilla arranca con sus
+   * datos. Sin esto arranca en blanco.
+   */
+  inicial?: PedidoInicial;
+  /** El texto del botón. Por defecto, "Enviar pedido". */
+  textoBoton?: string;
+  /** Mandar el mail a administración al guardar. Al editar, no. */
+  avisar?: boolean;
+}
+
+/** Los datos de un pedido ya cargado, con los nombres de la base. */
+export interface PedidoInicial {
+  account?: string | null; sales_cycle?: string | null; purchase_order?: string | null;
+  ship_date?: string | null; compartido_con?: string | null; is_new_client?: boolean;
+  company?: string | null; client_code?: string | null; bill_address?: string | null;
+  bill_city?: string | null; phone?: string | null; client_name?: string | null;
+  email?: string | null; tax_condition?: string | null; cuit?: string | null;
+  payment_terms?: string | null; delivery_address?: string | null; ship_city?: string | null;
+  ship_phone?: string | null; ship_contact?: string | null; carrier?: string | null;
+  zone?: string | null; notes?: string | null;
+  items: { product: string; presentation?: string | null; quantity: number; unit_price?: number | null }[];
 }
 
 export default function PlanillaPedido({
   casillasAgente, cliente, guardar, alGuardar,
   validar, alFallar, alEncontrarCliente, alElegirSugerencia, revisarCuit, aviso, companeros = [],
+  inicial, textoBoton = 'Enviar pedido', avisar = true,
 }: Props) {
   const { products } = useProducts();
 
@@ -168,7 +191,7 @@ export default function PlanillaPedido({
   const [error, setError] = useState<string | null>(null);
   // Los 5 renglones iniciales usan los id 0 a 4, así que los que se agregan
   // después arrancan del 5: si repitieran un id, React mezclaría las filas.
-  const proximoId = useRef(4);
+  const proximoId = useRef(Math.max(inicial?.items.length ?? 0, 5) - 1);
   // Traba contra el doble clic. No alcanza con el estado `enviando`: se aplica
   // en el siguiente refresco de pantalla, y con internet lento entran dos
   // clics antes de eso. Serían dos pedidos iguales con numeros distintos.
@@ -177,17 +200,37 @@ export default function PlanillaPedido({
   // y que el vendedor no tenga que buscarlos a ojo entre todas las filas.
   const [renglonesMal, setRenglonesMal] = useState<number[]>([]);
 
-  const [f, setF] = useState({
-    account: '', sales_cycle: '', purchase_order: '', ship_date: '', compartido_con: '', is_new_client: false,
-    company: '', client_code: '', bill_address: '', bill_city: '',
-    phone: '', client_name: '', email: '', tax_condition: '', cuit: '', payment_terms: '',
-    delivery_address: '', ship_city: '', ship_phone: '', ship_contact: '',
-    carrier: '', zone: '', notes: '',
+  const [f, setF] = useState(() => {
+    const vacio = {
+      account: '', sales_cycle: '', purchase_order: '', ship_date: '', compartido_con: '', is_new_client: false,
+      company: '', client_code: '', bill_address: '', bill_city: '',
+      phone: '', client_name: '', email: '', tax_condition: '', cuit: '', payment_terms: '',
+      delivery_address: '', ship_city: '', ship_phone: '', ship_contact: '',
+      carrier: '', zone: '', notes: '',
+    };
+    if (!inicial) return vacio;
+    // Al editar, cada campo arranca con lo que tiene el pedido.
+    const lleno = { ...vacio, is_new_client: !!inicial.is_new_client };
+    for (const k of Object.keys(vacio) as (keyof typeof vacio)[]) {
+      const v = inicial[k as keyof PedidoInicial];
+      if (k !== 'is_new_client' && typeof v === 'string') (lleno as Record<string, unknown>)[k] = v;
+    }
+    return lleno;
   });
 
-  const [renglones, setRenglones] = useState<Renglon[]>(
-    () => Array.from({ length: 5 }, (_, i) => renglonVacio(i)),
-  );
+  const [renglones, setRenglones] = useState<Renglon[]>(() => {
+    const cargados = (inicial?.items ?? []).map((it, i): Renglon => ({
+      id: i,
+      product: it.product ?? '',
+      presentation: it.presentation ?? '',
+      quantity: formatearCantidad(Number(it.quantity) || 0),
+      unitPrice: it.unit_price == null ? '' : String(it.unit_price).replace('.', ','),
+      qtyAuto: false,
+    }));
+    // Siempre al menos 5 renglones, como la planilla en papel.
+    for (let i = cargados.length; i < 5; i++) cargados.push(renglonVacio(i));
+    return cargados;
+  });
 
   const set = (k: keyof typeof f) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -202,7 +245,9 @@ export default function PlanillaPedido({
   const [clienteNoEsta, setClienteNoEsta] = useState(false);
   // El último código que se completó, para no volver a pisar los campos si el
   // vendedor corrigió algo a mano y el código no cambió.
-  const ultimoCompletado = useRef('');
+  // Al editar arranca con el código del pedido: así no se pisan sus datos con
+  // los de la ficha, salvo que se cambie el código.
+  const ultimoCompletado = useRef(inicial?.client_code?.trim() ?? '');
   // Lo que se completó solo. Si después se cambia el código y el nuevo no
   // existe, estos campos se vacían: un pedido con el código de un cliente y
   // los datos de otro es peor que un pedido en blanco. Lo que el vendedor
@@ -494,7 +539,7 @@ export default function PlanillaPedido({
 
       // Se espera el mail para que "administración ya lo recibió" sea cierto
       // cuando el vendedor lo lee. Si falla, no rompe: el pedido ya está guardado.
-      await sendOrderNotification(pedido.id);
+      if (avisar) await sendOrderNotification(pedido.id);
 
       alGuardar(pedido);
     } catch (err: any) {
@@ -912,7 +957,7 @@ export default function PlanillaPedido({
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           }}>
             {enviando && <Loader2 style={{ width: 16, height: 16 }} className="spin" />}
-            {enviando ? 'Enviando…' : `Enviar pedido — ${money.format(total)}`}
+            {enviando ? (avisar ? 'Enviando…' : 'Guardando…') : `${textoBoton} — ${money.format(total)}`}
           </button>
         </form>
 

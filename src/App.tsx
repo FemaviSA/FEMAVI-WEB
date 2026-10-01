@@ -22,6 +22,7 @@ const Quotes = lazy(() => import('./pages/admin/Quotes'));
 const QuoteDetail = lazy(() => import('./pages/admin/QuoteDetail'));
 const Pedidos = lazy(() => import('./pages/admin/Pedidos'));
 const NuevoPedido = lazy(() => import('./pages/admin/NuevoPedido'));
+const EditarPedido = lazy(() => import('./pages/admin/EditarPedido'));
 const Clientes = lazy(() => import('./pages/admin/Clientes'));
 const EnCaida = lazy(() => import('./pages/admin/EnCaida'));
 const Vendedores = lazy(() => import('./pages/admin/Vendedores'));
@@ -106,6 +107,7 @@ export default function App() {
           <Route path="/admin/cotizaciones" element={<RequireAuth todoElPanel><Quotes /></RequireAuth>} />
           <Route path="/admin/pedidos" element={<RequireAuth><Pedidos /></RequireAuth>} />
           <Route path="/admin/pedidos/nuevo" element={<RequireAuth><NuevoPedido /></RequireAuth>} />
+          <Route path="/admin/pedidos/:id/editar" element={<RequireAuth><EditarPedido /></RequireAuth>} />
           <Route path="/admin/clientes" element={<RequireAuth><Clientes /></RequireAuth>} />
           <Route path="/admin/se-caen" element={<RequireAuth todoElPanel><EnCaida /></RequireAuth>} />
           <Route path="/admin/vendedores" element={<RequireAuth><Vendedores /></RequireAuth>} />

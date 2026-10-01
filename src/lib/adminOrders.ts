@@ -222,6 +222,43 @@ export async function controlesDePedido(orderId: number): Promise<ControlesPedid
  * Carga un pedido desde el admin, a nombre de un vendedor. El proyecto sale de
  * la ficha del vendedor, igual que cuando lo carga él: no se elige acá.
  */
+export async function obtenerPedido(id: number): Promise<Pedido | null> {
+  const { data, error } = await supabase.from('orders').select('*').eq('id', id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as Pedido) ?? null;
+}
+
+/**
+ * Administración edita un pedido ya cargado, aunque esté aprobado. No cambia
+ * el número ni el estado; el total lo recalcula la base y la edición queda en
+ * el historial del pedido. No vuelve a mandar el mail.
+ */
+export async function editarPedidoAdmin(id: number, input: OrderInput, vendedor: string): Promise<OrderCreated> {
+  const items = input.items.filter(i => i.product.trim());
+  const total = items.reduce((acc, i) => acc + (i.quantity || 0) * (i.unit_price || 0), 0);
+
+  const { data, error } = await supabase.rpc('admin_editar_pedido', {
+    p_id: id,
+    p: {
+      ...input,
+      items: items.map(i => ({ ...i, line_total: (i.quantity || 0) * (i.unit_price || 0) })),
+      total,
+    },
+    p_vendedor: vendedor,
+  });
+  if (error || !data) {
+    const m = error?.message ?? '';
+    throw new Error(
+      m.includes('vendedor_de_otro_proyecto') ? 'El vendedor tiene que ser uno activo del mismo proyecto del pedido.'
+        : m.includes('compartido_invalido') ? 'El de "Comparto con" tiene que ser otro vendedor activo del mismo proyecto.'
+          : m.includes('ciclo') ? m
+            : m.includes('no autorizado') ? 'No tenés permiso para editar este pedido.'
+              : 'No se pudieron guardar los cambios. Probá de nuevo.',
+    );
+  }
+  return data as OrderCreated;
+}
+
 export async function crearPedidoAdmin(input: OrderInput, vendedor: string): Promise<OrderCreated> {
   const items = input.items.filter(i => i.product.trim());
   const total = items.reduce((acc, i) => acc + (i.quantity || 0) * (i.unit_price || 0), 0);

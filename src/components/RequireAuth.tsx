@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useProyectoAdmin } from '../hooks/useProyectoAdmin';
 import { supabase } from '../lib/supabase';
 
 /**
@@ -8,10 +9,18 @@ import { supabase } from '../lib/supabase';
  * (admin_emails). La base ya no le muestra datos a nadie más, pero sin este
  * control cualquiera que se registrara entraba igual a las pantallas del admin.
  */
-export function RequireAuth({ children }: { children: React.ReactNode }) {
+export function RequireAuth({ children, todoElPanel = false }: {
+  children: React.ReactNode;
+  /**
+   * Pantallas que no son de un proyecto (productos, cotizaciones, blog) o que
+   * son de FEMAVI. El admin limitado a un proyecto va directo a Pedidos.
+   */
+  todoElPanel?: boolean;
+}) {
   const { session, loading } = useAuth();
   const location = useLocation();
   const [esAdmin, setEsAdmin] = useState<boolean | null>(null);
+  const { cargando: cargandoProyecto, proyecto } = useProyectoAdmin();
 
   useEffect(() => {
     // Al rechazar a alguien se le cierra la sesión: el cartel de "sin acceso"
@@ -48,6 +57,17 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
 
   if (!session) {
     return <Navigate to="/admin/login" replace state={{ from: location }} />;
+  }
+
+  if (todoElPanel) {
+    if (cargandoProyecto) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="text-slate-500 text-sm">Cargando…</div>
+        </div>
+      );
+    }
+    if (proyecto) return <Navigate to="/admin/pedidos" replace />;
   }
 
   return <>{children}</>;

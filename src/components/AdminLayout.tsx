@@ -2,6 +2,8 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Package, ExternalLink, LogOut, Menu, X, ChevronRight, Mail, BookOpen, ClipboardList, Users, IdCard } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useProyectoAdmin } from '../hooks/useProyectoAdmin';
+import { NOMBRE_PROYECTO } from '../lib/proyectos';
 import { getQuoteCounts } from '../lib/quotes';
 import { useQuotesRealtime } from '../hooks/useQuotesRealtime';
 import { supabase } from '../lib/supabase';
@@ -23,20 +25,26 @@ export function AdminLayout({
   const [newQuotes, setNewQuotes] = useState(0);
   // Pedidos que esperan aprobación: es lo que administración tiene que mirar primero.
   const [porAprobar, setPorAprobar] = useState(0);
+  // Admin limitado a un proyecto (la secretaria de FemWay): solo ve lo suyo.
+  const { cargando: cargandoProyecto, proyecto } = useProyectoAdmin();
 
   useEffect(() => {
+    if (cargandoProyecto) return;
     let vigente = true;
     const cargar = async () => {
-      const { count } = await supabase
+      let q = supabase
         .from('orders').select('id', { count: 'exact', head: true }).eq('status', 'recibido');
+      if (proyecto) q = q.eq('proyecto', proyecto);
+      const { count } = await q;
       if (vigente) setPorAprobar(count ?? 0);
     };
     cargar();
     const id = setInterval(cargar, 60_000);
     return () => { vigente = false; clearInterval(id); };
-  }, []);
+  }, [cargandoProyecto, proyecto]);
 
   useEffect(() => {
+    if (proyecto) return;
     let mounted = true;
     const load = async () => {
       try {
@@ -50,7 +58,7 @@ export function AdminLayout({
     // Polling cada 60s como red de seguridad (por si websocket reconnect falla).
     const id = setInterval(load, 60_000);
     return () => { mounted = false; clearInterval(id); };
-  }, []);
+  }, [proyecto]);
 
   // Update inmediato del badge cuando llega un evento realtime.
   useQuotesRealtime((event) => {
@@ -95,9 +103,11 @@ export function AdminLayout({
         }`}
       >
         <div className="px-6 py-5 flex items-center justify-between border-b border-white/5">
-          <Link to="/admin" className="flex items-center gap-2.5">
+          <Link to={proyecto ? '/admin/pedidos' : '/admin'} className="flex items-center gap-2.5">
             <img src="/logo-femavi.png" alt="FEMAVI" className="h-8 w-auto rounded" />
-            <div className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Admin Panel</div>
+            <div className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">
+              {proyecto ? NOMBRE_PROYECTO[proyecto] : 'Admin Panel'}
+            </div>
           </Link>
           <button
             onClick={() => setMobileOpen(false)}
@@ -129,27 +139,32 @@ export function AdminLayout({
             <IdCard className="w-4 h-4" />
             <span className="flex-1">Vendedores</span>
           </NavLink>
-          <NavLink to="/admin" end className={navItem}>
-            <Package className="w-4 h-4" />
-            <span className="flex-1">Productos</span>
-          </NavLink>
-          <NavLink to="/admin/cotizaciones" className={navItem}>
-            <Mail className="w-4 h-4" />
-            <span className="flex-1">Cotizaciones</span>
-            {newQuotes > 0 && (
-              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold">
-                {newQuotes}
-              </span>
-            )}
-          </NavLink>
-          <NavLink to="/admin/blog" className={navItem}>
-            <BookOpen className="w-4 h-4" />
-            <span className="flex-1">Blog</span>
-          </NavLink>
+          {/* Lo que no es de un proyecto lo ve solo el que ve todo el panel. */}
+          {!cargandoProyecto && !proyecto && (
+            <>
+              <NavLink to="/admin" end className={navItem}>
+                <Package className="w-4 h-4" />
+                <span className="flex-1">Productos</span>
+              </NavLink>
+              <NavLink to="/admin/cotizaciones" className={navItem}>
+                <Mail className="w-4 h-4" />
+                <span className="flex-1">Cotizaciones</span>
+                {newQuotes > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold">
+                    {newQuotes}
+                  </span>
+                )}
+              </NavLink>
+              <NavLink to="/admin/blog" className={navItem}>
+                <BookOpen className="w-4 h-4" />
+                <span className="flex-1">Blog</span>
+              </NavLink>
+            </>
+          )}
         </nav>
 
         <div className="px-3 py-4 border-t border-white/5 space-y-1">
-          <a
+          {!proyecto && <a
             href="/"
             target="_blank"
             rel="noopener"
@@ -157,7 +172,7 @@ export function AdminLayout({
           >
             <ExternalLink className="w-4 h-4" />
             Ver sitio público
-          </a>
+          </a>}
           <div className="px-4 py-3 mt-2 rounded-lg bg-white/5 border border-white/5">
             <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">
               Sesión

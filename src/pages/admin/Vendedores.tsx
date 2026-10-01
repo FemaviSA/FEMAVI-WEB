@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { KeyRound, Loader2, LogOut, Plus, X } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
+import { useProyectoAdmin } from '../../hooks/useProyectoAdmin';
 import { NOMBRE_PROYECTO, PROYECTOS, type Proyecto } from '../../lib/proyectos';
 import {
   listarVendedoresAdmin, guardarVendedor, cerrarSesionesDe, type VendedorAdmin,
@@ -29,6 +30,10 @@ export default function Vendedores() {
   const [aviso, setAviso] = useState<string | null>(null);
   const [borrador, setBorrador] = useState<Borrador | null>(null);
   const [guardando, setGuardando] = useState(false);
+  // El admin limitado a un proyecto (la secretaria de FemWay) ve y da de alta
+  // solo vendedores de ese proyecto.
+  const { proyecto: proyectoFijo } = useProyectoAdmin();
+  const visibles = proyectoFijo ? filas.filter(v => v.proyecto === proyectoFijo) : filas;
 
   const cargar = useCallback(async () => {
     try {
@@ -80,7 +85,7 @@ export default function Vendedores() {
     <AdminLayout
       crumbs={[{ label: 'Vendedores' }]}
       actions={
-        <button onClick={() => setBorrador(vacio())}
+        <button onClick={() => setBorrador({ ...vacio(), proyecto: proyectoFijo ?? 'femavi' })}
           className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800">
           <Plus className="w-4 h-4" /> Nuevo vendedor
         </button>
@@ -116,7 +121,7 @@ export default function Vendedores() {
               </tr>
             </thead>
             <tbody>
-              {filas.map(v => (
+              {visibles.map(v => (
                 <tr key={v.code} className={`border-t border-slate-100 ${v.active ? '' : 'opacity-50'}`}>
                   <td className="px-4 py-3 font-mono text-slate-500">{v.code}</td>
                   <td className="px-4 py-3 font-semibold text-slate-900">{v.name}</td>
@@ -182,7 +187,7 @@ export default function Vendedores() {
                 </label>
               </div>
 
-              <div>
+              {!proyectoFijo && <div>
                 <div className="text-xs font-semibold text-slate-500 uppercase mb-1">Proyecto de este código</div>
                 <div className="flex gap-2">
                   {PROYECTOS.map(p => (
@@ -197,7 +202,7 @@ export default function Vendedores() {
                 <p className="mt-1 text-[11px] text-slate-400">
                   Cada código pertenece a un solo proyecto. Si el vendedor trabaja en los dos, se le crea un código para cada uno.
                 </p>
-              </div>
+              </div>}
 
               <label className="block text-xs font-semibold text-slate-500 uppercase">
                 <span className="inline-flex items-center gap-1"><KeyRound className="w-3.5 h-3.5" /> PIN {borrador.esNuevo ? '' : '(dejalo vacío para no cambiarlo)'}</span>

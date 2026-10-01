@@ -100,21 +100,21 @@ export default function App() {
           <Route path="/vendedores/:code" element={<SellerOrder />} />
           <Route path="/admin/login" element={<Login />} />
           <Route path="/admin/nueva-clave" element={<NuevaClave />} />
-          <Route path="/admin" element={<RequireAuth><Dashboard /></RequireAuth>} />
-          <Route path="/admin/products/new" element={<RequireAuth><ProductForm /></RequireAuth>} />
-          <Route path="/admin/products/:id" element={<RequireAuth><ProductForm /></RequireAuth>} />
-          <Route path="/admin/cotizaciones" element={<RequireAuth><Quotes /></RequireAuth>} />
+          <Route path="/admin" element={<RequireAuth todoElPanel><Dashboard /></RequireAuth>} />
+          <Route path="/admin/products/new" element={<RequireAuth todoElPanel><ProductForm /></RequireAuth>} />
+          <Route path="/admin/products/:id" element={<RequireAuth todoElPanel><ProductForm /></RequireAuth>} />
+          <Route path="/admin/cotizaciones" element={<RequireAuth todoElPanel><Quotes /></RequireAuth>} />
           <Route path="/admin/pedidos" element={<RequireAuth><Pedidos /></RequireAuth>} />
           <Route path="/admin/pedidos/nuevo" element={<RequireAuth><NuevoPedido /></RequireAuth>} />
           <Route path="/admin/clientes" element={<RequireAuth><Clientes /></RequireAuth>} />
-          <Route path="/admin/se-caen" element={<RequireAuth><EnCaida /></RequireAuth>} />
+          <Route path="/admin/se-caen" element={<RequireAuth todoElPanel><EnCaida /></RequireAuth>} />
           <Route path="/admin/vendedores" element={<RequireAuth><Vendedores /></RequireAuth>} />
           <Route path="/admin/clientes/femway/:codigo" element={<RequireAuth><ClienteFemwayFicha /></RequireAuth>} />
-          <Route path="/admin/clientes/:codigo" element={<RequireAuth><ClienteFicha /></RequireAuth>} />
-          <Route path="/admin/cotizaciones/:id" element={<RequireAuth><QuoteDetail /></RequireAuth>} />
-          <Route path="/admin/blog" element={<RequireAuth><Articles /></RequireAuth>} />
-          <Route path="/admin/blog/new" element={<RequireAuth><ArticleForm /></RequireAuth>} />
-          <Route path="/admin/blog/:id" element={<RequireAuth><ArticleForm /></RequireAuth>} />
+          <Route path="/admin/clientes/:codigo" element={<RequireAuth todoElPanel><ClienteFicha /></RequireAuth>} />
+          <Route path="/admin/cotizaciones/:id" element={<RequireAuth todoElPanel><QuoteDetail /></RequireAuth>} />
+          <Route path="/admin/blog" element={<RequireAuth todoElPanel><Articles /></RequireAuth>} />
+          <Route path="/admin/blog/new" element={<RequireAuth todoElPanel><ArticleForm /></RequireAuth>} />
+          <Route path="/admin/blog/:id" element={<RequireAuth todoElPanel><ArticleForm /></RequireAuth>} />
           <Route path="/industrias/transporte" element={<Transporte />} />
           <Route path="/industrias/gastronomia" element={<Gastronomia />} />
           <Route path="/industrias/edificios" element={<Edificios />} />

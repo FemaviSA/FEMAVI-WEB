@@ -328,3 +328,16 @@ export async function buscarClienteAdmin(q: string): Promise<ClienteSugerido[]> 
   if (error) throw new Error(error.message);
   return (data ?? []) as ClienteSugerido[];
 }
+
+/** Lo mismo, pero en los clientes de FemWay: para cargar pedidos de FemWay. */
+export async function datosDeClienteFemwayAdmin(codigo: string): Promise<DatosCliente | null> {
+  const { data, error } = await supabase.rpc('admin_femway_datos_cliente', { p_codigo: codigo });
+  if (error) throw new Error(error.message);
+  return (data as DatosCliente) ?? null;
+}
+
+export async function buscarClienteFemwayAdmin(q: string): Promise<ClienteSugerido[]> {
+  const { data, error } = await supabase.rpc('admin_femway_buscar_cliente', { p_q: q });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ClienteSugerido[];
+}

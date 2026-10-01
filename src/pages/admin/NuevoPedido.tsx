@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import PlanillaPedido, { Casilla, campo, type FuentesDeCliente } from '../../components/PlanillaPedido';
-import { buscarClienteAdmin, datosDeClienteAdmin } from '../../lib/historial';
+import { buscarClienteAdmin, datosDeClienteAdmin, buscarClienteFemwayAdmin, datosDeClienteFemwayAdmin } from '../../lib/historial';
+import { useProyectoAdmin } from '../../hooks/useProyectoAdmin';
 import { crearPedidoAdmin, listarVendedores, type Vendedor } from '../../lib/adminOrders';
 import { NOMBRE_PROYECTO } from '../../lib/proyectos';
 
@@ -18,13 +19,19 @@ export default function NuevoPedido() {
   // Cambiarlo desmonta y vuelve a montar la planilla: la deja en blanco.
   const [intento, setIntento] = useState(0);
 
+  // El admin limitado a un proyecto (la secretaria de FemWay) solo elige
+  // vendedores de ese proyecto.
+  const { proyecto: proyectoFijo } = useProyectoAdmin();
+
   useEffect(() => {
     listarVendedores()
-      .then(v => setVendedores(v.filter(x => x.active)))
+      .then(v => setVendedores(v.filter(x => x.active && (!proyectoFijo || x.proyecto === proyectoFijo))))
       .catch(() => setVendedores([]));
-  }, []);
+  }, [proyectoFijo]);
 
   const elegido = vendedores.find(v => v.code === vendedor);
+  // De dónde salen los clientes: FemWay tiene su registro; FEMAVI, el sistema viejo.
+  const deFemway = proyectoFijo === 'femway' || elegido?.proyecto === 'femway';
   // Duplas: los otros vendedores del mismo proyecto que el elegido.
   const companeros = useMemo(
     () => (elegido ? vendedores.filter(v => v.proyecto === elegido.proyecto && v.code !== elegido.code) : []),
@@ -34,8 +41,10 @@ export default function NuevoPedido() {
   // Memorizado: la planilla lo tiene como dependencia de sus efectos y un
   // objeto nuevo en cada dibujo la haría buscar sin parar.
   const fuentes = useMemo<FuentesDeCliente>(
-    () => ({ datos: datosDeClienteAdmin, buscar: buscarClienteAdmin }),
-    [],
+    () => (deFemway
+      ? { datos: datosDeClienteFemwayAdmin, buscar: buscarClienteFemwayAdmin }
+      : { datos: datosDeClienteAdmin, buscar: buscarClienteAdmin }),
+    [deFemway],
   );
 
   // Si todavía no se eligió vendedor, se propone el que tiene el cliente en el

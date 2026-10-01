@@ -3,6 +3,7 @@ import { NOMBRE_PROYECTO, PROYECTOS, type Proyecto } from '../../lib/proyectos';
 import { Download, Loader2, Plus, RefreshCw, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from '../../components/AdminLayout';
+import { useProyectoAdmin } from '../../hooks/useProyectoAdmin';
 import PedidoDetalle, { ChipEstado } from './PedidoDetalle';
 import {
   type Pedido, type Vendedor, type Estado, ESTADOS, ETIQUETA_ESTADO,
@@ -26,7 +27,10 @@ export default function Pedidos() {
   // Arranca en "Recibidos": lo primero que hay que mirar es lo que espera aprobación.
   const [pestaña, setPestaña] = useState<Pestaña>('recibido');
   // FEMAVI y FemWay se miran por separado, nunca juntos: es el corte de más arriba.
-  const [proyecto, setProyecto] = useState<Proyecto>('femavi');
+  const [proyectoElegido, setProyecto] = useState<Proyecto>('femavi');
+  // El admin limitado a un proyecto (la secretaria de FemWay) no elige: ve el suyo.
+  const { proyecto: proyectoFijo } = useProyectoAdmin();
+  const proyecto = proyectoFijo ?? proyectoElegido;
   const [vendedor, setVendedor] = useState('');
   const [cuenta, setCuenta] = useState('');
   const [desde, setDesde] = useState('');
@@ -125,7 +129,7 @@ export default function Pedidos() {
     >
       {/* Proyecto: el corte principal. Lo de cada uno se mide aparte. */}
       <div className="flex gap-2 mb-4">
-        {PROYECTOS.map(k => {
+        {(proyectoFijo ? [] : PROYECTOS).map(k => {
           const nuevos = pedidos.filter(p => p.proyecto === k && p.status === 'recibido').length;
           const activo = proyecto === k;
           return (
@@ -165,7 +169,8 @@ export default function Pedidos() {
         </div>
         <select value={vendedor} onChange={e => setVendedor(e.target.value)} className={campo}>
           <option value="">Todos los vendedores</option>
-          {vendedores.map(v => <option key={v.code} value={v.code}>{v.name} ({v.code})</option>)}
+          {/* Solo los del proyecto que se está mirando. */}
+          {vendedores.filter(v => v.proyecto === proyecto).map(v => <option key={v.code} value={v.code}>{v.name} ({v.code})</option>)}
         </select>
         <select value={cuenta} onChange={e => setCuenta(e.target.value)} className={campo}>
           <option value="">C1 y C2</option>

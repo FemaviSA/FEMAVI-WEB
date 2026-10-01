@@ -52,16 +52,17 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { order_id, prueba } = await req.json();
+    const { order_id, prueba, tipo } = await req.json();
     if (!order_id) throw new Error("Falta order_id");
 
-    // Modo prueba: manda solo a la casilla de Santiago, para no dejar correo de
-    // prueba en ventas@, que es compartida. Deliberadamente NO acepta una
-    // dirección arbitraria: si la aceptara, cualquiera podría usar esta función
-    // para mandar mail con el dominio de FEMAVI a donde quisiera.
-    const destinatarios = prueba === true
-      ? ["santiago@femavi.com.ar"]
-      : ["santiago@femavi.com.ar", "ventas@femavi.com.ar"];
+    // Dos mails distintos por pedido (Santiago, 01/10/2026):
+    //  * "ingreso": se cargó y hay que revisarlo y aprobarlo. FemWay va a
+    //    andrea@ y santiago@; FEMAVI, solo a santiago@.
+    //  * "aprobado": va a ventas@ con la planilla, para imprimir y cargar en
+    //    el sistema viejo. ventas@ ya no recibe los pedidos al cargarse.
+    const aprobado = tipo === "aprobado";
+    // Cada mail tiene su marca, y cada una se usa una sola vez.
+    const marca = aprobado ? "aprobado_notificado_at" : "notified_at";
 
     // El mail se arma con lo que quedó guardado, no con lo que mandó el
     // navegador: así no puede diferir de lo que administración ve en el panel.
@@ -70,25 +71,38 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Cada pedido se avisa una sola vez y solo si se cargó en la última hora.
-    // El pedido se "reclama" de forma atómica marcando notified_at: si ya
-    // estaba marcado, o es viejo, no se manda nada. Así nadie puede usar esta
-    // función para reenviar pedidos y llenar de correo a ventas@.
-    const haceUnaHora = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { data: o, error: errOrden } = await supabase
+    // Cada mail se manda una sola vez por pedido. El pedido se "reclama" de
+    // forma atómica marcando la fecha: si ya estaba marcada, no se manda nada.
+    // El de ingreso, además, solo si el pedido se cargó en la última hora; el
+    // de aprobado, solo si el pedido está aprobado. Así nadie puede usar esta
+    // función para reenviar pedidos y llenar de correo las casillas.
+    let reclamo = supabase
       .from("orders")
-      .update({ notified_at: new Date().toISOString() })
+      .update({ [marca]: new Date().toISOString() })
       .eq("id", order_id)
-      .is("notified_at", null)
-      .gte("created_at", haceUnaHora)
-      .select("*")
-      .maybeSingle();
+      .is(marca, null);
+    reclamo = aprobado
+      ? reclamo.eq("status", "aprobado")
+      : reclamo.gte("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString());
+    const { data: o, error: errOrden } = await reclamo.select("*").maybeSingle();
     if (errOrden) throw new Error("No pude leer el pedido " + order_id);
     if (!o) {
       return new Response(JSON.stringify({ ok: true, enviado: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Modo prueba: manda solo a la casilla de Santiago, para no dejar correo de
+    // prueba en las otras. Deliberadamente NO acepta una dirección arbitraria:
+    // si la aceptara, cualquiera podría usar esta función para mandar mail con
+    // el dominio de FEMAVI a donde quisiera.
+    const destinatarios = prueba === true
+      ? ["santiago@femavi.com.ar"]
+      : aprobado
+        ? ["ventas@femavi.com.ar"]
+        : o.proyecto === "femway"
+          ? ["andrea@femavi.com.ar", "santiago@femavi.com.ar"]
+          : ["santiago@femavi.com.ar"];
 
     let vendedor = o.seller_code ? "Agente " + o.seller_code : "—";
     if (o.seller_code) {
@@ -401,10 +415,14 @@ Deno.serve(async (req: Request) => {
     const html =
       '<div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto">' +
       '<div style="background:#1B3A6B;padding:18px 26px;border-radius:8px 8px 0 0">' +
-      `<h2 style="color:#fff;margin:0;font-size:19px">Pedido N° ${esc(dato(o.order_number))} · Cuenta ${esc(dato(o.account))}</h2>` +
+      `<h2 style="color:#fff;margin:0;font-size:19px">${aprobado ? "APROBADO · " : ""}Pedido N° ${esc(dato(o.order_number))} · Cuenta ${esc(dato(o.account))}</h2>` +
       `<p style="color:rgba(255,255,255,.75);margin:4px 0 0;font-size:13px">${esc(nombreProyecto)} · ${esc(vendedor)} · ${fecha}</p>` +
       "</div>" +
       '<div style="border:1px solid #e2e8ee;border-top:none;padding:20px 26px;border-radius:0 0 8px 8px">' +
+
+      (aprobado
+        ? '<div style="padding:10px 14px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;font-size:13px;margin-bottom:6px"><strong>Pedido aprobado.</strong> La planilla va adjunta para imprimir y cargar en el sistema.</div>'
+        : '<div style="padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;font-size:13px;margin-bottom:6px"><strong>Pedido nuevo para revisar.</strong> Aprobalo o rechazalo desde el panel: al aprobarlo le llega a ventas@ para cargar.</div>') +
 
       (o.is_new_client
         ? '<div style="padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;font-size:13px;margin-bottom:6px"><strong>Cliente nuevo</strong> — hay que darlo de alta antes de facturar.</div>'
@@ -451,6 +469,7 @@ Deno.serve(async (req: Request) => {
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY no configurada");
 
     const asunto = (prueba === true ? "[PRUEBA] " : "") + (esFemway ? "[FemWay] " : "") +
+      (aprobado ? "APROBADO · " : "Para revisar · ") +
       "Pedido " + dato(o.order_number) + " · " + dato(o.account) +
       " · " + vendedor + " · " + dato(o.company);
 
@@ -470,7 +489,7 @@ Deno.serve(async (req: Request) => {
       const err = await res.text();
       console.error("Resend error:", res.status, err);
       // Si el mail no salió, se libera el pedido para poder reintentar.
-      await supabase.from("orders").update({ notified_at: null }).eq("id", order_id);
+      await supabase.from("orders").update({ [marca]: null }).eq("id", order_id);
       return new Response(JSON.stringify({ error: err }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

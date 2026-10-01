@@ -68,7 +68,7 @@ export default function NuevoPedido() {
           </div>
           <p className="text-sm text-slate-500 mb-7">
             Quedó a nombre de {elegido ? `${elegido.name} (${elegido.code})` : 'el vendedor elegido'} y
-            el mail con la planilla ya salió.
+            el mail para revisarlo ya salió. Cuando lo aprueben, le llega a ventas@ para cargar.
           </p>
           <div className="flex gap-2 justify-center">
             <button

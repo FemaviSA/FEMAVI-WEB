@@ -147,19 +147,29 @@ export async function createOrder(input: OrderInput, sellerToken?: string): Prom
  * No corta el envío si falla: el pedido ya está guardado, y hacer que el
  * vendedor lo cargue de nuevo por un mail caído sería peor.
  */
-export async function sendOrderNotification(orderId: number): Promise<void> {
+export async function sendOrderNotification(
+  orderId: number,
+  /**
+   * "ingreso": el pedido se cargó y hay que revisarlo (FemWay a andrea@ y
+   * santiago@, FEMAVI a santiago@). "aprobado": va a ventas@ con el Excel,
+   * para imprimir y cargar en el sistema viejo.
+   */
+  tipo: 'ingreso' | 'aprobado' = 'ingreso',
+): Promise<boolean> {
   const url = import.meta.env.VITE_SUPABASE_URL as string;
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-  if (!url) return;
+  if (!url) return false;
 
   try {
     const res = await fetch(url + '/functions/v1/send-order-notification', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: key, Authorization: 'Bearer ' + key },
-      body: JSON.stringify({ order_id: orderId }),
+      body: JSON.stringify({ order_id: orderId, tipo }),
     });
     if (!res.ok) console.warn('[orders] no se pudo mandar el mail:', res.status, await res.text());
+    return res.ok;
   } catch (e) {
     console.warn('[orders] no se pudo mandar el mail:', e);
+    return false;
   }
 }

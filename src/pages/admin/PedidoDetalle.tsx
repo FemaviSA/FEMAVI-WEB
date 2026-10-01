@@ -7,6 +7,7 @@ import {
   type Pedido, type CambioEstado, type Estado, ETIQUETA_ESTADO, SIGUIENTE,
   cambiarEstado, completarDatos, historialDe, volumenDe, fmtNum, fmtPesos,
 } from '../../lib/adminOrders';
+import { sendOrderNotification } from '../../lib/orders';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio',
   'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -164,6 +165,11 @@ export default function PedidoDetalle({
                           });
                         }
                         await cambiarEstado(pedido.id, siguiente.estado);
+                        // Aprobado: le llega a ventas@ con la planilla, para
+                        // imprimir y cargar en el sistema viejo.
+                        if (siguiente.estado === 'aprobado' && !(await sendOrderNotification(pedido.id, 'aprobado'))) {
+                          setError('El pedido quedó aprobado, pero no salió el mail a ventas@. Avisales a mano.');
+                        }
                       })}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-50"
                     >

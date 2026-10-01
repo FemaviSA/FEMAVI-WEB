@@ -117,15 +117,8 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
 
       {error && <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-      {/* Un pedido cargado todavía no es una venta: cuenta cuando administración
-          lo aprueba. Acá solo se avisa que llegó, para que no quede la duda. */}
-      {!!datos?.esperando && (
-        <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
-          Tenés {datos.esperando} pedido{datos.esperando > 1 ? 's' : ''} esperando la aprobación de
-          administración. Van a aparecer acá cuando los aprueben.
-        </div>
-      )}
-
+      {/* Un pedido cargado todavía no es una venta: aparece recién cuando
+          administración lo aprueba. Los que esperan no se muestran ni se avisan. */}
       {cargando && !datos ? (
         <div className="flex items-center gap-2 text-slate-500 text-sm py-10"><Loader2 className="w-4 h-4 animate-spin" /> Cargando…</div>
       ) : datos && t && (
@@ -165,7 +158,7 @@ export default function MisVentas({ token, proyecto, onPaseVencido }: { token: s
 
           <div className="rounded-xl bg-white border border-slate-200 overflow-hidden">
             {datos.pedidos.length === 0 ? (
-              <div className="p-8 text-center text-sm text-slate-500">No cargaste pedidos en este período.</div>
+              <div className="p-8 text-center text-sm text-slate-500">No hay ventas aprobadas en este período.</div>
             ) : (
               <ul>
                 {datos.pedidos.map((p, i) => (

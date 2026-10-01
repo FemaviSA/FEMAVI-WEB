@@ -133,12 +133,9 @@ export interface ResumenVentas {
   };
   /** De qué está hecho el volumen: producto por producto. */
   productos: { producto: string; vendido: number; bonificado: number }[];
-  /** Cargados y todavía sin aprobar: no suman, solo avisan que llegaron. */
-  esperando: number;
-  por_estado: Record<string, number>;
   pedidos: {
     numero: string | null; fecha: string; cliente: string | null; cuenta: string | null;
-    total: number | null; estado: string; motivo: string | null;
+    total: number | null;
   }[];
 }
 
@@ -182,17 +179,16 @@ export interface ResumenEquipo {
   /** Todos los vendedores del proyecto, también los que están en cero. */
   vendedores: {
     code: string; name: string; pedidos: number; clientes: number;
-    pesos: number; volumen: number; esperando: number;
+    pesos: number; volumen: number;
   }[];
   clientes: {
     cliente: string | null; codigo: string | null; vendedor: string;
     pedidos: number; pesos: number; ultimo: string;
   }[];
-  /** Pedidos del proyecto esperando aprobación: no suman. */
-  esperando: number;
+  /** Solo los aprobados: al vendedor, aunque sea gerente, no le llega nada pendiente. */
   pedidos: {
     numero: string | null; fecha: string; vendedor: string; cliente: string | null;
-    codigo: string | null; total: number | null; estado: string;
+    codigo: string | null; total: number | null;
   }[];
 }
 

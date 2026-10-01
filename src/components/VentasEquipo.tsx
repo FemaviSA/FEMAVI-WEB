@@ -128,12 +128,6 @@ export default function VentasEquipo({ token, proyecto, onPaseVencido }: { token
 
       {error && <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-      {!!datos?.esperando && (
-        <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
-          Hay {datos.esperando} pedido{datos.esperando > 1 ? 's' : ''} del equipo esperando la aprobación de
-          administración. No suman hasta que los aprueben.
-        </div>
-      )}
 
       {cargando && !datos ? (
         <div className="flex items-center gap-2 text-slate-500 text-sm py-10"><Loader2 className="w-4 h-4 animate-spin" /> Cargando…</div>
@@ -207,7 +201,6 @@ export default function VentasEquipo({ token, proyecto, onPaseVencido }: { token
                         <div className="font-semibold text-slate-900">{v.name}</div>
                         <div className="text-xs text-slate-400">
                           Agente {v.code}
-                          {v.esperando > 0 && <span className="ml-2 text-amber-700 font-semibold">{v.esperando} esperando aprobación</span>}
                         </div>
                       </td>
                       <td className="px-3 py-2.5 text-right font-bold text-slate-900">{pesos.format(v.pesos)}</td>
@@ -264,14 +257,8 @@ export default function VentasEquipo({ token, proyecto, onPaseVencido }: { token
                       {p.cliente ?? '—'} {p.codigo && <span className="text-xs text-slate-400 font-semibold ml-1">{p.codigo}</span>}
                       <span className="block text-xs text-slate-400">{nombre(p.vendedor)}</span>
                     </span>
+                    {/* Sin estado: acá solo llegan los aprobados. */}
                     <span className="text-sm font-semibold text-slate-900">{pesos.format(Number(p.total) || 0)}</span>
-                    {/* El estado no se muestra: todo lo de la lista ya cuenta. Solo
-                        se marca lo que todavía no suma. */}
-                    {p.estado === 'recibido' && (
-                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ring-1 bg-amber-50 text-amber-700 ring-amber-200`}>
-                        Esperando aprobación
-                      </span>
-                    )}
                   </li>
                 ))}
               </ul>

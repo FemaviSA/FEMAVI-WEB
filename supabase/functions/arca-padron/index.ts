@@ -7,7 +7,8 @@
 // El certificado y su clave privada viven en los secretos del proyecto
 // (ARCA_CERT, ARCA_KEY, ARCA_CUIT), nunca en el repositorio ni en la base.
 //
-// Solo lo pueden usar los administradores: se valida el usuario contra is_admin().
+// La usan los administradores (se valida el usuario contra is_admin()) y los
+// vendedores con su pase, al dar de alta un cliente nuevo en la planilla.
 import forge from "npm:node-forge@1.3.1";
 import { XMLParser } from "npm:fast-xml-parser@4.3.6";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -206,25 +207,48 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { cuit, order_id, cache_dias } = await req.json();
+    const { cuit, order_id, cache_dias, token } = await req.json();
     const digitos = String(cuit ?? "").replace(/\D/g, "");
     if (digitos.length !== 11) return json({ error: "El CUIT tiene que tener 11 dígitos." }, 400);
-
-    // Solo administradores: se pregunta con el propio usuario que llamó.
-    const auth = req.headers.get("Authorization") ?? "";
-    const comoUsuario = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: auth } } },
-    );
-    const { data: esAdmin } = await comoUsuario.rpc("is_admin");
-    if (esAdmin !== true) return json({ error: "No autorizado." }, 403);
-    const { data: usuario } = await comoUsuario.auth.getUser();
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+
+    // Quién pregunta. Dos puertas:
+    //  * un administrador, con su sesión del panel;
+    //  * un vendedor, con su pase (desde 06/10/2026): al dar de alta un
+    //    cliente nuevo, la planilla trae de ARCA la razón social, el domicilio
+    //    y el IVA. El pase lo valida la base, como en todo lo del vendedor.
+    let quien: string | null = null;
+    if (token) {
+      const { data: codigo, error: errPase } = await supabase.rpc("seller_de_token", { p_token: String(token) });
+      if (errPase || !codigo) return json({ error: "sesion_vencida" }, 401);
+      quien = "vendedor " + codigo;
+
+      // Cada consulta usa el certificado de FEMAVI: un tope por día, por si
+      // algo queda consultando en loop. Lo guardado de los últimos días no
+      // cuenta, porque no le pregunta a ARCA.
+      const { count } = await supabase
+        .from("arca_consultas").select("id", { count: "exact", head: true })
+        .eq("consultado_por", quien)
+        .gte("consultado_at", new Date(Date.now() - 86400000).toISOString());
+      if ((count ?? 0) >= 40) {
+        return json({ error: "Llegaste al máximo de consultas a ARCA por hoy. Completá los datos a mano." }, 429);
+      }
+    } else {
+      const auth = req.headers.get("Authorization") ?? "";
+      const comoUsuario = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: auth } } },
+      );
+      const { data: esAdmin } = await comoUsuario.rpc("is_admin");
+      if (esAdmin !== true) return json({ error: "No autorizado." }, 403);
+      const { data: usuario } = await comoUsuario.auth.getUser();
+      quien = usuario?.user?.email ?? null;
+    }
 
     const entorno = Deno.env.get("ARCA_ENTORNO") === "homologacion" ? "homologacion" : "produccion";
     const representada = Deno.env.get("ARCA_CUIT");
@@ -234,7 +258,7 @@ Deno.serve(async (req: Request) => {
       supabase.from("arca_consultas").insert({
         cuit: digitos,
         order_id: order_id ?? null,
-        consultado_por: usuario?.user?.email ?? null,
+        consultado_por: quien,
         ok,
         detalle,
         datos,

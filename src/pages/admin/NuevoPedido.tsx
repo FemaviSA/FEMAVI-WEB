@@ -5,6 +5,11 @@ import { AdminLayout } from '../../components/AdminLayout';
 import PlanillaPedido, { Casilla, campo, type FuentesDeCliente } from '../../components/PlanillaPedido';
 import { buscarClienteAdmin, datosDeClienteAdmin, buscarClienteFemwayAdmin, datosDeClienteFemwayAdmin } from '../../lib/historial';
 import { useProyectoAdmin } from '../../hooks/useProyectoAdmin';
+import { consultarArca } from '../../lib/arca';
+
+// Cliente nuevo: con el CUIT se traen de ARCA los datos fiscales. Fuera del
+// componente para que sea siempre la misma función.
+const arcaAdmin = (cuit: string) => consultarArca(cuit);
 import { crearPedidoAdmin, listarVendedores, type Vendedor } from '../../lib/adminOrders';
 import { NOMBRE_PROYECTO } from '../../lib/proyectos';
 
@@ -111,6 +116,7 @@ export default function NuevoPedido() {
         }
         cliente={fuentes}
         companeros={companeros}
+        consultarArca={arcaAdmin}
         guardar={(input) => crearPedidoAdmin(input, vendedor)}
         alGuardar={(pedido) => { setNumero(pedido.order_number ?? ''); window.scrollTo(0, 0); }}
         validar={() => (vendedor ? [] : ['el código del agente al que corresponde el pedido'])}

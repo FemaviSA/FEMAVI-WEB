@@ -7,6 +7,10 @@ import { buscarClienteAdmin, datosDeClienteAdmin, buscarClienteFemwayAdmin, dato
 import { editarPedidoAdmin, listarVendedores, obtenerPedido, type Pedido, type Vendedor } from '../../lib/adminOrders';
 import { useProyectoAdmin } from '../../hooks/useProyectoAdmin';
 import { NOMBRE_PROYECTO } from '../../lib/proyectos';
+import { consultarArca } from '../../lib/arca';
+
+// Si se cambia el CUIT de un cliente nuevo, se vuelven a traer sus datos de ARCA.
+const arcaAdmin = (cuit: string) => consultarArca(cuit);
 
 // Administración corrige un pedido ya cargado, aunque esté aprobado: la misma
 // planilla, con los datos del pedido. No cambia el número ni el estado, y no
@@ -118,6 +122,7 @@ export default function EditarPedido() {
         }
         cliente={fuentes}
         companeros={companeros}
+        consultarArca={arcaAdmin}
         guardar={(input) => editarPedidoAdmin(pedido.id, input, vendedor)}
         alGuardar={() => { setGuardado(true); window.scrollTo(0, 0); }}
         validar={() => (vendedor ? [] : ['el código del agente al que corresponde el pedido'])}

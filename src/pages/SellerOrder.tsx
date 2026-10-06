@@ -5,6 +5,7 @@ import { createOrder, SesionVencidaError } from '../lib/orders';
 import { verifySellerPin, rememberedSeller, forgetSeller, perfilDeVendedor, companerosDe, PaseVencidoError, type Seller } from '../lib/sellers';
 import { buscarMiCliente, datosDeCliente } from '../lib/historial';
 import { cuitDeOtroVendedor } from '../lib/femway';
+import { consultarArca } from '../lib/arca';
 import { SEO, SITE_URL } from '../components/SEO';
 import MisVentas from '../components/MisVentas';
 import VentasEquipo from '../components/VentasEquipo';
@@ -200,6 +201,12 @@ export default function SellerOrder() {
     [token, proyecto],
   );
 
+  // Cliente nuevo: con el CUIT, la planilla trae los datos fiscales de ARCA.
+  const arcaDelVendedor = useMemo(
+    () => (token ? (cuit: string) => consultarArca(cuit, undefined, token) : undefined),
+    [token],
+  );
+
   const alFallar = useCallback((e: unknown) => {
     if (e instanceof SesionVencidaError) {
       forgetSeller();
@@ -338,6 +345,7 @@ export default function SellerOrder() {
             cliente={fuentesCliente}
             revisarCuit={revisarCuit}
             companeros={companeros}
+            consultarArca={arcaDelVendedor}
             guardar={(input) => createOrder(input, seller.token)}
             alGuardar={(pedido) => { setNumero(pedido.order_number ?? ''); window.scrollTo(0, 0); }}
             alFallar={alFallar}

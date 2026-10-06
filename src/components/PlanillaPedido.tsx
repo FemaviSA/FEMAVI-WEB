@@ -3,6 +3,7 @@ import { Loader2, Plus, Trash2, Copy } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
 import { sendOrderNotification, type OrderCreated, type OrderInput } from '../lib/orders';
 import type { ClienteSugerido, DatosCliente } from '../lib/historial';
+import type { PersonaArca } from '../lib/arca';
 
 // La planilla de pedido: la misma para el vendedor, que carga los suyos, y para
 // administración, que carga los que llegan por mail y elige a qué vendedor van.
@@ -165,6 +166,31 @@ interface Props {
   textoBoton?: string;
   /** Mandar el mail a administración al guardar. Al editar, no. */
   avisar?: boolean;
+  /**
+   * Cliente nuevo: con el CUIT se trae de ARCA la razón social, el domicilio
+   * fiscal y la condición de IVA. Sin esto no se consulta.
+   */
+  consultarArca?: (cuit: string) => Promise<PersonaArca>;
+}
+
+/** El dígito verificador del CUIT: sin esto no se le pregunta a ARCA. */
+function cuitValido(cuit: string): boolean {
+  const d = cuit.replace(/[^0-9]/g, '');
+  if (d.length !== 11) return false;
+  const pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  const suma = pesos.reduce((s, p, i) => s + p * Number(d[i]), 0);
+  const resto = 11 - (suma % 11);
+  const verificador = resto === 11 ? 0 : resto === 10 ? 9 : resto;
+  return verificador === Number(d[10]);
+}
+
+/** De lo que dice ARCA a las opciones de la planilla; null si no encaja. */
+function ivaDeArca(condicion: string | null): string | null {
+  if (!condicion) return null;
+  if (/monotributo/i.test(condicion)) return 'Monotributo';
+  if (/responsable inscripto/i.test(condicion)) return 'Responsable Inscripto';
+  if (/exento/i.test(condicion)) return 'Exento';
+  return null;
 }
 
 /** Los datos de un pedido ya cargado, con los nombres de la base. */
@@ -183,7 +209,7 @@ export interface PedidoInicial {
 export default function PlanillaPedido({
   casillasAgente, cliente, guardar, alGuardar,
   validar, alFallar, alEncontrarCliente, alElegirSugerencia, revisarCuit, aviso, companeros = [],
-  inicial, textoBoton = 'Enviar pedido', avisar = true,
+  inicial, textoBoton = 'Enviar pedido', avisar = true, consultarArca,
 }: Props) {
   const { products } = useProducts();
 
@@ -323,6 +349,61 @@ export default function PlanillaPedido({
     return () => { vigente = false; clearTimeout(t); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [f.cuit, revisarCuit]);
+
+  // --- Cliente nuevo: los datos fiscales salen de ARCA ----------------------
+  // Con el CUIT se trae la razón social tal como figura (es la que se usa para
+  // facturar), el domicilio fiscal y la condición de IVA. La razón social se
+  // reemplaza siempre; lo demás, solo si está vacío, para no pisar lo que el
+  // vendedor ya escribió.
+  const [arca, setArca] = useState<
+    { estado: 'buscando' } | { estado: 'ok'; datos: PersonaArca } | { estado: 'error'; mensaje: string } | null
+  >(null);
+  // Al editar arranca con el CUIT del pedido: no se vuelve a consultar ni se
+  // pisa nada salvo que se cambie el CUIT.
+  const ultimoCuitArca = useRef(inicial?.cuit?.replace(/[^0-9]/g, '') ?? '');
+
+  useEffect(() => {
+    const digitos = f.cuit.replace(/[^0-9]/g, '');
+    if (!consultarArca || !f.is_new_client || !cuitValido(digitos)) {
+      if (!f.is_new_client || digitos.length < 11) setArca(null);
+      if (digitos.length === 11 && !cuitValido(digitos) && f.is_new_client) {
+        setArca({ estado: 'error', mensaje: 'Ese CUIT no es válido: revisá los números.' });
+      }
+      return;
+    }
+    if (digitos === ultimoCuitArca.current) return;
+
+    let vigente = true;
+    const t = setTimeout(() => {
+      setArca({ estado: 'buscando' });
+      consultarArca(digitos)
+        .then(d => {
+          if (!vigente) return;
+          ultimoCuitArca.current = digitos;
+          setArca({ estado: 'ok', datos: d });
+          // "CHARLONE 6150, VILLA BALLESTER, BUENOS AIRES": la calle, y el resto
+          // es la ciudad y la provincia.
+          const partes = (d.domicilio ?? '').split(',').map(s => s.trim()).filter(Boolean);
+          const direccion = partes[0] ?? '';
+          const ciudad = partes.slice(1).join(', ');
+          const iva = ivaDeArca(d.condicion);
+          setF(p => ({
+            ...p,
+            company: (d.razon_social ?? '').replace(/\s+/g, ' ').trim() || p.company,
+            bill_address: p.bill_address.trim() || direccion,
+            bill_city: p.bill_city.trim() || ciudad,
+            tax_condition: p.tax_condition || iva || '',
+          }));
+        })
+        .catch(e => {
+          if (!vigente) return;
+          if (alFallar?.(e)) return;
+          setArca({ estado: 'error', mensaje: (e as Error)?.message || 'No se pudo consultar ARCA. Completá a mano.' });
+        });
+    }, 500);
+    return () => { vigente = false; clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [f.cuit, f.is_new_client, consultarArca]);
 
   const [sugerencias, setSugerencias] = useState<ClienteSugerido[]>([]);
   // Lo tipeado en "Nombre / Razón social". Vive aparte del formulario para que
@@ -705,7 +786,11 @@ export default function PlanillaPedido({
                     // Se cierra al salir del campo, pero recién después del clic
                     // en la lista: si no, el clic no llega a registrarse.
                     onBlur={() => setTimeout(() => setSugerencias([]), 150)}
+                    placeholder={consultarArca && f.is_new_client ? 'o poné el CUIT abajo y se completa solo' : undefined}
                   />
+                  {arca?.estado === 'ok' && f.is_new_client && (
+                    <span style={{ fontSize: 10, color: C.ok, fontWeight: 700 }}>✓ según ARCA</span>
+                  )}
                   {cliente && sugerencias.length > 0 && (
                     <ul style={{
                       position: 'absolute', zIndex: 20, top: '100%', left: 0, minWidth: '100%',
@@ -776,6 +861,23 @@ export default function PlanillaPedido({
                   <span style={{ fontSize: 10, color: '#b91c1c', fontWeight: 700, display: 'block' }}>
                     Es cliente de otro vendedor
                   </span>
+                )}
+                {/* Lo que dijo ARCA del cliente nuevo. */}
+                {arca?.estado === 'buscando' && (
+                  <span style={{ fontSize: 10, color: C.textLight, display: 'block' }}>buscando en ARCA…</span>
+                )}
+                {arca?.estado === 'ok' && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, display: 'block',
+                    color: arca.datos.estado && arca.datos.estado !== 'ACTIVO' ? '#b91c1c' : C.ok,
+                  }}>
+                    {arca.datos.estado && arca.datos.estado !== 'ACTIVO'
+                      ? `ARCA: CUIT ${arca.datos.estado.toLowerCase()}`
+                      : '✓ datos traídos de ARCA'}
+                  </span>
+                )}
+                {arca?.estado === 'error' && (
+                  <span style={{ fontSize: 10, color: '#b45309', fontWeight: 700, display: 'block' }}>{arca.mensaje}</span>
                 )}
               </Casilla>
               <Casilla rot={`Cond. de pago${obligNuevo}`} span={3}>

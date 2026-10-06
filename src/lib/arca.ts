@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { PaseVencidoError } from './sellers';
 
 // Consulta al padrón de ARCA. La hace una función del servidor, que es la
 // única que tiene el certificado; desde acá solo se pide y se muestra.
@@ -30,9 +31,13 @@ export class FaltaCertificadoError extends Error {
   }
 }
 
-export async function consultarArca(cuit: string, orderId?: number): Promise<PersonaArca> {
+/**
+ * `token` es el pase del vendedor: con él, el vendedor consulta al dar de alta
+ * un cliente nuevo desde la planilla. Sin pase, tiene que ser un admin.
+ */
+export async function consultarArca(cuit: string, orderId?: number, token?: string): Promise<PersonaArca> {
   const { data, error } = await supabase.functions.invoke('arca-padron', {
-    body: { cuit, order_id: orderId ?? null },
+    body: { cuit, order_id: orderId ?? null, token: token ?? null },
   });
 
   // Los errores vienen con el detalle en el cuerpo de la respuesta.
@@ -43,6 +48,7 @@ export async function consultarArca(cuit: string, orderId?: number): Promise<Per
       try { cuerpo = await respuesta.json(); } catch { /* sin cuerpo */ }
     }
     if (cuerpo.error === 'FALTA_CERTIFICADO') throw new FaltaCertificadoError();
+    if (cuerpo.error === 'sesion_vencida') throw new PaseVencidoError();
     throw new Error(cuerpo.error ?? error.message ?? 'No se pudo consultar ARCA.');
   }
 

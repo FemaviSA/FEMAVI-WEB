@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, Plus, Trash2, Copy } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
-import { sendOrderNotification, type OrderCreated, type OrderInput } from '../lib/orders';
+import { sendOrderNotification, CONDICIONES_PAGO, type OrderCreated, type OrderInput } from '../lib/orders';
 import type { ClienteSugerido, DatosCliente } from '../lib/historial';
 import type { PersonaArca } from '../lib/arca';
 
@@ -522,6 +522,7 @@ export default function PlanillaPedido({
     if (!f.company.trim()) faltan.push('la razón social');
     if (!f.bill_city.trim()) faltan.push('la ciudad y provincia');
     if (!f.client_code.trim() && !f.is_new_client) faltan.push('el código de cliente (o tildar que es cliente nuevo)');
+    if (!f.payment_terms.trim()) faltan.push('la condición de pago');
 
     // De un cliente nuevo no hay ficha que consultar ni un "donde siempre" al
     // que despachar, así que el alta tiene que venir completa de una.
@@ -531,7 +532,6 @@ export default function PlanillaPedido({
       if (!f.email.trim()) faltan.push('el e-mail');
       if (!f.tax_condition) faltan.push('la condición de IVA');
       if (!f.cuit.trim()) faltan.push('el CUIT');
-      if (!f.payment_terms.trim()) faltan.push('la condición de pago');
       if (!f.delivery_address.trim()) faltan.push('la dirección de entrega');
       if (!f.ship_city.trim()) faltan.push('la ciudad y provincia de entrega');
     }
@@ -880,8 +880,16 @@ export default function PlanillaPedido({
                   <span style={{ fontSize: 10, color: '#b45309', fontWeight: 700, display: 'block' }}>{arca.mensaje}</span>
                 )}
               </Casilla>
-              <Casilla rot={`Cond. de pago${obligNuevo}`} span={3}>
-                <input style={campo} value={f.payment_terms} onChange={set('payment_terms')} />
+              <Casilla rot="Cond. de pago *" span={3}>
+                {/* De una lista y obligatoria: antes escribían cualquier cosa. */}
+                <select style={{ ...campo, cursor: 'pointer' }} value={f.payment_terms} onChange={set('payment_terms')}>
+                  <option value="">elegir…</option>
+                  {CONDICIONES_PAGO.map(c => <option key={c} value={c}>{c}</option>)}
+                  {/* Un pedido viejo que se edita conserva la suya. */}
+                  {f.payment_terms && !(CONDICIONES_PAGO as readonly string[]).includes(f.payment_terms) && (
+                    <option value={f.payment_terms}>{f.payment_terms} (anterior)</option>
+                  )}
+                </select>
               </Casilla>
             </div>
 

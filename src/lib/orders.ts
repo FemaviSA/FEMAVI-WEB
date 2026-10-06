@@ -51,6 +51,19 @@ export interface OrderInput {
 
 const txt = (v?: string | null) => v?.trim() || null;
 
+/**
+ * La condición de pago se elige de esta lista y es obligatoria (06/10/2026).
+ * La base controla la misma lista al guardar un pedido nuevo (pedido_insertar).
+ */
+export const CONDICIONES_PAGO = [
+  'Contado (efectivo/transferencia)',
+  'Contado (cheque/echeq)',
+  'Pago 7 días',
+  'Pago 15 días',
+  'Pago 30 días',
+  'Pago anticipado',
+] as const;
+
 export interface OrderCreated {
   id: number;
   order_number: string | null;
@@ -126,6 +139,9 @@ export async function createOrder(input: OrderInput, sellerToken?: string): Prom
   // pedido a un cliente de otro.
   if (error?.message?.includes('cliente_de_otro_vendedor')) {
     throw new Error('Ese CUIT ya es de otro vendedor de FemWay. Hablá con administración.');
+  }
+  if (error?.message?.includes('condicion_pago_invalida')) {
+    throw new Error('Elegí la condición de pago de la lista.');
   }
   if (error?.message?.includes('compartido_invalido')) {
     throw new Error('El compañero elegido en "Comparto con" no es un vendedor de tu proyecto. Elegí otro o dejalo vacío.');

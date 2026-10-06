@@ -276,7 +276,9 @@ export async function crearPedidoAdmin(input: OrderInput, vendedor: string): Pro
       ? 'Ese vendedor no existe o está dado de baja.'
       : error?.message?.includes('compartido_invalido')
         ? 'El de "Comparto con" tiene que ser otro vendedor activo del mismo proyecto.'
-        : 'No se pudo guardar el pedido. Probá de nuevo.');
+        : error?.message?.includes('condicion_pago_invalida')
+          ? 'Elegí la condición de pago de la lista.'
+          : 'No se pudo guardar el pedido. Probá de nuevo.');
   }
   return data as OrderCreated;
 }

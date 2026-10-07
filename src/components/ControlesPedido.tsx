@@ -58,7 +58,9 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
   }
   if (error || !c) return <div className="text-sm text-red-700">{error ?? 'No se pudieron hacer los controles.'}</div>;
 
-  const dup = c.duplicados_sistema;
+  // "Ya es cliente de FEMAVI" sirve en FemWay. En un pedido de FEMAVI el cliente
+  // siempre existe en el sistema, y mostrarlo solo confunde.
+  const dup = c.pedido?.proyecto === 'femavi' ? [] : c.duplicados_sistema;
   const web = c.duplicados_web;
 
   return (
@@ -98,7 +100,7 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
                   {' '}· cód. {d.codigo}{d.localidad ? ` · ${d.localidad}` : ''}
                   {' '}· última compra {fecha(d.ultima_compra)}
                   {d.compro_ultimo_anio ? ' (en el último año)' : ' (dormido)'}
-                  {' '}· {d.coincide_por === 'cuit' ? 'mismo CUIT' : `nombre parecido (${Math.round((d.parecido ?? 0) * 100)}%)`}
+                  {' '}· mismo CUIT
                 </span>
               </li>
             ))}

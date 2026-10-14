@@ -8,6 +8,7 @@ import { editarPedidoAdmin, listarVendedores, obtenerPedido, type Pedido, type V
 import { useProyectoAdmin } from '../../hooks/useProyectoAdmin';
 import { NOMBRE_PROYECTO } from '../../lib/proyectos';
 import { consultarArca } from '../../lib/arca';
+import { zonaFemway } from '../../lib/femway';
 
 // Si se cambia el CUIT de un cliente nuevo, se vuelven a traer sus datos de ARCA.
 const arcaAdmin = (cuit: string) => consultarArca(cuit);
@@ -123,6 +124,7 @@ export default function EditarPedido() {
         cliente={fuentes}
         companeros={companeros}
         consultarArca={arcaAdmin}
+        zonaDe={deFemway ? zonaFemway : undefined}
         guardar={(input) => editarPedidoAdmin(pedido.id, input, vendedor)}
         alGuardar={() => { setGuardado(true); window.scrollTo(0, 0); }}
         validar={() => (vendedor ? [] : ['el código del agente al que corresponde el pedido'])}

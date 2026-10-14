@@ -171,6 +171,12 @@ interface Props {
    * fiscal y la condición de IVA. Sin esto no se consulta.
    */
   consultarArca?: (cuit: string) => Promise<PersonaArca>;
+  /**
+   * La zona de reparto que corresponde a la ciudad de entrega, o null si no se
+   * reconoce. Con esto la zona se completa sola al escribir la ciudad. Es cosa
+   * de FemWay.
+   */
+  zonaDe?: (ciudad: string) => Promise<string | null>;
 }
 
 /** El dígito verificador del CUIT: sin esto no se le pregunta a ARCA. */
@@ -209,7 +215,7 @@ export interface PedidoInicial {
 export default function PlanillaPedido({
   casillasAgente, cliente, guardar, alGuardar,
   validar, alFallar, alEncontrarCliente, alElegirSugerencia, revisarCuit, aviso, companeros = [],
-  inicial, textoBoton = 'Enviar pedido', avisar = true, consultarArca,
+  inicial, textoBoton = 'Enviar pedido', avisar = true, consultarArca, zonaDe,
 }: Props) {
   const { products } = useProducts();
 
@@ -333,6 +339,25 @@ export default function PlanillaPedido({
     return () => { vigente = false; clearTimeout(t); setBuscandoCliente(false); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [f.client_code, f.is_new_client, cliente]);
+
+  // --- Zona de reparto -----------------------------------------------------
+  // Sale de la ciudad de entrega. Solo cuando la ciudad cambia: al editar un
+  // pedido no se pisa la zona que ya tiene, y si la ciudad no se reconoce
+  // queda lo que esté escrito, para ponerla a mano.
+  const ultimaCiudad = useRef(inicial?.ship_city?.trim() ?? '');
+  useEffect(() => {
+    const ciudad = f.ship_city.trim();
+    if (!zonaDe || !ciudad || ciudad === ultimaCiudad.current) return;
+    let vigente = true;
+    const t = setTimeout(() => {
+      zonaDe(ciudad).then(z => {
+        if (!vigente) return;
+        ultimaCiudad.current = ciudad;
+        if (z) setF(p => ({ ...p, zone: z }));
+      });
+    }, 400);
+    return () => { vigente = false; clearTimeout(t); };
+  }, [f.ship_city, zonaDe]);
 
   // --- La otra puerta: buscar por razón social -----------------------------
   // Si no se acuerda el código, se escribe el nombre y se elige de la lista.

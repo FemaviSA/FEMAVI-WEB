@@ -4,7 +4,7 @@ import { CheckCircle2, Loader2, Lock, LogOut } from 'lucide-react';
 import { createOrder, SesionVencidaError } from '../lib/orders';
 import { verifySellerPin, rememberedSeller, forgetSeller, perfilDeVendedor, companerosDe, PaseVencidoError, type Seller } from '../lib/sellers';
 import { buscarMiCliente, datosDeCliente } from '../lib/historial';
-import { cuitDeOtroVendedor } from '../lib/femway';
+import { cuitDeOtroVendedor, zonaFemway } from '../lib/femway';
 import { consultarArca } from '../lib/arca';
 import { SEO, SITE_URL } from '../components/SEO';
 import MisVentas from '../components/MisVentas';
@@ -346,6 +346,7 @@ export default function SellerOrder() {
             revisarCuit={revisarCuit}
             companeros={companeros}
             consultarArca={arcaDelVendedor}
+            zonaDe={proyecto === 'femway' ? zonaFemway : undefined}
             guardar={(input) => createOrder(input, seller.token)}
             alGuardar={(pedido) => { setNumero(pedido.order_number ?? ''); window.scrollTo(0, 0); }}
             alFallar={alFallar}

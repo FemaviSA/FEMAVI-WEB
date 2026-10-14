@@ -169,6 +169,17 @@ export async function cuitDeOtroVendedor(token: string, cuit: string): Promise<{
   return (data as { codigo: string; razon_social: string }) ?? null;
 }
 
+/**
+ * La zona de reparto de FemWay para una localidad de entrega ("Wilde
+ * Avellaneda" → "400"), o null si no se reconoce. La base la pone igual al
+ * guardar; esto es para mostrarla mientras se carga.
+ */
+export async function zonaFemway(localidad: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('femway_zona_de', { p_localidad: localidad });
+  if (error) return null;
+  return (data as string | null) ?? null;
+}
+
 /** El vendedor deja una nota en la ficha de su cliente. Solo la nota. */
 export async function guardarMiNotaFemway(token: string, codigo: string, notas: string): Promise<void> {
   const { error } = await supabase.rpc('seller_femway_guardar_nota', {

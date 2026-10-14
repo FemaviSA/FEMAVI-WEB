@@ -31,10 +31,12 @@ function EstadoSync({ sync }: { sync: Awaited<ReturnType<typeof estadoSincroniza
 export default function Clientes() {
   // Los dos proyectos se miran por separado, igual que en Pedidos. Los de
   // FEMAVI salen del sistema viejo; los de FemWay tienen su registro propio.
-  const [proyectoElegido, setProyecto] = useState<Proyecto>('femavi');
-  // El admin limitado a un proyecto (la secretaria de FemWay) no elige: ve el suyo.
-  const { proyecto: proyectoFijo } = useProyectoAdmin();
-  const proyecto = proyectoFijo ?? proyectoElegido;
+  const [proyecto, setProyecto] = useState<Proyecto>('femavi');
+  // Clientes es la excepción del admin limitado a un proyecto: la secretaria de
+  // FemWay también entra a toda la base de FEMAVI, porque la necesita para
+  // trabajar. Arranca en el suyo, pero puede cambiar de solapa.
+  const { cargando: cargandoProyecto, proyecto: proyectoFijo } = useProyectoAdmin();
+  useEffect(() => { if (proyectoFijo) setProyecto(proyectoFijo); }, [proyectoFijo]);
   const [filtros, setFiltros] = useState<FiltrosClientes>({ orden: 'ultima', pagina: 0 });
   const [texto, setTexto] = useState('');
   const [filas, setFilas] = useState<ClienteLista[]>([]);
@@ -53,7 +55,7 @@ export default function Clientes() {
   }, [texto]);
 
   useEffect(() => {
-    if (proyecto !== 'femavi') return;
+    if (cargandoProyecto || proyecto !== 'femavi') return;
     let vigente = true;
     setCargando(true);
     setError(null);
@@ -62,7 +64,7 @@ export default function Clientes() {
       .catch(e => { if (vigente) setError(e.message); })
       .finally(() => { if (vigente) setCargando(false); });
     return () => { vigente = false; };
-  }, [filtros, proyecto]);
+  }, [filtros, proyecto, cargandoProyecto]);
 
   const nombreVendedor = useMemo(() => {
     const m = new Map(vendedores.map(v => [v.code, v.name]));
@@ -81,7 +83,7 @@ export default function Clientes() {
   return (
     <AdminLayout crumbs={[{ label: 'Clientes' }]}>
       <div className="flex gap-2 mb-4">
-        {(proyectoFijo ? [] : PROYECTOS).map(k => (
+        {PROYECTOS.map(k => (
           <button key={k} type="button" onClick={() => setProyecto(k)}
             className={`px-4 py-2 rounded-lg text-sm font-bold ring-1 ${proyecto === k
               ? (k === 'femway' ? 'bg-violet-600 text-white ring-violet-600' : 'bg-sky-600 text-white ring-sky-600')

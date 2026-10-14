@@ -172,11 +172,11 @@ interface Props {
    */
   consultarArca?: (cuit: string) => Promise<PersonaArca>;
   /**
-   * La zona de reparto que corresponde a la ciudad de entrega, o null si no se
-   * reconoce. Con esto la zona se completa sola al escribir la ciudad. Es cosa
-   * de FemWay.
+   * La zona de reparto que corresponde a la ciudad (y, si hace falta, la
+   * dirección) de entrega, o null si no se reconoce. Con esto la zona se
+   * completa sola al escribir la ciudad. Es cosa de FemWay.
    */
-  zonaDe?: (ciudad: string) => Promise<string | null>;
+  zonaDe?: (ciudad: string, direccion: string) => Promise<string | null>;
 }
 
 /** El dígito verificador del CUIT: sin esto no se le pregunta a ARCA. */
@@ -341,23 +341,27 @@ export default function PlanillaPedido({
   }, [f.client_code, f.is_new_client, cliente]);
 
   // --- Zona de reparto -----------------------------------------------------
-  // Sale de la ciudad de entrega. Solo cuando la ciudad cambia: al editar un
-  // pedido no se pisa la zona que ya tiene, y si la ciudad no se reconoce
+  // Sale de la ciudad de entrega, y si con la ciudad sola no alcanza (La
+  // Matanza, Del Viso), de la dirección. Solo cuando alguna de las dos cambia:
+  // al editar un pedido no se pisa la zona que ya tiene, y si no se reconoce
   // queda lo que esté escrito, para ponerla a mano.
-  const ultimaCiudad = useRef(inicial?.ship_city?.trim() ?? '');
+  const ultimaEntrega = useRef(
+    `${inicial?.ship_city?.trim() ?? ''}|${inicial?.delivery_address?.trim() ?? ''}`);
   useEffect(() => {
     const ciudad = f.ship_city.trim();
-    if (!zonaDe || !ciudad || ciudad === ultimaCiudad.current) return;
+    const direccion = f.delivery_address.trim();
+    const clave = `${ciudad}|${direccion}`;
+    if (!zonaDe || !ciudad || clave === ultimaEntrega.current) return;
     let vigente = true;
     const t = setTimeout(() => {
-      zonaDe(ciudad).then(z => {
+      zonaDe(ciudad, direccion).then(z => {
         if (!vigente) return;
-        ultimaCiudad.current = ciudad;
+        ultimaEntrega.current = clave;
         if (z) setF(p => ({ ...p, zone: z }));
       });
-    }, 400);
+    }, 600);
     return () => { vigente = false; clearTimeout(t); };
-  }, [f.ship_city, zonaDe]);
+  }, [f.ship_city, f.delivery_address, zonaDe]);
 
   // --- La otra puerta: buscar por razón social -----------------------------
   // Si no se acuerda el código, se escribe el nombre y se elige de la lista.

@@ -173,11 +173,17 @@ export async function cuitDeOtroVendedor(token: string, cuit: string): Promise<{
  * La zona de reparto de FemWay para una localidad de entrega ("Wilde
  * Avellaneda" → "400"), o null si no se reconoce. La base la pone igual al
  * guardar; esto es para mostrarla mientras se carga.
+ *
+ * Si la localidad sola no alcanza ("La Matanza", "Del Viso", que está en dos
+ * partidos), se busca la dirección de entrega: eso lo hace una función del
+ * servidor, y el resultado queda en el pedido como si se hubiera escrito a mano.
  */
-export async function zonaFemway(localidad: string): Promise<string | null> {
+export async function zonaFemway(localidad: string, direccion = ''): Promise<string | null> {
   const { data, error } = await supabase.rpc('femway_zona_de', { p_localidad: localidad });
-  if (error) return null;
-  return (data as string | null) ?? null;
+  if (!error && data) return data as string;
+  if (!/\d/.test(direccion)) return null;   // sin altura no hay dónde buscar
+  const r = await supabase.functions.invoke('femway-zona-direccion', { body: { localidad, direccion } });
+  return (r.data?.zona as string | null) ?? null;
 }
 
 /** El vendedor deja una nota en la ficha de su cliente. Solo la nota. */

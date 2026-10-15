@@ -59,7 +59,8 @@ Deno.serve(async (req: Request) => {
     //  * "ingreso": se cargó y hay que revisarlo y aprobarlo. FemWay va a
     //    andrea@ y santiago@; FEMAVI, solo a santiago@.
     //  * "aprobado": va a ventas@ con la planilla, para imprimir y cargar en
-    //    el sistema viejo. ventas@ ya no recibe los pedidos al cargarse.
+    //    el sistema viejo, y a santiago@, que lo revisa una segunda vez antes
+    //    de que se facture. ventas@ ya no recibe los pedidos al cargarse.
     const aprobado = tipo === "aprobado";
     // Cada mail tiene su marca, y cada una se usa una sola vez.
     const marca = aprobado ? "aprobado_notificado_at" : "notified_at";
@@ -99,7 +100,7 @@ Deno.serve(async (req: Request) => {
     const destinatarios = prueba === true
       ? ["santiago@femavi.com.ar"]
       : aprobado
-        ? ["ventas@femavi.com.ar"]
+        ? ["ventas@femavi.com.ar", "santiago@femavi.com.ar"]
         : o.proyecto === "femway"
           ? ["andrea@femavi.com.ar", "santiago@femavi.com.ar"]
           : ["santiago@femavi.com.ar"];

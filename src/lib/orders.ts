@@ -167,8 +167,9 @@ export async function sendOrderNotification(
   orderId: number,
   /**
    * "ingreso": el pedido se cargó y hay que revisarlo (FemWay a andrea@ y
-   * santiago@, FEMAVI a santiago@). "aprobado": va a ventas@ con el Excel,
-   * para imprimir y cargar en el sistema viejo.
+   * santiago@, FEMAVI a santiago@). "aprobado": va con el Excel a ventas@,
+   * para imprimir y cargar en el sistema viejo, y a santiago@, que lo revisa
+   * una segunda vez antes de que se facture.
    */
   tipo: 'ingreso' | 'aprobado' = 'ingreso',
 ): Promise<boolean> {

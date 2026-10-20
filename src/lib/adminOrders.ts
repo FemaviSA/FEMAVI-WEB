@@ -169,25 +169,38 @@ export function exportarCsv(pedidos: Pedido[], nombreVendedor: (code: string | n
 // ── Controles al autorizar ──
 // Avisos para mirar antes de aprobar: no bloquean nada.
 
+/** Un cliente del sistema viejo que tiene el mismo CUIT que el del pedido. */
+export interface ClienteDelSistema {
+  codigo: string; razon_social: string | null; cuit: string | null; localidad: string | null;
+  vendedor: string | null; vendedor_nombre: string | null; ultima_compra: string | null;
+  /** Si le compró a FEMAVI en los últimos 12 meses. */
+  compro_ultimo_anio: boolean;
+  /** El cliente figura con un vendedor distinto del que cargó el pedido. */
+  otro_vendedor: boolean;
+  coincide_por: 'cuit' | 'nombre'; parecido: number | null;
+}
+
 export interface ControlesPedido {
-  pedido: { id: number; numero: string | null; proyecto: Proyecto; cliente_nuevo: boolean; estado: Estado };
+  pedido: {
+    id: number; numero: string | null; proyecto: Proyecto; cliente_nuevo: boolean; estado: Estado;
+    vendedor: string | null; vendedor_nombre: string | null;
+  };
   cuit: {
     estado: 'ok' | 'invalido' | 'falta';
     digitos?: string; formateado?: string; tipo?: string; mensaje?: string;
   };
-  duplicados_sistema: {
-    codigo: string; razon_social: string | null; cuit: string | null; localidad: string | null;
-    vendedor: string | null; ultima_compra: string | null;
-    /** Si le compró a FEMAVI en los últimos 12 meses. */
-    compro_ultimo_anio: boolean;
-    coincide_por: 'cuit' | 'nombre'; parecido: number | null;
-  }[];
+  duplicados_sistema: ClienteDelSistema[];
   duplicados_web: {
     id: number; numero: string | null; fecha: string; proyecto: Proyecto;
     company: string | null; cuit: string | null; vendedor: string | null; estado: Estado;
   }[];
   /** Cuántos de los encontrados le compraron a FEMAVI en el último año. */
   duplicados_vivos: number;
+  /**
+   * El cliente ya existe en el sistema viejo y figura con otro vendedor, no con
+   * el que cargó el pedido. Hay que mirarlo antes de aprobar.
+   */
+  cliente_de_otro_vendedor: ClienteDelSistema | null;
   /**
    * El cliente está registrado como un pase de FEMAVI a FemWay: que aparezca en
    * los dos lados es a propósito, no un error.

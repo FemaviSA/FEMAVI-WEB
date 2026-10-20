@@ -58,10 +58,15 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
   }
   if (error || !c) return <div className="text-sm text-red-700">{error ?? 'No se pudieron hacer los controles.'}</div>;
 
-  // "Ya es cliente de FEMAVI" sirve en FemWay. En un pedido de FEMAVI el cliente
-  // siempre existe en el sistema, y mostrarlo solo confunde.
-  const dup = c.pedido?.proyecto === 'femavi' ? [] : c.duplicados_sistema;
+  const dup = c.duplicados_sistema;
   const web = c.duplicados_web;
+  const otro = c.cliente_de_otro_vendedor;
+  const esFemway = c.pedido?.proyecto === 'femway';
+
+  // De quién es el cliente en el sistema viejo. Se dice siempre: si lo cargó un
+  // vendedor y el cliente figura con otro, hay que mirarlo antes de aprobar.
+  const deQuien = (d: typeof dup[number]) =>
+    d.vendedor_nombre ? `${d.vendedor_nombre} (${d.vendedor})` : d.vendedor ? `vendedor ${d.vendedor}` : 'sin vendedor';
 
   return (
     <div className="space-y-2">
@@ -79,17 +84,22 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
         </Fila>
       )}
 
-      {/* Cliente que ya existe en el sistema */}
+      {/* Cliente que ya existe en el sistema viejo */}
       {dup.length > 0 && (
         <Fila
-          tono={c.duplicado_grave ? 'mal' : c.pase_femway ? 'ok' : 'aviso'}
-          icono={<AlertTriangle className="w-4 h-4" />}
-          titulo={c.pase_femway
-            // Que esté en los dos lados es a propósito: alguien lo pasó a FemWay.
-            ? `Pasado a FemWay el ${fecha(c.pase_femway.pasado_el)}: es el mismo cliente en los dos proyectos`
-            : c.duplicado_grave
-              ? 'Ojo: ya es cliente de FEMAVI y compró en el último año'
-              : 'Ya existe en el sistema, pero no compra hace más de un año'}>
+          tono={c.duplicado_grave || otro ? (c.duplicado_grave ? 'mal' : 'aviso') : 'ok'}
+          icono={c.duplicado_grave || otro ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+          titulo={otro
+            // Lo que hay que mirar: el cliente es de otro vendedor.
+            ? `Ojo: este cliente figura con ${deQuien(otro)}, no con ${c.pedido.vendedor_nombre ?? 'el vendedor del pedido'}`
+            : c.pase_femway
+              // Que esté en los dos lados es a propósito: alguien lo pasó a FemWay.
+              ? `Pasado a FemWay el ${fecha(c.pase_femway.pasado_el)}: es el mismo cliente en los dos proyectos`
+              : c.duplicado_grave
+                ? 'Ojo: ya es cliente de FEMAVI y compró en el último año'
+                : esFemway && !dup.some(d => d.compro_ultimo_anio)
+                  ? 'Ya existe en FEMAVI, pero no compra hace más de un año'
+                  : 'Es un cliente que ya está en el sistema'}>
           <ul className="mt-1.5 space-y-1">
             {dup.map(d => (
               <li key={d.codigo} className="text-xs">
@@ -98,6 +108,7 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
                 </Link>
                 <span className="opacity-80">
                   {' '}· cód. {d.codigo}{d.localidad ? ` · ${d.localidad}` : ''}
+                  {' '}· {deQuien(d)}
                   {' '}· última compra {fecha(d.ultima_compra)}
                   {d.compro_ultimo_anio ? ' (en el último año)' : ' (dormido)'}
                   {' '}· mismo CUIT
@@ -122,9 +133,22 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
         </Fila>
       )}
 
-      {dup.length === 0 && web.length === 0 && (
-        <Fila tono="ok" icono={<CheckCircle2 className="w-4 h-4" />} titulo="No aparece repetido">
-          <p className="text-xs opacity-80">No coincide con ningún cliente del sistema ni con otro pedido web.</p>
+      {/* Ningún cliente del sistema tiene este CUIT. Si el pedido no viene
+          marcado como cliente nuevo, algo no cierra: o el CUIT está mal escrito
+          o el cliente todavía no se cargó. */}
+      {dup.length === 0 && (
+        <Fila
+          tono={c.pedido.cliente_nuevo ? 'ok' : 'aviso'}
+          icono={c.pedido.cliente_nuevo ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+          titulo={c.pedido.cliente_nuevo
+            ? 'Cliente nuevo: no hay ninguno con este CUIT en el sistema'
+            : 'No encontré ningún cliente del sistema con este CUIT'}>
+          <p className="text-xs opacity-80">
+            {c.pedido.cliente_nuevo
+              ? 'Hay que darlo de alta en el sistema viejo antes de facturar.'
+              : 'El pedido no viene marcado como cliente nuevo: fijate si el CUIT está bien escrito.'}
+            {web.length === 0 && ' Tampoco hay otro pedido web con este CUIT.'}
+          </p>
         </Fila>
       )}
 

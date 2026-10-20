@@ -137,19 +137,29 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
           marcado como cliente nuevo, algo no cierra: o el CUIT está mal escrito
           o el cliente todavía no se cargó. */}
       {dup.length === 0 && (
-        <Fila
-          tono={c.pedido.cliente_nuevo ? 'ok' : 'aviso'}
-          icono={c.pedido.cliente_nuevo ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-          titulo={c.pedido.cliente_nuevo
-            ? 'Cliente nuevo: no hay ninguno con este CUIT en el sistema'
-            : 'No encontré ningún cliente del sistema con este CUIT'}>
-          <p className="text-xs opacity-80">
-            {c.pedido.cliente_nuevo
-              ? 'Hay que darlo de alta en el sistema viejo antes de facturar.'
-              : 'El pedido no viene marcado como cliente nuevo: fijate si el CUIT está bien escrito.'}
-            {web.length === 0 && ' Tampoco hay otro pedido web con este CUIT.'}
-          </p>
-        </Fila>
+        !c.cuit.digitos ? (
+          /* Sin CUIT no hay con qué buscarlo: decirlo, no dar por hecho que no existe. */
+          <Fila tono="aviso" icono={<AlertTriangle className="w-4 h-4" />}
+            titulo="Sin CUIT no puedo buscarlo en el sistema">
+            <p className="text-xs opacity-80">
+              El cliente puede existir igual. Hay que mirarlo a mano antes de aprobar.
+            </p>
+          </Fila>
+        ) : (
+          <Fila
+            tono={c.pedido.cliente_nuevo ? 'ok' : 'aviso'}
+            icono={c.pedido.cliente_nuevo ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+            titulo={c.pedido.cliente_nuevo
+              ? 'Cliente nuevo: no hay ninguno con este CUIT en el sistema'
+              : 'No encontré ningún cliente del sistema con este CUIT'}>
+            <p className="text-xs opacity-80">
+              {c.pedido.cliente_nuevo
+                ? 'Hay que darlo de alta en el sistema viejo antes de facturar.'
+                : 'El pedido no viene marcado como cliente nuevo: fijate si el CUIT está bien escrito.'}
+              {web.length === 0 && ' Tampoco hay otro pedido web con este CUIT.'}
+            </p>
+          </Fila>
+        )
       )}
 
       {/* Precios contra la lista */}

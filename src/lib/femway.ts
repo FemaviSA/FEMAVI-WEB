@@ -67,6 +67,30 @@ export async function guardarClienteFemway(c: AltaClienteFemway): Promise<{ codi
   return data as { codigo: string; nuevo: boolean };
 }
 
+export interface ClienteConDiferencias {
+  codigo: string;
+  razon_social: string;
+  vendedor: string | null;
+  campos: DiferenciaFemavi[];
+}
+
+/** Los clientes de FemWay cuya copia no coincide con el sistema viejo. */
+export async function diferenciasFemway(): Promise<ClienteConDiferencias[]> {
+  const { data, error } = await supabase.rpc('admin_femway_diferencias');
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ClienteConDiferencias[];
+}
+
+/**
+ * Vuelve a leer del sistema viejo los datos de facturación y entrega de un
+ * cliente que vino de FEMAVI. No se hace solo: en FemWay se editan datos a
+ * mano y un refresco automático los pisaría.
+ */
+export async function traerClienteDeFemavi(codigo: string): Promise<void> {
+  const { error } = await supabase.rpc('admin_femway_traer_de_femavi', { p_codigo: codigo });
+  if (error) throw new Error(error.message);
+}
+
 export async function borrarClienteFemway(codigo: string): Promise<void> {
   const { error } = await supabase.rpc('admin_femway_borrar_cliente', { p_codigo: codigo });
   if (error) throw new Error(error.message);
@@ -108,8 +132,23 @@ export interface PedidoFemway {
   sin_codigo: boolean;
 }
 
+/**
+ * Un dato de la ficha de FemWay que no coincide con el del sistema viejo. La
+ * copia de FemWay se saca una sola vez —cuando el cliente se pasa o cuando
+ * entra su primer pedido— y después no se vuelve a leer: si alguien corrige el
+ * cliente en el sistema viejo, acá queda el dato de antes. Por eso se avisa.
+ * Solo lo recibe el admin.
+ */
+export interface DiferenciaFemavi {
+  campo: string;
+  femway: string | null;
+  femavi: string | null;
+}
+
 export interface FichaFemway {
   cliente: DatosClienteFemway;
+  /** Solo en la ficha del admin, y vacío cuando todo coincide. */
+  diferencias?: DiferenciaFemavi[];
   resumen: {
     pedidos: number; pesos: number; volumen: number;
     primera_compra: string | null; ultima_compra: string | null;

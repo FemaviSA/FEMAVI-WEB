@@ -1,7 +1,10 @@
 import { Fragment, useState } from 'react';
-import { ChevronDown, ChevronRight, Loader2, Pencil, X } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronRight, Loader2, Pencil, X } from 'lucide-react';
 import { fmtNum, fmtPesos, type Vendedor } from '../lib/adminOrders';
-import { guardarClienteFemway, type DatosClienteFemway, type FichaFemway } from '../lib/femway';
+import {
+  guardarClienteFemway, traerClienteDeFemavi,
+  type DatosClienteFemway, type DiferenciaFemavi, type FichaFemway,
+} from '../lib/femway';
 
 // La ficha de un cliente de FemWay, armada igual que la de FEMAVI: los datos
 // del ABM y el historial de compras, nada más. La usan el admin y el vendedor;
@@ -68,6 +71,15 @@ export default function FichaFemwayVista({ ficha, nombreVendedor, mostrarFemavi,
           Cód. {c.codigo} · CUIT {c.cuit ?? '—'} · {nombreVendedor(c.vendedor)} · Zona {c.zona ?? '—'}
         </div>
       </div>
+
+      {/* La copia de FemWay no coincide con el sistema viejo */}
+      {mostrarFemavi && (ficha.diferencias?.length ?? 0) > 0 && (
+        <AvisoDiferencias
+          codigo={c.codigo}
+          diferencias={ficha.diferencias!}
+          alTraer={puedeEditar ? alGuardar : undefined}
+        />
+      )}
 
       {/* Datos del cliente, el ABM */}
       <section className="rounded-xl bg-white border border-slate-200 p-4 mb-6">
@@ -195,6 +207,74 @@ export default function FichaFemwayVista({ ficha, nombreVendedor, mostrarFemavi,
         </p>
       </section>
     </>
+  );
+}
+
+// ── Aviso de diferencias con el sistema viejo ──
+// El cliente que vino de FEMAVI se copió una sola vez. Si después se corrigió
+// en el sistema viejo, la ficha de FemWay quedó con el dato de antes y la
+// planilla del vendedor se llena con ese. Pasó con TALOS S.R.L.: se facturó
+// una dirección vieja. No se refresca solo porque acá se editan datos a mano.
+
+function AvisoDiferencias({ codigo, diferencias, alTraer }: {
+  codigo: string; diferencias: DiferenciaFemavi[]; alTraer?: () => void;
+}) {
+  const [trayendo, setTrayendo] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const traer = async () => {
+    setTrayendo(true);
+    setError(null);
+    try {
+      await traerClienteDeFemavi(codigo);
+      alTraer!();
+    } catch (e) {
+      setError((e as Error).message);
+      setTrayendo(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 mb-6">
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="w-4 h-4 text-amber-700 mt-0.5 shrink-0" />
+        <div className="min-w-0">
+          <h2 className="text-sm font-bold text-amber-900">No coincide con el sistema viejo</h2>
+          <p className="text-xs text-amber-800 mt-0.5">
+            Estos datos son los que usa la planilla del vendedor. Si el bueno es el del sistema
+            viejo, traelo; si el bueno es este, hay que corregir el cliente en el sistema viejo.
+          </p>
+
+          <table className="mt-3 text-sm">
+            <thead className="text-[10px] text-amber-700 uppercase tracking-wide">
+              <tr>
+                <th className="text-left pr-6 pb-1">Dato</th>
+                <th className="text-left pr-6 pb-1">En FemWay</th>
+                <th className="text-left pb-1">En el sistema viejo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {diferencias.map(d => (
+                <tr key={d.campo} className="border-t border-amber-200/70">
+                  <td className="pr-6 py-1 text-amber-900 font-semibold whitespace-nowrap">{d.campo}</td>
+                  <td className="pr-6 py-1 text-amber-900">{d.femway || '—'}</td>
+                  <td className="py-1 text-amber-900">{d.femavi || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {error && <div className="mt-3 text-sm text-red-700">{error}</div>}
+
+          {alTraer && (
+            <button onClick={traer} disabled={trayendo}
+              className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-700 text-white text-sm font-semibold hover:bg-amber-800 disabled:opacity-40">
+              {trayendo && <Loader2 className="w-4 h-4 animate-spin" />} Traer del sistema viejo
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

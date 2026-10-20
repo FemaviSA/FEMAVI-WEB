@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRightLeft, Loader2, Plus, Search, Trash2, X } from 'lucide-react';
+import { AlertTriangle, ArrowRightLeft, Loader2, Plus, Search, Trash2, X } from 'lucide-react';
 import { buscarClienteAdmin, type ClienteSugerido } from '../lib/historial';
 import {
-  borrarClienteFemway, clientesFemway, guardarClienteFemway, pasarClienteAFemway,
-  type ClienteFemway,
+  borrarClienteFemway, clientesFemway, diferenciasFemway, guardarClienteFemway, pasarClienteAFemway,
+  type ClienteConDiferencias, type ClienteFemway,
 } from '../lib/femway';
 import { fmtNum, type Vendedor } from '../lib/adminOrders';
 
@@ -24,6 +24,12 @@ export default function ClientesFemway({ vendedores }: { vendedores: Vendedor[] 
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [panel, setPanel] = useState<'pase' | 'alta' | null>(null);
+  const [desfasados, setDesfasados] = useState<ClienteConDiferencias[]>([]);
+
+  // Los que ya no coinciden con el sistema viejo. La copia de FemWay se saca
+  // una sola vez: si después se corrige el cliente allá, acá queda el dato de
+  // antes y con eso se llena la planilla del vendedor.
+  useEffect(() => { diferenciasFemway().then(setDesfasados).catch(() => {}); }, []);
 
   const cargar = useCallback(async (q: string) => {
     setError(null);
@@ -76,6 +82,36 @@ export default function ClientesFemway({ vendedores }: { vendedores: Vendedor[] 
 
       {error && <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
 
+      {desfasados.length > 0 && (
+        <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-700 mt-0.5 shrink-0" />
+            <div>
+              <div className="text-sm font-bold text-amber-900">
+                {desfasados.length === 1
+                  ? 'Un cliente no coincide con el sistema viejo'
+                  : `${desfasados.length} clientes no coinciden con el sistema viejo`}
+              </div>
+              <p className="text-xs text-amber-800 mt-0.5">
+                Lo que está acá es lo que se le llena al vendedor en la planilla. Abrí la ficha para
+                ver la diferencia y decidir cuál de los dos hay que corregir.
+              </p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                {desfasados.map(d => (
+                  <Link key={d.codigo} to={`/admin/clientes/femway/${d.codigo}`}
+                    className="text-sm font-semibold text-amber-900 underline decoration-amber-300 hover:decoration-amber-700">
+                    {d.razon_social}
+                    <span className="font-normal text-amber-700/80">
+                      {' · '}{d.campos.map(c => c.campo.toLowerCase()).join(', ')}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-xl bg-white border border-slate-200 overflow-x-auto">
         {cargando && filas.length === 0 ? (
           <div className="flex items-center gap-2 p-8 text-slate-500 text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Buscando…</div>
@@ -127,6 +163,12 @@ export default function ClientesFemway({ vendedores }: { vendedores: Vendedor[] 
                     ) : (
                       <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-violet-50 text-violet-700 ring-1 ring-violet-200">
                         Nuevo de FemWay
+                      </span>
+                    )}
+                    {desfasados.some(d => d.codigo === c.codigo) && (
+                      <span title="No coincide con el sistema viejo"
+                        className="ml-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-900 ring-1 ring-amber-300">
+                        <AlertTriangle className="w-3 h-3" /> No coincide
                       </span>
                     )}
                   </td>

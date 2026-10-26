@@ -278,6 +278,12 @@ export interface DatosCliente {
   ship_city: string | null;
   ship_phone: string | null;
   zone: string | null;
+  /**
+   * El transporte que el cliente tiene asignado en el sistema viejo, por
+   * nombre ("CRUZ DEL SUR"). null si no tiene ninguno. Solo en FEMAVI: los
+   * clientes de FemWay no tienen expreso cargado.
+   */
+  carrier?: string | null;
   /** Observación del sistema viejo ("BAJA 9/2011"): se muestra, no se carga. */
   nota: string | null;
 }

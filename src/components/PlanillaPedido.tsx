@@ -325,6 +325,9 @@ export default function PlanillaPedido({
             phone: d.phone ?? '', client_name: d.client_name ?? '',
             delivery_address: d.delivery_address ?? '', ship_city: d.ship_city ?? '',
             ship_phone: d.ship_phone ?? '', zone: d.zone ?? '',
+            // El transporte que el cliente tiene asignado en el sistema viejo.
+            // Si no tiene ninguno, la casilla queda libre para escribirlo.
+            carrier: d.carrier ?? '',
           };
           setDatos(d);
           alEncontrarCliente?.(d);

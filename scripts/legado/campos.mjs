@@ -64,6 +64,20 @@ export function articulos(dir) {
   return [...m.values()];
 }
 
+// Expresos: el transporte que cada cliente tiene asignado. hist_clientes.expreso
+// guarda el código de acá; '000' es "sin transporte".
+export function expresos(dir) {
+  const m = new Map();
+  for (const r of leerArchivo(dir + '/MAEEXPRE', 8).regs) {
+    const codigo = texto(r, 0, 3);
+    if (codigo) m.set(codigo, {
+      codigo, nombre: texto(r, 3, 33), domicilio: texto(r, 33, 63), localidad: texto(r, 63, 83),
+      telefonos: texto(r, 83, 111), recorrido: texto(r, 111, 136), alias: texto(r, 136, 166),
+    });
+  }
+  return [...m.values()];
+}
+
 export function comprobantes(dir) {
   const m = new Map();
   for (const r of leerArchivo(dir + '/HISTPEDI', 4).regs) {

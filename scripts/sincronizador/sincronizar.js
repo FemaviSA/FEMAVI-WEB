@@ -1,7 +1,7 @@
 // Sincronizador del sistema viejo de FEMAVI -> base de datos de la web.
 // Corre cada 15 minutos en la PC de la oficina (Windows 7, Node 12).
 //
-//  - SOLO LEE los archivos del sistema (MAECLI, MAEART, HISTPEDI, HISDEPED).
+//  - SOLO LEE los archivos del sistema (MAECLI, MAEART, MAEEXPRE, HISTPEDI, HISDEPED).
 //  - Si ningún archivo cambió desde la última pasada, no hace nada más que avisar
 //    que sigue viva.
 //  - Si cambió alguno, lo decodifica y sube SOLO las filas nuevas o modificadas.
@@ -155,6 +155,13 @@ var TABLAS = [
       cond_pago: texto(r, 391, 393),
     };
   } },
+  { tabla: 'expresos', archivo: 'MAEEXPRE', h: 8, clave: function (x) { return x.codigo; }, fila: function (r) {
+    var codigo = texto(r, 0, 3);
+    return codigo && {
+      codigo: codigo, nombre: texto(r, 3, 33), domicilio: texto(r, 33, 63), localidad: texto(r, 63, 83),
+      telefonos: texto(r, 83, 111), recorrido: texto(r, 111, 136), alias: texto(r, 136, 166),
+    };
+  } },
   { tabla: 'comprobantes', archivo: 'HISTPEDI', h: 4, clave: function (x) { return x.clave; }, fila: function (r) {
     var clave = r.toString('latin1', 0, 13);
     if (!/^\d{12}/.test(clave)) return null;
@@ -226,6 +233,12 @@ function buscarCarpeta(config) {
 // ── Una pasada ──
 function sincronizarTabla(t, dir, estado, config) {
   var ruta = path.join(dir, t.archivo);
+  // Si el archivo no está, se avisa y se sigue con los demás: que falte uno no
+  // puede dejar sin sincronizar a los otros.
+  if (!fs.existsSync(ruta)) {
+    log('AVISO: no esta ' + t.archivo + ' en ' + dir + ': se saltea.');
+    return Promise.resolve(0);
+  }
   var st = fs.statSync(ruta);
   var firma = st.size + '|' + st.mtimeMs;
   if (estado.archivos[t.archivo] === firma) return Promise.resolve(0);

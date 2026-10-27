@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Package, ExternalLink, LogOut, Menu, X, ChevronRight, Mail, BookOpen, ClipboardList, Users, IdCard } from 'lucide-react';
+import { Package, ExternalLink, LogOut, Menu, X, ChevronRight, Mail, BookOpen, ClipboardList, Users, IdCard, TrendingUp } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useProyectoAdmin } from '../hooks/useProyectoAdmin';
 import { NOMBRE_PROYECTO } from '../lib/proyectos';
@@ -130,6 +130,10 @@ export function AdminLayout({
                 {porAprobar}
               </span>
             )}
+          </NavLink>
+          <NavLink to="/admin/facturacion" className={navItem}>
+            <TrendingUp className="w-4 h-4" />
+            <span className="flex-1">Facturación</span>
           </NavLink>
           <NavLink to="/admin/clientes" className={navItem}>
             <Users className="w-4 h-4" />

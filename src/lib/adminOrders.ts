@@ -316,3 +316,42 @@ export async function crearPedidoAdmin(input: OrderInput, vendedor: string): Pro
   }
   return data as OrderCreated;
 }
+
+// ── Facturación ──
+// Lo que factura un proyecto en un período: el total, mes a mes, y abierto por
+// vendedor, por producto y por cliente. Cuenta solo lo aprobado; lo que está
+// esperando se devuelve aparte para no confundirlo con facturación.
+
+export type CanalVentas = 'vendedores' | 'distribucion' | 'todo';
+
+export interface Facturacion {
+  proyecto: Proyecto;
+  canal: CanalVentas;
+  desde: string;
+  hasta: string;
+  totales: { pedidos: number; clientes: number; pesos: number; volumen: number; bonificado: number };
+  /** Recibidos y a confirmar: todavía no es facturación. */
+  esperando: { pedidos: number; pesos: number; a_confirmar: number };
+  meses: { mes: string; nombre: string; pedidos: number; pesos: number; volumen: number }[];
+  vendedores: {
+    code: string; name: string; es_distribuidor: boolean;
+    pedidos: number; clientes: number; pesos: number; volumen: number;
+  }[];
+  productos: { producto: string; vendido: number; bonificado: number; pesos: number }[];
+  clientes: {
+    cliente: string | null; codigo: string | null; vendedor: string | null;
+    pedidos: number; pesos: number; ultimo: string;
+  }[];
+}
+
+export async function facturacion(
+  proyecto: Proyecto, desde: string, hasta: string,
+  vendedores: string[] = [], canal: CanalVentas = 'vendedores',
+): Promise<Facturacion> {
+  const { data, error } = await supabase.rpc('admin_facturacion', {
+    p_proyecto: proyecto, p_desde: desde, p_hasta: hasta,
+    p_vendedores: vendedores.length ? vendedores : null, p_canal: canal,
+  });
+  if (error) throw new Error(error.message);
+  return data as Facturacion;
+}

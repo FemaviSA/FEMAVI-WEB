@@ -187,7 +187,9 @@ export interface ResumenEquipo {
   ciclos: ResumenVentas['ciclos'];
   totales: ResumenVentas['totales'];
   productos: ResumenVentas['productos'];
-  /** Todos los vendedores del proyecto, también los que están en cero. */
+  /** Qué canal se pidió: vendedores, distribución o los dos juntos. */
+  canal?: 'vendedores' | 'distribucion' | 'todo';
+  /** Todos los vendedores del canal, también los que están en cero. */
   vendedores: {
     code: string; name: string; pedidos: number; clientes: number;
     pesos: number; volumen: number;
@@ -203,8 +205,19 @@ export interface ResumenEquipo {
   }[];
 }
 
-export async function resumenDelEquipo(token: string, periodo: PeriodoVentas): Promise<ResumenEquipo> {
-  const { data, error } = await supabase.rpc('seller_equipo', { p_token: token, p_periodo: periodo });
+/**
+ * Qué se está mirando: el equipo de vendedores, los distribuidores (los que
+ * nos compran para revender) o la suma de los dos. Son negocios distintos y
+ * por eso no se mezclan salvo que se pidan juntos.
+ */
+export type CanalVentas = 'vendedores' | 'distribucion' | 'todo';
+
+export async function resumenDelEquipo(
+  token: string, periodo: PeriodoVentas, canal: CanalVentas = 'vendedores',
+): Promise<ResumenEquipo> {
+  const { data, error } = await supabase.rpc('seller_equipo', {
+    p_token: token, p_periodo: periodo, p_canal: canal,
+  });
   if (error?.message?.includes('sesion_vencida')) throw new PaseVencidoError();
   if (error?.message?.includes('no_es_gerente')) throw new Error('Esta vista es solo para el gerente del proyecto.');
   if (error || !data) throw new Error('No se pudo cargar el resumen del equipo. Revisá la conexión.');

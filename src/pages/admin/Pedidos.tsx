@@ -32,7 +32,7 @@ export default function Pedidos() {
   const { proyecto: proyectoFijo } = useProyectoAdmin();
   const proyecto = proyectoFijo ?? proyectoElegido;
   // Equipo de vendedores o distribuidores: nunca juntos, igual que los proyectos.
-  const [canal, setCanal] = useState<'vendedores' | 'distribucion'>('vendedores');
+  const [canal, setCanal] = useState<'vendedores' | 'distribucion' | 'todo'>('vendedores');
   const [vendedor, setVendedor] = useState('');
   const [cuenta, setCuenta] = useState('');
   const [desde, setDesde] = useState('');
@@ -78,7 +78,7 @@ export default function Pedidos() {
     const q = busqueda.trim().toLowerCase();
     return pedidos.filter(p => {
       if (p.proyecto !== proyecto) return false;
-      if (esDeDistribuidor(p) !== (canal === 'distribucion')) return false;
+      if (canal !== 'todo' && esDeDistribuidor(p) !== (canal === 'distribucion')) return false;
       if (vendedor && (p.seller_code ?? '') !== vendedor) return false;
       if (cuenta && p.account !== cuenta) return false;
       const dia = diaAR(p.created_at);
@@ -168,7 +168,11 @@ export default function Pedidos() {
           nos compra un distribuidor para revender. */}
       {hayDistribuidores && (
         <div className="inline-flex gap-1 p-1 mb-4 rounded-lg bg-slate-100">
-          {([['vendedores', 'Vendedores'], ['distribucion', `Distribución ${NOMBRE_PROYECTO[proyecto]}`]] as const).map(([k, rot]) => (
+          {([
+            ['vendedores', 'Vendedores'],
+            ['distribucion', `Distribución ${NOMBRE_PROYECTO[proyecto]}`],
+            ['todo', 'Todo junto'],
+          ] as const).map(([k, rot]) => (
             <button key={k} onClick={() => { setCanal(k); setVendedor(''); }}
               className={`px-3 py-1.5 rounded-md text-sm font-semibold transition ${canal === k
                 ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
@@ -198,10 +202,14 @@ export default function Pedidos() {
             className={campo + ' pl-9 w-56'} />
         </div>
         <select value={vendedor} onChange={e => setVendedor(e.target.value)} className={campo}>
-          <option value="">{canal === 'distribucion' ? 'Todos los distribuidores' : 'Todos los vendedores'}</option>
+          <option value="">
+            {canal === 'distribucion' ? 'Todos los distribuidores'
+              : canal === 'todo' ? 'Todos' : 'Todos los vendedores'}
+          </option>
           {/* Solo los del proyecto y del canal que se está mirando. */}
           {vendedores
-            .filter(v => v.proyecto === proyecto && !!v.es_distribuidor === (canal === 'distribucion'))
+            .filter(v => v.proyecto === proyecto
+              && (canal === 'todo' || !!v.es_distribuidor === (canal === 'distribucion')))
             .map(v => <option key={v.code} value={v.code}>{v.name} ({v.code})</option>)}
         </select>
         <select value={cuenta} onChange={e => setCuenta(e.target.value)} className={campo}>

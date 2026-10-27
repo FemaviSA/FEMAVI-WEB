@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ChevronDown, ChevronUp, Loader2, X } from 'lucide-react';
-import { resumenDelEquipo, PaseVencidoError, type PeriodoVentas, type ResumenEquipo } from '../lib/sellers';
+import {
+  resumenDelEquipo, PaseVencidoError,
+  type CanalVentas, type PeriodoVentas, type ResumenEquipo,
+} from '../lib/sellers';
 import { miFichaClienteFemway, type FichaFemway } from '../lib/femway';
 import FichaFemwayVista from './FichaFemwayVista';
 import { NOMBRE_PROYECTO, type Proyecto } from '../lib/proyectos';
@@ -19,6 +22,9 @@ const fechaDelPedido = (iso: string) =>
  */
 export default function VentasEquipo({ token, proyecto, onPaseVencido }: { token: string; proyecto: Proyecto; onPaseVencido: () => void }) {
   const [periodo, setPeriodo] = useState<PeriodoVentas>('ciclo');
+  // Lo que vende el equipo y lo que nos compra un distribuidor para revender
+  // son dos negocios: se miran por separado, o juntos si se quiere el total.
+  const [canal, setCanal] = useState<CanalVentas>('vendedores');
   const [datos, setDatos] = useState<ResumenEquipo | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +61,7 @@ export default function VentasEquipo({ token, proyecto, onPaseVencido }: { token
     let vigente = true;
     setCargando(true);
     setError(null);
-    resumenDelEquipo(token, periodo)
+    resumenDelEquipo(token, periodo, canal)
       .then(r => { if (vigente) setDatos(r); })
       .catch(e => {
         if (!vigente) return;
@@ -64,7 +70,7 @@ export default function VentasEquipo({ token, proyecto, onPaseVencido }: { token
       })
       .finally(() => { if (vigente) setCargando(false); });
     return () => { vigente = false; };
-  }, [token, periodo, onPaseVencido]);
+  }, [token, periodo, canal, onPaseVencido]);
 
   const nombre = useMemo(() => {
     const m = new Map<string, string>();
@@ -124,6 +130,21 @@ export default function VentasEquipo({ token, proyecto, onPaseVencido }: { token
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Vendedores y distribución son dos negocios distintos: por eso se ven
+          separados, y juntos solo si se pide el total. */}
+      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-4 w-fit">
+        {([
+          ['vendedores', 'Vendedores'],
+          ['distribucion', 'Distribución'],
+          ['todo', 'Todo junto'],
+        ] as [CanalVentas, string][]).map(([k, r]) => (
+          <button key={k} onClick={() => { setCanal(k); setVendedor(null); }}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium ${canal === k ? 'bg-white shadow text-slate-900' : 'text-slate-500'}`}>
+            {r}
+          </button>
+        ))}
       </div>
 
       {error && <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}

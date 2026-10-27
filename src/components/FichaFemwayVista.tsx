@@ -110,6 +110,9 @@ export default function FichaFemwayVista({ ficha, nombreVendedor, mostrarFemavi,
             <Dato rotulo="Entrega" valor={[c.entrega_domicilio, c.entrega_localidad].filter(Boolean).join(', ')} />
             <Dato rotulo="Teléfono de entrega" valor={c.entrega_telefono} />
             <Dato rotulo="Zona" valor={c.zona} />
+            {c.descuento_tolerado != null && (
+              <Dato rotulo="Descuento acordado" valor={`${c.descuento_tolerado}% sobre la lista`} />
+            )}
             {mostrarFemavi && c.origen === 'femavi' && <Dato rotulo="Código en FEMAVI" valor={c.cliente_femavi} />}
             {/* Con guardarNota la nota va aparte, para poder escribirla. */}
             {!guardarNota && <Dato rotulo="Notas" valor={c.notas} />}
@@ -291,6 +294,7 @@ function FormularioDatos({ cliente, vendedores, onListo }: {
     entrega_domicilio: cliente.entrega_domicilio ?? '', entrega_localidad: cliente.entrega_localidad ?? '',
     entrega_telefono: cliente.entrega_telefono ?? '', zona: cliente.zona ?? '',
     vendedor: cliente.vendedor ?? '', notas: cliente.notas ?? '',
+    descuento_tolerado: cliente.descuento_tolerado != null ? String(cliente.descuento_tolerado) : '',
   });
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -337,6 +341,9 @@ function FormularioDatos({ cliente, vendedores, onListo }: {
             {vendedores.map(v => <option key={v.code} value={v.code}>{v.name} ({v.code})</option>)}
           </select>
         </label>
+        {/* Un distribuidor trabaja con su descuento: así no salta la alerta de
+            precio en cada pedido suyo. Vacío = el 20% general. */}
+        <Campo rot="Descuento acordado (%)" k="descuento_tolerado" />
         <Campo rot="Notas" k="notas" />
       </div>
 

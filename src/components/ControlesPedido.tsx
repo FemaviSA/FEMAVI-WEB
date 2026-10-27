@@ -58,9 +58,13 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
   }
   if (error || !c) return <div className="text-sm text-red-700">{error ?? 'No se pudieron hacer los controles.'}</div>;
 
-  const dup = c.duplicados_sistema;
-  const web = c.duplicados_web;
+  // "Ya es cliente del sistema" se dice la primera vez, que es cuando hay algo
+  // que decidir. Después el cliente ya es conocido —en FemWay todos están
+  // también en FEMAVI— y repetirlo en cada pedido es ruido que tapa lo que sí
+  // importa. Lo que no se calla nunca: que el cliente sea de otro vendedor.
   const otro = c.cliente_de_otro_vendedor;
+  const dup = (c.primera_vez || otro || c.pase_femway) ? c.duplicados_sistema : [];
+  const web = c.duplicados_web;
   const esFemway = c.pedido?.proyecto === 'femway';
 
   // De quién es el cliente en el sistema viejo. Se dice siempre: si lo cargó un
@@ -119,10 +123,11 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
         </Fila>
       )}
 
-      {/* Mismo cliente en otro pedido de la web */}
+      {/* El mismo pedido cargado dos veces: mismo cliente y mismo importe. Que
+          un cliente compre seguido no se avisa, es lo normal. */}
       {web.length > 0 && (
         <Fila tono="aviso" icono={<AlertTriangle className="w-4 h-4" />}
-          titulo="Ya hay otro pedido web de este mismo cliente">
+          titulo="Hay otro pedido de este cliente por el mismo importe">
           <ul className="mt-1.5 space-y-1">
             {web.map(p => (
               <li key={p.id} className="text-xs opacity-90">
@@ -136,7 +141,7 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
       {/* Ningún cliente del sistema tiene este CUIT. Si el pedido no viene
           marcado como cliente nuevo, algo no cierra: o el CUIT está mal escrito
           o el cliente todavía no se cargó. */}
-      {dup.length === 0 && (
+      {c.duplicados_sistema.length === 0 && (
         !c.cuit.digitos ? (
           /* Sin CUIT no hay con qué buscarlo: decirlo, no dar por hecho que no existe. */
           <Fila tono="aviso" icono={<AlertTriangle className="w-4 h-4" />}
@@ -172,7 +177,9 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
             ? `${c.precio.alertas} precio${(c.precio.alertas ?? 0) > 1 ? 's' : ''} por debajo de lo permitido`
             : 'Precios dentro de lo permitido'}>
           <p className="text-xs opacity-80 mb-1.5">
-            Se tolera hasta 20% por debajo del precio más barato de la lista {c.precio.vigencia}.
+            Se tolera hasta {c.precio.tolerancia ?? 20}% por debajo del precio más barato de la
+            lista {c.precio.vigencia}.
+            {c.precio.tolerancia_propia && ' Es el descuento acordado con este cliente.'}
           </p>
           <ul className="space-y-1">
             {(c.precio.renglones ?? []).map((r, i) => (

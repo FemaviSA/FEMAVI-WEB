@@ -39,6 +39,12 @@ export interface AltaClienteFemway {
   zona?: string;
   vendedor?: string;
   notas?: string;
+  /**
+   * Descuento sobre la lista que este cliente tiene acordado, en %. Vacío = el
+   * 20% general. Es solo para no alertar de más al aprobar: un distribuidor
+   * trabaja con su descuento y no es un error.
+   */
+  descuento_tolerado?: number | string | null;
 }
 
 export async function clientesFemway(q?: string, vendedor?: string): Promise<ClienteFemway[]> {
@@ -117,6 +123,8 @@ export interface DatosClienteFemway {
   cliente_femavi: string | null;
   pasado_el: string | null;
   notas: string | null;
+  /** Su descuento acordado sobre la lista, en %. null = el 20% general. */
+  descuento_tolerado: number | null;
 }
 
 export interface PedidoFemway {

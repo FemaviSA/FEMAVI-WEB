@@ -203,6 +203,12 @@ export interface ControlesPedido {
   /** Cuántos de los encontrados le compraron a FEMAVI en el último año. */
   duplicados_vivos: number;
   /**
+   * Es el primer pedido de este cliente en este proyecto. Los avisos de "ya es
+   * cliente" solo sirven acá: a partir del segundo el cliente ya es conocido y
+   * repetirlos es ruido.
+   */
+  primera_vez: boolean;
+  /**
    * El cliente ya existe en el sistema viejo y figura con otro vendedor, no con
    * el que cargó el pedido. Hay que mirarlo antes de aprobar.
    */
@@ -222,6 +228,10 @@ export interface ControlesPedido {
     /** Mes de la lista cargada, por ejemplo 09-26. */
     vigencia?: string;
     alertas?: number;
+    /** Hasta cuánto por debajo de la lista se tolera, en %. El general es 20. */
+    tolerancia?: number;
+    /** El cliente tiene su propio descuento acordado (un distribuidor). */
+    tolerancia_propia?: boolean;
     renglones?: {
       producto: string; envase: string | null; cantidad: number; precio: number;
       producto_lista: string | null; precio_lista: number | null;

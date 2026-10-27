@@ -31,6 +31,8 @@ export default function Pedidos() {
   // El admin limitado a un proyecto (la secretaria de FemWay) no elige: ve el suyo.
   const { proyecto: proyectoFijo } = useProyectoAdmin();
   const proyecto = proyectoFijo ?? proyectoElegido;
+  // Equipo de vendedores o distribuidores: nunca juntos, igual que los proyectos.
+  const [canal, setCanal] = useState<'vendedores' | 'distribucion'>('vendedores');
   const [vendedor, setVendedor] = useState('');
   const [cuenta, setCuenta] = useState('');
   const [desde, setDesde] = useState('');
@@ -59,11 +61,24 @@ export default function Pedidos() {
     return v ? `${v.name} (${code})` : `Agente ${code}`;
   }, [vendedores]);
 
+  // Un distribuidor nos compra para revender: su facturación no es la del
+  // equipo y se mira aparte. Hoy solo Sposito (61) en FemWay.
+  const distribuidores = useMemo(
+    () => new Set(vendedores.filter(v => v.es_distribuidor).map(v => v.code)),
+    [vendedores],
+  );
+  const hayDistribuidores = useMemo(
+    () => vendedores.some(v => v.es_distribuidor && v.proyecto === proyecto),
+    [vendedores, proyecto],
+  );
+  const esDeDistribuidor = (p: Pedido) => distribuidores.has(p.seller_code ?? '');
+
   // Todo menos el estado: sobre esto se cuentan las pestañas.
   const filtradosSinEstado = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     return pedidos.filter(p => {
       if (p.proyecto !== proyecto) return false;
+      if (esDeDistribuidor(p) !== (canal === 'distribucion')) return false;
       if (vendedor && (p.seller_code ?? '') !== vendedor) return false;
       if (cuenta && p.account !== cuenta) return false;
       const dia = diaAR(p.created_at);
@@ -75,7 +90,8 @@ export default function Pedidos() {
       }
       return true;
     });
-  }, [pedidos, proyecto, vendedor, cuenta, desde, hasta, busqueda]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pedidos, proyecto, canal, distribuidores, vendedor, cuenta, desde, hasta, busqueda]);
 
   const conteo = useMemo(() => {
     const c: Record<string, number> = { todos: filtradosSinEstado.length };
@@ -148,6 +164,20 @@ export default function Pedidos() {
         })}
       </div>
 
+      {/* Equipo o distribución: lo que vende el equipo no se mezcla con lo que
+          nos compra un distribuidor para revender. */}
+      {hayDistribuidores && (
+        <div className="inline-flex gap-1 p-1 mb-4 rounded-lg bg-slate-100">
+          {([['vendedores', 'Vendedores'], ['distribucion', `Distribución ${NOMBRE_PROYECTO[proyecto]}`]] as const).map(([k, rot]) => (
+            <button key={k} onClick={() => { setCanal(k); setVendedor(''); }}
+              className={`px-3 py-1.5 rounded-md text-sm font-semibold transition ${canal === k
+                ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+              {rot}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Pestañas por estado */}
       <div className="flex gap-1 overflow-x-auto pb-1 mb-4">
         {(['recibido', 'a_confirmar', 'aprobado', 'rechazado', 'todos'] as Pestaña[]).map(e => (
@@ -168,9 +198,11 @@ export default function Pedidos() {
             className={campo + ' pl-9 w-56'} />
         </div>
         <select value={vendedor} onChange={e => setVendedor(e.target.value)} className={campo}>
-          <option value="">Todos los vendedores</option>
-          {/* Solo los del proyecto que se está mirando. */}
-          {vendedores.filter(v => v.proyecto === proyecto).map(v => <option key={v.code} value={v.code}>{v.name} ({v.code})</option>)}
+          <option value="">{canal === 'distribucion' ? 'Todos los distribuidores' : 'Todos los vendedores'}</option>
+          {/* Solo los del proyecto y del canal que se está mirando. */}
+          {vendedores
+            .filter(v => v.proyecto === proyecto && !!v.es_distribuidor === (canal === 'distribucion'))
+            .map(v => <option key={v.code} value={v.code}>{v.name} ({v.code})</option>)}
         </select>
         <select value={cuenta} onChange={e => setCuenta(e.target.value)} className={campo}>
           <option value="">C1 y C2</option>

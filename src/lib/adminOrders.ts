@@ -76,6 +76,11 @@ export interface Vendedor {
   active: boolean;
   /** FEMAVI o FemWay: cada código pertenece a uno solo. */
   proyecto: Proyecto;
+  /**
+   * Nos compra para revender. Su facturación se mira aparte: una cosa es lo
+   * que vende el equipo y otra lo que compra un distribuidor.
+   */
+  es_distribuidor?: boolean;
 }
 
 export interface CambioEstado {
@@ -97,7 +102,7 @@ export async function listarPedidos(): Promise<Pedido[]> {
 }
 
 export async function listarVendedores(): Promise<Vendedor[]> {
-  const { data, error } = await supabase.from('sellers').select('code, name, active, proyecto');
+  const { data, error } = await supabase.from('sellers').select('code, name, active, proyecto, es_distribuidor');
   if (error) throw error;
   return ((data ?? []) as Vendedor[]).sort((a, b) => Number(a.code) - Number(b.code));
 }

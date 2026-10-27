@@ -2,14 +2,17 @@ import { supabase } from './supabase';
 import { NOMBRE_PROYECTO, type Proyecto } from './proyectos';
 import type { OrderCreated, OrderInput } from './orders';
 
-// Tres estados y nada más. Ingresado, facturado y entregado se sacaron el
-// 01/10/2026: no se usan, y la base ya no los acepta.
-export const ESTADOS = ['recibido', 'aprobado', 'rechazado'] as const;
+// Ingresado, facturado y entregado se sacaron el 01/10/2026: no se usan, y la
+// base ya no los acepta. "A confirmar" se agregó el 27/10/2026: el pedido está
+// bien cargado pero falta que el cliente lo confirme, así que todavía no le
+// suma a la facturación del vendedor.
+export const ESTADOS = ['recibido', 'a_confirmar', 'aprobado', 'rechazado'] as const;
 export type Estado = (typeof ESTADOS)[number];
 export type { Proyecto };
 
 export const ETIQUETA_ESTADO: Record<Estado, string> = {
   recibido: 'Recibido',
+  a_confirmar: 'A confirmar',
   aprobado: 'Aprobado',
   rechazado: 'Rechazado',
 };
@@ -17,6 +20,7 @@ export const ETIQUETA_ESTADO: Record<Estado, string> = {
 /** El paso siguiente de cada estado, y cómo se llama el botón que lo da. */
 export const SIGUIENTE: Partial<Record<Estado, { estado: Estado; accion: string }>> = {
   recibido: { estado: 'aprobado', accion: 'Aprobar' },
+  a_confirmar: { estado: 'aprobado', accion: 'El cliente confirmó: aprobar' },
 };
 
 export interface ItemPedido {
@@ -62,6 +66,8 @@ export interface Pedido {
   items: ItemPedido[];
   total: number | null;
   notes: string | null;
+  /** Cuándo salió la última planilla para imprimir y llamar al cliente. */
+  confirmar_notificado_at?: string | null;
 }
 
 export interface Vendedor {

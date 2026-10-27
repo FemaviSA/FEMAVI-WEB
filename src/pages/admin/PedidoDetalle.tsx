@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { X, Loader2, Check, Ban, History, ShieldCheck, Pencil } from 'lucide-react';
+import { X, Loader2, Check, Ban, History, ShieldCheck, Pencil, PhoneCall, Printer } from 'lucide-react';
 import ControlesPedido from '../../components/ControlesPedido';
 import ConsultaArca from '../../components/ConsultaArca';
 import {
@@ -14,6 +14,7 @@ const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio',
 
 const COLOR_ESTADO: Record<Estado, string> = {
   recibido: 'bg-amber-50 text-amber-700 ring-amber-200',
+  a_confirmar: 'bg-violet-50 text-violet-700 ring-violet-200',
   aprobado: 'bg-sky-50 text-sky-700 ring-sky-200',
   rechazado: 'bg-red-50 text-red-700 ring-red-200',
 };
@@ -59,6 +60,8 @@ export default function PedidoDetalle({
 
   const v = volumenDe(pedido.items);
   const siguiente = SIGUIENTE[pedido.status];
+  /** Todavía no está aprobado: recibido o esperando al cliente. */
+  const sinAprobar = pedido.status === 'recibido' || pedido.status === 'a_confirmar';
 
   const hacer = async (fn: () => Promise<void>) => {
     setError(null);
@@ -127,22 +130,38 @@ export default function PedidoDetalle({
             </div>
           )}
 
+          {/* El pedido está esperando que el cliente lo confirme */}
+          {pedido.status === 'a_confirmar' && (
+            <div className="rounded-lg bg-violet-50 border border-violet-200 px-4 py-3 text-sm text-violet-900">
+              <strong>Falta confirmarlo con el cliente.</strong> No le suma a la facturación del
+              vendedor hasta que se apruebe.
+              {pedido.confirmar_notificado_at && (
+                <span className="block text-xs text-violet-700 mt-1">
+                  La planilla salió por mail para imprimir el{' '}
+                  {new Date(pedido.confirmar_notificado_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}.
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Controles: lo que hay que mirar antes de aprobar */}
-          {pedido.status === 'recibido' && (
+          {sinAprobar && (
             <section className="rounded-xl border border-slate-200 p-4">
               <h3 className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
                 <ShieldCheck className="w-4 h-4" /> Antes de aprobar
               </h3>
               <ControlesPedido orderId={pedido.id} recargar={pedido.status} />
               <div className="mt-3">
+                {/* La consulta sola es al recibirlo: en un pedido que ya está
+                    esperando al cliente, ya se consultó. */}
                 <ConsultaArca cuitInicial={pedido.cuit} orderId={pedido.id}
-                  razonPedido={pedido.company} automatico />
+                  razonPedido={pedido.company} automatico={pedido.status === 'recibido'} />
               </div>
             </section>
           )}
 
           {/* Fuera del momento de aprobar, queda a mano pero sin consultar sola */}
-          {pedido.status !== 'recibido' && (
+          {!sinAprobar && (
             <ConsultaArca cuitInicial={pedido.cuit} orderId={pedido.id} razonPedido={pedido.company} />
           )}
 
@@ -175,6 +194,43 @@ export default function PedidoDetalle({
                     >
                       {trabajando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                       {siguiente.accion}
+                    </button>
+                  )}
+                  {/* El pedido está bien, pero hay que hablar con el cliente.
+                      Queda en su solapa y sale la planilla para imprimir; no
+                      le suma al vendedor hasta que se apruebe. */}
+                  {pedido.status === 'recibido' && (
+                    <button
+                      disabled={trabajando}
+                      onClick={() => hacer(async () => {
+                        if (datosCambiados) {
+                          await completarDatos(pedido.id, {
+                            sales_cycle: ciclo.trim() || null, client_code: nroCliente.trim() || null,
+                          });
+                        }
+                        await cambiarEstado(pedido.id, 'a_confirmar');
+                        if (!(await sendOrderNotification(pedido.id, 'a_confirmar'))) {
+                          setError('Quedó a confirmar, pero no salió el mail con la planilla. Volvé a pedirla desde el pedido.');
+                        }
+                      })}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-violet-300 bg-violet-50 text-violet-800 text-sm font-semibold hover:bg-violet-100 disabled:opacity-50"
+                    >
+                      {trabajando ? <Loader2 className="w-4 h-4 animate-spin" /> : <PhoneCall className="w-4 h-4" />}
+                      Dejar a confirmar
+                    </button>
+                  )}
+                  {/* Otra copia para imprimir, cuando se perdió la primera. */}
+                  {pedido.status === 'a_confirmar' && (
+                    <button
+                      disabled={trabajando}
+                      onClick={() => hacer(async () => {
+                        if (!(await sendOrderNotification(pedido.id, 'a_confirmar'))) {
+                          setError('No salió el mail. Si lo pediste recién, esperá un minuto y probá de nuevo.');
+                        }
+                      })}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      <Printer className="w-4 h-4" /> Mandarme la planilla de nuevo
                     </button>
                   )}
                   {faltaCiclo && (
@@ -222,7 +278,7 @@ export default function PedidoDetalle({
                 <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
                   Ciclo de ventas
                   {usaCiclos
-                    ? pedido.status === 'recibido' && <span className="text-red-600"> · obligatorio para aprobar</span>
+                    ? sinAprobar && <span className="text-red-600"> · obligatorio para aprobar</span>
                     : <span className="text-slate-400"> · FemWay mide por mes</span>}
                 </span>
                 {/* Se elige de los meses: el corte del ciclo va variando, así que

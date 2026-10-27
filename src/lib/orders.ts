@@ -167,11 +167,13 @@ export async function sendOrderNotification(
   orderId: number,
   /**
    * "ingreso": el pedido se cargó y hay que revisarlo (FemWay a andrea@ y
-   * santiago@, FEMAVI a santiago@). "aprobado": va con el Excel a ventas@,
-   * para imprimir y cargar en el sistema viejo, y a santiago@, que lo revisa
-   * una segunda vez antes de que se facture.
+   * santiago@, FEMAVI a santiago@). "a_confirmar": va a esos mismos, con el
+   * Excel para imprimir y llamar al cliente; se puede volver a pedir cuando
+   * hace falta otra copia. "aprobado": va con el Excel a ventas@, para
+   * imprimir y cargar en el sistema viejo, y a santiago@, que lo revisa una
+   * segunda vez antes de que se facture.
    */
-  tipo: 'ingreso' | 'aprobado' = 'ingreso',
+  tipo: 'ingreso' | 'a_confirmar' | 'aprobado' = 'ingreso',
 ): Promise<boolean> {
   const url = import.meta.env.VITE_SUPABASE_URL as string;
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string;

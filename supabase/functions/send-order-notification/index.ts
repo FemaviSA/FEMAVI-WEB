@@ -55,15 +55,22 @@ Deno.serve(async (req: Request) => {
     const { order_id, prueba, tipo } = await req.json();
     if (!order_id) throw new Error("Falta order_id");
 
-    // Dos mails distintos por pedido (Santiago, 01/10/2026):
+    // Tres mails distintos por pedido:
     //  * "ingreso": se cargó y hay que revisarlo y aprobarlo. FemWay va a
     //    andrea@ y santiago@; FEMAVI, solo a santiago@.
+    //  * "a_confirmar" (27/10/2026): el pedido está bien pero falta que el
+    //    cliente lo confirme. Va a la misma gente que lo revisa —nunca a
+    //    ventas@—, con la planilla para imprimir y llamar al cliente.
     //  * "aprobado": va a ventas@ con la planilla, para imprimir y cargar en
     //    el sistema viejo, y a santiago@, que lo revisa una segunda vez antes
     //    de que se facture. ventas@ ya no recibe los pedidos al cargarse.
     const aprobado = tipo === "aprobado";
-    // Cada mail tiene su marca, y cada una se usa una sola vez.
-    const marca = aprobado ? "aprobado_notificado_at" : "notified_at";
+    const aConfirmar = tipo === "a_confirmar";
+    // Cada mail tiene su marca. Las de ingreso y aprobado se usan una sola vez;
+    // la de "a confirmar" se puede repetir, porque el papel se pierde.
+    const marca = aprobado ? "aprobado_notificado_at"
+      : aConfirmar ? "confirmar_notificado_at"
+      : "notified_at";
 
     // El mail se arma con lo que quedó guardado, no con lo que mandó el
     // navegador: así no puede diferir de lo que administración ve en el panel.
@@ -80,11 +87,20 @@ Deno.serve(async (req: Request) => {
     let reclamo = supabase
       .from("orders")
       .update({ [marca]: new Date().toISOString() })
-      .eq("id", order_id)
-      .is(marca, null);
-    reclamo = aprobado
-      ? reclamo.eq("status", "aprobado")
-      : reclamo.gte("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString());
+      .eq("id", order_id);
+    if (aConfirmar) {
+      // Este se puede volver a pedir desde el panel cuando hace falta otra
+      // copia, pero no dos veces seguidas: así nadie llena la casilla.
+      reclamo = reclamo
+        .eq("status", "a_confirmar")
+        .or("confirmar_notificado_at.is.null,confirmar_notificado_at.lt." +
+            new Date(Date.now() - 2 * 60 * 1000).toISOString());
+    } else {
+      reclamo = reclamo.is(marca, null);
+      reclamo = aprobado
+        ? reclamo.eq("status", "aprobado")
+        : reclamo.gte("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString());
+    }
     const { data: o, error: errOrden } = await reclamo.select("*").maybeSingle();
     if (errOrden) throw new Error("No pude leer el pedido " + order_id);
     if (!o) {
@@ -97,13 +113,16 @@ Deno.serve(async (req: Request) => {
     // prueba en las otras. Deliberadamente NO acepta una dirección arbitraria:
     // si la aceptara, cualquiera podría usar esta función para mandar mail con
     // el dominio de FEMAVI a donde quisiera.
+    // "A confirmar" va a los mismos que revisan, nunca a ventas@: todavía no
+    // hay nada que cargar en el sistema viejo.
+    const revisan = o.proyecto === "femway"
+      ? ["andrea@femavi.com.ar", "santiago@femavi.com.ar"]
+      : ["santiago@femavi.com.ar"];
     const destinatarios = prueba === true
       ? ["santiago@femavi.com.ar"]
       : aprobado
         ? ["ventas@femavi.com.ar", "santiago@femavi.com.ar"]
-        : o.proyecto === "femway"
-          ? ["andrea@femavi.com.ar", "santiago@femavi.com.ar"]
-          : ["santiago@femavi.com.ar"];
+        : revisan;
 
     let vendedor = o.seller_code ? "Agente " + o.seller_code : "—";
     if (o.seller_code) {
@@ -416,14 +435,16 @@ Deno.serve(async (req: Request) => {
     const html =
       '<div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto">' +
       '<div style="background:#1B3A6B;padding:18px 26px;border-radius:8px 8px 0 0">' +
-      `<h2 style="color:#fff;margin:0;font-size:19px">${aprobado ? "APROBADO · " : ""}Pedido N° ${esc(dato(o.order_number))} · Cuenta ${esc(dato(o.account))}</h2>` +
+      `<h2 style="color:#fff;margin:0;font-size:19px">${aprobado ? "APROBADO · " : aConfirmar ? "A CONFIRMAR · " : ""}Pedido N° ${esc(dato(o.order_number))} · Cuenta ${esc(dato(o.account))}</h2>` +
       `<p style="color:rgba(255,255,255,.75);margin:4px 0 0;font-size:13px">${esc(nombreProyecto)} · ${esc(vendedor)} · ${fecha}</p>` +
       "</div>" +
       '<div style="border:1px solid #e2e8ee;border-top:none;padding:20px 26px;border-radius:0 0 8px 8px">' +
 
       (aprobado
         ? '<div style="padding:10px 14px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;font-size:13px;margin-bottom:6px"><strong>Pedido aprobado.</strong> La planilla va adjunta para imprimir y cargar en el sistema.</div>'
-        : '<div style="padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;font-size:13px;margin-bottom:6px"><strong>Pedido nuevo para revisar.</strong> Aprobalo o rechazalo desde el panel: al aprobarlo le llega a ventas@ para cargar.</div>') +
+        : aConfirmar
+          ? '<div style="padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;font-size:13px;margin-bottom:6px"><strong>Falta confirmarlo con el cliente.</strong> La planilla va adjunta para imprimir y llamarlo. Todavía no le suma al vendedor: cuando el cliente confirme, aprobalo desde el panel y recién ahí le llega a ventas@.</div>'
+          : '<div style="padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;font-size:13px;margin-bottom:6px"><strong>Pedido nuevo para revisar.</strong> Aprobalo o rechazalo desde el panel: al aprobarlo le llega a ventas@ para cargar.</div>') +
 
       (o.is_new_client
         ? '<div style="padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;font-size:13px;margin-bottom:6px"><strong>Cliente nuevo</strong> — hay que darlo de alta antes de facturar.</div>'
@@ -470,7 +491,7 @@ Deno.serve(async (req: Request) => {
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY no configurada");
 
     const asunto = (prueba === true ? "[PRUEBA] " : "") + (esFemway ? "[FemWay] " : "") +
-      (aprobado ? "APROBADO · " : "Para revisar · ") +
+      (aprobado ? "APROBADO · " : aConfirmar ? "A CONFIRMAR · " : "Para revisar · ") +
       "Pedido " + dato(o.order_number) + " · " + dato(o.account) +
       " · " + vendedor + " · " + dato(o.company);
 

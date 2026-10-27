@@ -159,6 +159,7 @@ export default function FichaFemwayVista({ ficha, nombreVendedor, mostrarFemavi,
                           {p.sin_codigo && <span className="ml-1.5 text-[10px] text-slate-400">por CUIT</span>}
                           {/* Solo lo ve administración: al vendedor no le llegan los sin aprobar. */}
                           {p.estado === 'recibido' && <span className="ml-1.5 text-[10px] font-semibold text-amber-700">Recibido</span>}
+                          {p.estado === 'a_confirmar' && <span className="ml-1.5 text-[10px] font-semibold text-violet-700">A confirmar</span>}
                         </td>
                         <td className="py-2 text-right font-semibold">{fmtNum(kilos)}</td>
                         <td className="py-2 text-right">{fmtPesos.format(Number(p.total) || 0)}</td>

@@ -93,7 +93,10 @@ export default function FichaClienteVista({ ficha, nombreVendedor }: Props) {
                   <td className="py-1.5 text-slate-500">{fecha(p.fecha)}</td>
                   <td className="py-1.5 text-slate-600">{p.vendedor ? nombreVendedor(p.vendedor.padStart(3, '0')) : 'Web'}</td>
                   {/* Solo lo ve administración: al vendedor no le llegan los sin aprobar. */}
-                  <td className="py-1.5">{p.estado === 'recibido' && <span className="text-[11px] font-semibold text-amber-700">Recibido</span>}</td>
+                  <td className="py-1.5">
+                    {p.estado === 'recibido' && <span className="text-[11px] font-semibold text-amber-700">Recibido</span>}
+                    {p.estado === 'a_confirmar' && <span className="text-[11px] font-semibold text-violet-700">A confirmar</span>}
+                  </td>
                   <td className="py-1.5 text-right font-semibold">{fmtPesos.format(Number(p.total) || 0)}</td>
                 </tr>
               ))}

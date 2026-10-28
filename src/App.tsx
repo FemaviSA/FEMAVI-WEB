@@ -27,6 +27,7 @@ const Clientes = lazy(() => import('./pages/admin/Clientes'));
 const EnCaida = lazy(() => import('./pages/admin/EnCaida'));
 const Vendedores = lazy(() => import('./pages/admin/Vendedores'));
 const Facturacion = lazy(() => import('./pages/admin/Facturacion'));
+const FacturaInterna = lazy(() => import('./pages/admin/FacturaInterna'));
 const ClienteFicha = lazy(() => import('./pages/admin/ClienteFicha'));
 const ClienteFemwayFicha = lazy(() => import('./pages/admin/ClienteFemwayFicha'));
 const NotFound = lazy(() => import('./pages/NotFound'));
@@ -113,6 +114,7 @@ export default function App() {
           <Route path="/admin/se-caen" element={<RequireAuth todoElPanel><EnCaida /></RequireAuth>} />
           <Route path="/admin/vendedores" element={<RequireAuth><Vendedores /></RequireAuth>} />
           <Route path="/admin/facturacion" element={<RequireAuth><Facturacion /></RequireAuth>} />
+          <Route path="/admin/factura-interna" element={<RequireAuth todoElPanel><FacturaInterna /></RequireAuth>} />
           <Route path="/admin/clientes/femway/:codigo" element={<RequireAuth><ClienteFemwayFicha /></RequireAuth>} />
           {/* La ficha de un cliente de FEMAVI la ve tambien el admin de un solo
               proyecto: la base de clientes de FEMAVI es comun a los dos. */}

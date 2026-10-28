@@ -114,7 +114,7 @@ export default function App() {
           <Route path="/admin/se-caen" element={<RequireAuth todoElPanel><EnCaida /></RequireAuth>} />
           <Route path="/admin/vendedores" element={<RequireAuth><Vendedores /></RequireAuth>} />
           <Route path="/admin/facturacion" element={<RequireAuth><Facturacion /></RequireAuth>} />
-          <Route path="/admin/factura-interna" element={<RequireAuth todoElPanel><FacturaInterna /></RequireAuth>} />
+          <Route path="/admin/factura-interna" element={<RequireAuth><FacturaInterna /></RequireAuth>} />
           <Route path="/admin/clientes/femway/:codigo" element={<RequireAuth><ClienteFemwayFicha /></RequireAuth>} />
           {/* La ficha de un cliente de FEMAVI la ve tambien el admin de un solo
               proyecto: la base de clientes de FEMAVI es comun a los dos. */}

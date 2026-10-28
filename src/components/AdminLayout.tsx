@@ -144,12 +144,15 @@ export function AdminLayout({
             <span className="flex-1">Vendedores</span>
           </NavLink>
           {/* Lo que no es de un proyecto lo ve solo el que ve todo el panel. */}
+          {/* La factura interna es de FemWay: la ve también el admin de FemWay. */}
+          {!cargandoProyecto && (!proyecto || proyecto === 'femway') && (
+            <NavLink to="/admin/factura-interna" className={navItem}>
+              <Receipt className="w-4 h-4" />
+              <span className="flex-1">Factura interna</span>
+            </NavLink>
+          )}
           {!cargandoProyecto && !proyecto && (
             <>
-              <NavLink to="/admin/factura-interna" className={navItem}>
-                <Receipt className="w-4 h-4" />
-                <span className="flex-1">Factura interna</span>
-              </NavLink>
               <NavLink to="/admin" end className={navItem}>
                 <Package className="w-4 h-4" />
                 <span className="flex-1">Productos</span>

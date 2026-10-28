@@ -190,7 +190,7 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
                 ) : (
                   <span className={r.alerta ? 'font-semibold' : 'opacity-80'}>
                     {' '}· {fmtPesos.format(r.precio)} contra {fmtPesos.format(r.precio_lista ?? 0)}
-                    {' '}({r.descuento_pct}% de descuento)
+                    {' '}({textoDiferencia(r.descuento_pct)})
                     {r.producto_lista && r.producto_lista !== r.producto ? ` · en la lista: ${r.producto_lista}` : ''}
                   </span>
                 )}
@@ -201,4 +201,10 @@ export default function ControlesPedido({ orderId, recargar }: { orderId: number
       )}
     </div>
   );
+}
+
+// Vender más caro que la lista no es un descuento negativo: se dice al derecho.
+function textoDiferencia(pct: number | null): string {
+  if (pct == null || pct === 0) return 'igual a la lista';
+  return pct > 0 ? `${pct}% de descuento` : `${-pct}% más caro que la lista`;
 }

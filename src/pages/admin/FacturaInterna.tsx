@@ -6,6 +6,7 @@ import {
   facturaInterna, guardarCostoQuimwey, mesesFacturaInterna,
   type ClaseComprobante, type FacturaInterna as Datos,
 } from '../../lib/facturaInterna';
+import { elegirCarpeta, guardarEnCarpeta, sePuedeElegirCarpeta } from '../../lib/carpetaLocal';
 
 // La factura interna de FEMAVI a FemWay, armada sola: lo que salió para FemWay
 // en el mes según los comprobantes del sistema viejo, a costo de la lista de
@@ -15,6 +16,7 @@ import {
 // de crédito restan. La primera factura (octubre 2026) se lleva septiembre.
 
 const PRIMER_MES = '2026-10-01';
+const CARPETA_PDF = 'factura-interna';
 
 const diaAR = (d: Date) =>
   d.toLocaleDateString('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires' });
@@ -140,15 +142,25 @@ export default function FacturaInterna() {
     return () => { vigente = false; };
   }, [mes, vuelta]);
 
+  // El PDF va a FEMWEY\FACTURAS INTERNAS\<año>\OCTUBRE 2026.pdf: la carpeta
+  // FACTURAS INTERNAS se elige una vez por navegador y la del año se crea sola.
   const [exportando, setExportando] = useState(false);
-  const exportarPdf = async () => {
+  const [aviso, setAviso] = useState<string | null>(null);
+  const exportarPdf = async (cambiarCarpeta = false) => {
     if (!datos) return;
     setExportando(true);
+    setAviso(null);
     try {
-      const { descargarFacturaInternaPdf } = await import('../../lib/facturaInternaPdf');
-      await descargarFacturaInternaPdf(datos, PRIMER_MES);
+      if (cambiarCarpeta && !(await elegirCarpeta(CARPETA_PDF))) return;
+      const nombre = nombreMes(datos.mes).replace(' de ', ' ').toUpperCase() + '.pdf';
+      const r = await guardarEnCarpeta(CARPETA_PDF, datos.mes.slice(0, 4), nombre, async () => {
+        const pdf = await import('../../lib/facturaInternaPdf');
+        return pdf.armarFacturaInternaPdf(datos, PRIMER_MES, await pdf.logoFemavi()).output('blob');
+      });
+      if ('ruta' in r) setAviso(`Guardado en ${r.ruta}`);
+      else if ('descargado' in r) setAviso(`Descargado como ${nombre} (este navegador no deja elegir la carpeta).`);
     } catch (e) {
-      setError('No se pudo armar el PDF: ' + (e as Error).message);
+      setError('No se pudo guardar el PDF: ' + (e as Error).message);
     } finally {
       setExportando(false);
     }
@@ -166,7 +178,7 @@ export default function FacturaInterna() {
       crumbs={[{ label: 'Factura interna' }]}
       actions={
         <div className="flex items-center gap-2">
-          <button onClick={exportarPdf} disabled={!datos || cargando || exportando}
+          <button onClick={() => exportarPdf()} disabled={!datos || cargando || exportando}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
             {exportando ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} Exportar PDF
           </button>
@@ -193,6 +205,17 @@ export default function FacturaInterna() {
           </button>
         ))}
       </div>
+
+      {aviso && (
+        <div className="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 flex flex-wrap items-center gap-x-3">
+          {aviso}
+          {sePuedeElegirCarpeta() && (
+            <button onClick={() => exportarPdf(true)} className="text-xs underline text-emerald-700 hover:text-emerald-900">
+              Cambiar carpeta
+            </button>
+          )}
+        </div>
+      )}
 
       {error && <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
 

@@ -89,8 +89,9 @@ export function comprobantes(dir) {
       comprobante: Number(clave.slice(6, 12)),
       tipo: clave[12].trim() || null,
       cliente: texto(r, 13, 18),
-      fecha: fecha(r, 18),
+      fecha: fecha(r, 18),               // el día que se cargó el pedido
       total: num(r, 87, 93, 2),
+      fecha_comprobante: fecha(r, 99),   // el del remito/factura: avanza con la numeración
     });
   }
   return [...m.values()];

@@ -166,7 +166,9 @@ var TABLAS = [
     var clave = r.toString('latin1', 0, 13);
     if (!/^\d{12}/.test(clave)) return null;
     return { clave: clave, pedido: Number(clave.slice(0, 6)), comprobante: Number(clave.slice(6, 12)),
-      tipo: clave[12].trim() || null, cliente: texto(r, 13, 18), fecha: fecha(r, 18), total: num(r, 87, 93, 2) };
+      tipo: clave[12].trim() || null, cliente: texto(r, 13, 18), fecha: fecha(r, 18), total: num(r, 87, 93, 2),
+      // pos. 18 es el día que se cargó el pedido; pos. 99 el del remito/factura (avanza con la numeración)
+      fecha_comprobante: fecha(r, 99) };
   } },
   { tabla: 'renglones', archivo: 'HISDEPED', h: 4, clave: function (x) { return x.clave + '|' + x.linea; }, fila: function (r) {
     var clave = r.toString('latin1', 0, 13), linea = Number(r.toString('latin1', 13, 15));

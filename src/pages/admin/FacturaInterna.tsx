@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, ChevronDown, ChevronRight, Loader2, Pencil, RefreshCw } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronRight, FileDown, Loader2, Pencil, RefreshCw } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { fmtNum, fmtPesos } from '../../lib/adminOrders';
 import {
@@ -140,6 +140,20 @@ export default function FacturaInterna() {
     return () => { vigente = false; };
   }, [mes, vuelta]);
 
+  const [exportando, setExportando] = useState(false);
+  const exportarPdf = async () => {
+    if (!datos) return;
+    setExportando(true);
+    try {
+      const { descargarFacturaInternaPdf } = await import('../../lib/facturaInternaPdf');
+      await descargarFacturaInternaPdf(datos, PRIMER_MES);
+    } catch (e) {
+      setError('No se pudo armar el PDF: ' + (e as Error).message);
+    } finally {
+      setExportando(false);
+    }
+  };
+
   const alternar = (n: number) =>
     setAbiertos(p => { const s = new Set(p); if (s.has(n)) s.delete(n); else s.add(n); return s; });
 
@@ -151,10 +165,16 @@ export default function FacturaInterna() {
     <AdminLayout
       crumbs={[{ label: 'Factura interna' }]}
       actions={
-        <button onClick={recargar}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 hover:bg-slate-50">
-          <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} /> Actualizar
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={exportarPdf} disabled={!datos || cargando || exportando}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
+            {exportando ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} Exportar PDF
+          </button>
+          <button onClick={recargar}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 hover:bg-slate-50">
+            <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} /> Actualizar
+          </button>
+        </div>
       }
     >
       <p className="text-sm text-slate-500 mb-4 max-w-3xl">

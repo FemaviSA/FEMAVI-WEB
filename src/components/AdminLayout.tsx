@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Package, ExternalLink, LogOut, Menu, X, ChevronRight, Mail, BookOpen, ClipboardList, Users, IdCard, TrendingUp, Receipt, PiggyBank } from 'lucide-react';
+import { Package, ExternalLink, LogOut, Menu, X, ChevronRight, Mail, BookOpen, ClipboardList, Users, IdCard, TrendingUp, Receipt } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useProyectoAdmin } from '../hooks/useProyectoAdmin';
 import { NOMBRE_PROYECTO } from '../lib/proyectos';
@@ -146,16 +146,10 @@ export function AdminLayout({
           {/* Lo que no es de un proyecto lo ve solo el que ve todo el panel. */}
           {/* La factura interna es de FemWay: la ve también el admin de FemWay. */}
           {!cargandoProyecto && (!proyecto || proyecto === 'femway') && (
-            <>
-              <NavLink to="/admin/rentabilidad" className={navItem}>
-                <PiggyBank className="w-4 h-4" />
-                <span className="flex-1">Rentabilidad</span>
-              </NavLink>
-              <NavLink to="/admin/factura-interna" className={navItem}>
-                <Receipt className="w-4 h-4" />
-                <span className="flex-1">Factura interna</span>
-              </NavLink>
-            </>
+            <NavLink to="/admin/factura-interna" className={navItem}>
+              <Receipt className="w-4 h-4" />
+              <span className="flex-1">Factura interna</span>
+            </NavLink>
           )}
           {!cargandoProyecto && !proyecto && (
             <>

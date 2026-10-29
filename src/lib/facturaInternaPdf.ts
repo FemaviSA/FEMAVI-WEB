@@ -72,11 +72,26 @@ export function armarFacturaInternaPdf(d: FacturaInterna, primerMes: string, img
       [{ content: 'Notas de crédito', styles: { textColor: [...ROJO] } }, { content: pesos(t.notas_credito), styles: { textColor: [...ROJO] } }],
       [{ content: 'Sin cargo (incluido en remitos y papelitos)', styles: { textColor: [...GRIS] } }, { content: pesos(t.sin_cargo), styles: { textColor: [...GRIS] } }],
     ],
-    foot: [['Total a facturar', pesos(t.costo)]],
+    foot: [
+      ['Total a facturar', pesos(t.costo)],
+      ['Facturado a clientes en el mes', pesos(t.facturado)],
+    ],
     footStyles: { fontStyle: 'bold', fillColor: [...CLARO], textColor: [...OSCURO], halign: 'right' },
-    didParseCell: c => { if (c.section === 'foot' && c.column.index === 0) c.cell.styles.halign = 'left'; },
+    didParseCell: c => {
+      if (c.section === 'foot' && c.column.index === 0) c.cell.styles.halign = 'left';
+      if (c.section === 'foot' && c.row.index === 1) {
+        c.cell.styles.fillColor = 255;
+        c.cell.styles.fontStyle = 'normal';
+        c.cell.styles.textColor = [...GRIS];
+      }
+    },
   });
-  let y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 5;
+  if (t.facturado > 0) {
+    const y0 = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+    doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...GRIS);
+    doc.text(`El costo es el ${fmtNum(Math.round((t.costo / t.facturado) * 1000) / 10)}% de lo facturado.`, M + 1.4, y0 + 3.5);
+  }
+  let y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + (t.facturado > 0 ? 9 : 5);
 
   if (d.sin_costo.length) {
     doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor(180, 83, 9);

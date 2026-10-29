@@ -278,9 +278,15 @@ export default function FacturaInterna() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-4">
             <Tarjeta fuerte rotulo="A facturar a FemWay" valor={fmtPesos.format(t.costo)}
               pie={`${fmtNum(t.comprobantes)} comprobantes · ${fmtNum(t.kg)} L/kg`} />
+            {/* Lo facturado de verdad (remitos y papelitos del sistema viejo), no los
+                pedidos aprobados de la solapa Facturación. */}
+            <Tarjeta rotulo="Facturado a clientes" valor={fmtPesos.format(t.facturado)}
+              pie={t.facturado > 0
+                ? `el costo es el ${fmtNum(Math.round((t.costo / t.facturado) * 1000) / 10)}%`
+                : 'lo que salió con remito o papelito'} />
             <Tarjeta rotulo="Remitos" valor={fmtPesos.format(t.remitos)} />
             <Tarjeta rotulo="Papelitos" valor={fmtPesos.format(t.papelitos)} pie="salen sin remito" />
             <Tarjeta rotulo="Notas de crédito" valor={fmtPesos.format(t.notas_credito)} pie="lo que volvió" />

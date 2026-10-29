@@ -42,6 +42,9 @@ export interface FacturaInterna {
   hasta: string;
   ultimo_comprobante: string | null;
   totales: {
+    /** Lo que se les facturó a los clientes en el mes (sistema viejo, precio de venta, menos NC). */
+    facturado: number;
+    facturado_notas_credito: number;
     costo: number;
     remitos: number;
     papelitos: number;

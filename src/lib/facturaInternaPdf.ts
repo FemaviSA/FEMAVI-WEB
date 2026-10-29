@@ -70,7 +70,6 @@ export function armarFacturaInternaPdf(d: FacturaInterna, primerMes: string, img
     body: [
       ['Remitos y papelitos', pesos(t.remitos + t.papelitos)],
       [{ content: 'Notas de crédito', styles: { textColor: [...ROJO] } }, { content: pesos(t.notas_credito), styles: { textColor: [...ROJO] } }],
-      [{ content: 'Sin cargo (incluido en remitos y papelitos)', styles: { textColor: [...GRIS] } }, { content: pesos(t.sin_cargo), styles: { textColor: [...GRIS] } }],
     ],
     foot: [
       ['Total a facturar', pesos(t.costo)],
@@ -86,12 +85,17 @@ export function armarFacturaInternaPdf(d: FacturaInterna, primerMes: string, img
       }
     },
   });
-  if (t.facturado > 0) {
+  // Lo sin cargo va como nota, no en la tabla: ya está dentro de remitos y papelitos.
+  const notas = [
+    t.facturado > 0 ? `El costo es el ${fmtNum(Math.round((t.costo / t.facturado) * 1000) / 10)}% de lo facturado.` : '',
+    t.sin_cargo > 0 ? `Incluye ${pesos(t.sin_cargo)} de mercadería sin cargo (muestras, dispensers...).` : '',
+  ].filter(Boolean).join(' ');
+  if (notas) {
     const y0 = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
     doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...GRIS);
-    doc.text(`El costo es el ${fmtNum(Math.round((t.costo / t.facturado) * 1000) / 10)}% de lo facturado.`, M + 1.4, y0 + 3.5);
+    doc.text(notas, M + 1.4, y0 + 3.5);
   }
-  let y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + (t.facturado > 0 ? 9 : 5);
+  let y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + (notas ? 9 : 5);
 
   if (d.sin_costo.length) {
     doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor(180, 83, 9);

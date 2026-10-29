@@ -85,11 +85,9 @@ export function armarFacturaInternaPdf(d: FacturaInterna, primerMes: string, img
       }
     },
   });
-  // Lo sin cargo va como nota, no en la tabla: ya está dentro de remitos y papelitos.
-  const notas = [
-    t.facturado > 0 ? `El costo es el ${fmtNum(Math.round((t.costo / t.facturado) * 1000) / 10)}% de lo facturado.` : '',
-    t.sin_cargo > 0 ? `Incluye ${pesos(t.sin_cargo)} de mercadería sin cargo (muestras, dispensers...).` : '',
-  ].filter(Boolean).join(' ');
+  // Lo sin cargo no va en el PDF (está dentro de remitos y papelitos): solo en la pantalla.
+  const notas = t.facturado > 0
+    ? `El costo es el ${fmtNum(Math.round((t.costo / t.facturado) * 1000) / 10)}% de lo facturado.` : '';
   if (notas) {
     const y0 = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
     doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...GRIS);

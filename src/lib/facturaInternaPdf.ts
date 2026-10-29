@@ -58,15 +58,36 @@ export function armarFacturaInternaPdf(d: FacturaInterna, primerMes: string, img
     : `Del ${fecha(d.desde)} al ${fecha(d.hasta)}.`;
   doc.text(`${periodo} A costo de la lista de Quimwey. Emitida el ${new Date().toLocaleDateString('es-AR')}.`, M, 30);
 
+  // Resumen: lo que salió (remitos y papelitos juntos), lo que volvió y lo sin cargo
+  const t = d.totales;
+  autoTable(doc, {
+    startY: 34,
+    margin: { left: M, right: M },
+    tableWidth: 100,
+    theme: 'plain',
+    styles: { fontSize: 9, cellPadding: 1.4, textColor: [...OSCURO] },
+    columnStyles: { 1: { halign: 'right' } },
+    body: [
+      ['Remitos y papelitos', pesos(t.remitos + t.papelitos)],
+      [{ content: 'Notas de crédito', styles: { textColor: [...ROJO] } }, { content: pesos(t.notas_credito), styles: { textColor: [...ROJO] } }],
+      [{ content: 'Sin cargo (incluido en remitos y papelitos)', styles: { textColor: [...GRIS] } }, { content: pesos(t.sin_cargo), styles: { textColor: [...GRIS] } }],
+    ],
+    foot: [['Total a facturar', pesos(t.costo)]],
+    footStyles: { fontStyle: 'bold', fillColor: [...CLARO], textColor: [...OSCURO], halign: 'right' },
+    didParseCell: c => { if (c.section === 'foot' && c.column.index === 0) c.cell.styles.halign = 'left'; },
+  });
+  let y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 5;
+
   if (d.sin_costo.length) {
-    doc.setFont('helvetica', 'bold').setTextColor(180, 83, 9);
+    doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor(180, 83, 9);
     doc.text(`Atención: sin costo, no suman: ${d.sin_costo.map(s => s.producto).join(', ')}`,
-      M, 34.5, { maxWidth: ancho - 2 * M });
+      M, y, { maxWidth: ancho - 2 * M });
+    y += 5;
   }
 
   // Producto por producto
   autoTable(doc, {
-    startY: d.sin_costo.length ? 39 : 35,
+    startY: y,
     margin: { left: M, right: M, bottom: 16 },
     styles: { fontSize: 8.5, cellPadding: 1.6, textColor: [...OSCURO] },
     headStyles: { fillColor: [...CLARO], textColor: [...GRIS], fontStyle: 'bold' },

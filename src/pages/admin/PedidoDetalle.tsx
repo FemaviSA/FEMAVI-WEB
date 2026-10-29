@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { X, Loader2, Check, Ban, History, ShieldCheck, Pencil, PhoneCall, Printer } from 'lucide-react';
 import ControlesPedido from '../../components/ControlesPedido';
 import ConsultaArca from '../../components/ConsultaArca';
+import DevolucionesPedido from '../../components/DevolucionesPedido';
 import {
   type Pedido, type CambioEstado, type Estado, ETIQUETA_ESTADO, SIGUIENTE,
   cambiarEstado, completarDatos, historialDe, volumenDe, fmtNum, fmtPesos,
@@ -248,6 +249,14 @@ export default function PedidoDetalle({
                 </div>
               ) : (
                 <div className="space-y-3">
+                  {/* Rechazar es frenarlo antes de que salga. Si salió y el
+                      cliente lo devolvió, va como devolución. */}
+                  {pedido.status === 'aprobado' && (
+                    <div className="rounded-lg bg-orange-50 border border-orange-200 px-3 py-2 text-xs text-orange-900">
+                      <strong>¿El cliente lo devolvió?</strong> Entonces no lo rechaces: cancelá y usá
+                      “Registrar devolución”, más abajo. Rechazar es solo para un pedido que no salió.
+                    </div>
+                  )}
                   <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">
                     Motivo del rechazo (lo ve el vendedor)
                   </label>
@@ -270,6 +279,9 @@ export default function PedidoDetalle({
               {error && <div className="mt-3 text-sm text-red-700">{error}</div>}
             </section>
           )}
+
+          {/* Lo que el cliente devolvió: el pedido salió, no es un rechazo */}
+          {pedido.status === 'aprobado' && <DevolucionesPedido orderId={pedido.id} />}
 
           {/* Datos que completa administración */}
           <section className="rounded-xl bg-slate-50 border border-slate-200 p-4">

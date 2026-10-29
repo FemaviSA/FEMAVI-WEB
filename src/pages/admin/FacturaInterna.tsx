@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, ChevronDown, ChevronRight, FileDown, Loader2, Pencil, RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  AlertTriangle, ChevronDown, ChevronRight, ChevronsUpDown, ChevronUp, FileDown, Loader2, Pencil, RefreshCw,
+} from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { fmtNum, fmtPesos } from '../../lib/adminOrders';
 import {
   facturaInterna, guardarCostoQuimwey, mesesFacturaInterna,
-  type ClaseComprobante, type FacturaInterna as Datos,
+  type ClaseComprobante, type ComprobanteInterno, type FacturaInterna as Datos,
 } from '../../lib/facturaInterna';
 import { elegirCarpeta, guardarEnCarpeta, sePuedeElegirCarpeta } from '../../lib/carpetaLocal';
 
@@ -112,6 +114,39 @@ function CampoCosto({ articulo, costo, alGuardar, abierto = false }: {
 
 type Lista = 'productos' | 'comprobantes';
 
+// Los comprobantes se ordenan tocando el encabezado. El primer toque va en el
+// sentido que más se usa (fecha: lo más nuevo primero; importe: lo más caro);
+// el segundo lo da vuelta.
+type Columna = 'fecha' | 'comprobante' | 'pedido' | 'cliente' | 'importe';
+type Orden = { col: Columna; desc: boolean };
+const PRIMERO_DESC: Record<Columna, boolean> = { fecha: true, importe: true, comprobante: false, pedido: false, cliente: false };
+
+function comparar(a: ComprobanteInterno, b: ComprobanteInterno, col: Columna): number {
+  switch (col) {
+    case 'fecha': return a.fecha.localeCompare(b.fecha) || a.comprobante - b.comprobante;
+    case 'comprobante': return a.comprobante - b.comprobante;
+    case 'pedido': return a.pedido - b.pedido || a.comprobante - b.comprobante;
+    case 'cliente': return (a.cliente ?? '').localeCompare(b.cliente ?? '', 'es', { sensitivity: 'base' });
+    case 'importe': return (a.importe ?? -Infinity) - (b.importe ?? -Infinity);
+  }
+}
+
+function Encabezado({ col, rotulo, orden, alOrdenar, derecha }: {
+  col: Columna; rotulo: string; orden: Orden | null; alOrdenar: (c: Columna) => void; derecha?: boolean;
+}) {
+  const activo = orden?.col === col;
+  const Flecha = !activo ? ChevronsUpDown : orden.desc ? ChevronDown : ChevronUp;
+  return (
+    <th className={`px-4 py-2.5 ${derecha ? 'text-right' : 'text-left'}`}>
+      <button onClick={() => alOrdenar(col)}
+        className={`inline-flex items-center gap-1 uppercase tracking-wide hover:text-slate-900 ${activo ? 'text-slate-900' : ''}`}>
+        {rotulo}
+        <Flecha className={`w-3 h-3 ${activo ? '' : 'opacity-40'}`} />
+      </button>
+    </th>
+  );
+}
+
 export default function FacturaInterna() {
   // Arranca con los meses del calendario y después toma los de la base, que
   // abren un mes apenas hay un comprobante con esa fecha.
@@ -165,6 +200,15 @@ export default function FacturaInterna() {
       setExportando(false);
     }
   };
+
+  const [orden, setOrden] = useState<Orden | null>(null);
+  const ordenar = (col: Columna) =>
+    setOrden(o => ({ col, desc: o?.col === col ? !o.desc : PRIMERO_DESC[col] }));
+  const comprobantes = useMemo(() => {
+    const lista = datos?.comprobantes ?? [];
+    if (!orden) return lista;
+    return [...lista].sort((a, b) => (orden.desc ? -1 : 1) * comparar(a, b, orden.col));
+  }, [datos, orden]);
 
   const alternar = (n: number) =>
     setAbiertos(p => { const s = new Set(p); if (s.has(n)) s.delete(n); else s.add(n); return s; });
@@ -317,15 +361,15 @@ export default function FacturaInterna() {
                 <table className="w-full text-sm min-w-[720px]">
                   <thead className="bg-slate-50 text-[11px] text-slate-500 uppercase tracking-wide">
                     <tr>
-                      <th className="text-left px-4 py-2.5">Fecha</th>
-                      <th className="text-left px-4 py-2.5">Comprobante</th>
-                      <th className="text-left px-4 py-2.5">Pedido</th>
-                      <th className="text-left px-4 py-2.5">Cliente</th>
-                      <th className="text-right px-4 py-2.5">Importe</th>
+                      <Encabezado col="fecha" rotulo="Fecha" orden={orden} alOrdenar={ordenar} />
+                      <Encabezado col="comprobante" rotulo="Comprobante" orden={orden} alOrdenar={ordenar} />
+                      <Encabezado col="pedido" rotulo="Pedido" orden={orden} alOrdenar={ordenar} />
+                      <Encabezado col="cliente" rotulo="Cliente" orden={orden} alOrdenar={ordenar} />
+                      <Encabezado col="importe" rotulo="Importe" orden={orden} alOrdenar={ordenar} derecha />
                     </tr>
                   </thead>
                   <tbody>
-                    {datos.comprobantes.map(c => {
+                    {comprobantes.map(c => {
                       const abierto = abiertos.has(c.comprobante);
                       return [
                         <tr key={c.comprobante} onClick={() => alternar(c.comprobante)}

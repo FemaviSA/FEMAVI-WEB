@@ -317,6 +317,36 @@ export default function FacturaInterna() {
             </section>
           )}
 
+          {/* La mercadería ya salió pero todavía no se facturó: hasta que se
+              facture, este mes no está cerrado. */}
+          {(datos.sin_facturar?.length ?? 0) > 0 && (
+            <section className="rounded-xl bg-violet-50 border border-violet-200 p-4 mb-6">
+              <div className="flex items-center gap-2 text-sm font-bold text-violet-900 mb-1">
+                <AlertTriangle className="w-4 h-4" />
+                {datos.sin_facturar!.length === 1
+                  ? 'Un remito de este mes todavía sin facturar'
+                  : `${datos.sin_facturar!.length} remitos de este mes todavía sin facturar`}
+              </div>
+              <p className="text-xs text-violet-800 mb-3">
+                La mercadería ya salió, así que va a entrar en este mes. Hasta que se facture no
+                suma, y el total de acá arriba va a subir cuando se facture.
+              </p>
+              <ul className="space-y-1">
+                {datos.sin_facturar!.map(s => (
+                  <li key={s.comprobante} className="text-sm text-violet-900">
+                    <span className="font-semibold">Remito {s.comprobante}</span>
+                    <span className="text-violet-700">
+                      {' · '}{new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}
+                      {' · '}{s.cliente ?? '—'}
+                      {s.pedido ? ` · pedido ${s.pedido}` : ''}
+                      {s.vendedor ? ` · vendedor ${s.vendedor}` : ''}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <section className="rounded-xl bg-white border border-slate-200 overflow-hidden">
             <div className="flex gap-1 p-2 border-b border-slate-100">
               {([['productos', 'Por producto'], ['comprobantes', 'Comprobantes']] as [Lista, string][]).map(([k, r]) => (

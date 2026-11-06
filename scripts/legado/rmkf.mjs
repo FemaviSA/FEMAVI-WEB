@@ -24,6 +24,19 @@ export function expandir(d) {
   return Buffer.from(out);
 }
 
+/**
+ * Los comprobantes con factura electrónica se guardan en un registro más corto
+ * —152 bytes en vez de 170— con la cola corrida 18 lugares: el vendedor queda
+ * en la posición 122 y no en la 140. Antes se descartaban enteros, así que esos
+ * movimientos no existían para la web (el remito 138717 de CEMATIC, octubre
+ * 2026). Se rellenan los 18 lugares que faltan para que la cola vuelva a caer
+ * donde corresponde; lo de antes del corte ya estaba bien.
+ */
+export function normalizar(r, L) {
+  if (r.length !== L - 18 || L !== 170) return r;
+  return Buffer.concat([r.subarray(0, 107), Buffer.alloc(18, 0x20), r.subarray(107)]);
+}
+
 export function leerArchivo(ruta, cabecera) {
   const f = fs.readFileSync(ruta);
   const L = f.readUInt16BE(16);
@@ -40,7 +53,7 @@ export function leerArchivo(ruta, cabecera) {
         const l = f.readUInt16BE(p + h - 2);
         if (!l || p + h + l > base + B) break;
         if (guardar) {
-          const r = expandir(f.subarray(p + h, p + h + l));
+          const r = normalizar(expandir(f.subarray(p + h, p + h + l)), L);
           if (r.length === L) regs.push(r); else descartados++;
         }
         p += h + l;

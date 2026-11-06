@@ -100,10 +100,22 @@ function recorrer(f, B, h, alRegistro) {
   }
   return bloques ? coincide / bloques : 0;
 }
+// Los comprobantes con factura electronica se guardan en un registro mas corto
+// -152 bytes en vez de 170- con la cola corrida 18 lugares: el vendedor queda
+// en la posicion 122 y no en la 140. Antes se descartaban enteros y esos
+// movimientos no llegaban nunca (el remito 138717 de CEMATIC, octubre 2026).
+// Se rellenan los 18 lugares que faltan; lo de antes del corte ya estaba bien.
+function normalizar(r, L) {
+  if (r.length !== L - 18 || L !== 170) return r;
+  return Buffer.concat([r.slice(0, 107), Buffer.alloc(18, 0x20), r.slice(107)]);
+}
 function registros(ruta, h) {
   var f = leerArchivo(ruta), L = f.readUInt16BE(16), regs = [];
   var B = recorrer(f, 512, h, null) >= recorrer(f, 1024, h, null) ? 512 : 1024;
-  recorrer(f, B, h, function (comp) { var r = expandir(comp); if (r.length === L) regs.push(r); });
+  recorrer(f, B, h, function (comp) {
+    var r = normalizar(expandir(comp), L);
+    if (r.length === L) regs.push(r);
+  });
   return regs;
 }
 
@@ -161,6 +173,17 @@ var TABLAS = [
       codigo: codigo, nombre: texto(r, 3, 33), domicilio: texto(r, 33, 63), localidad: texto(r, 63, 83),
       telefonos: texto(r, 83, 111), recorrido: texto(r, 111, 136), alias: texto(r, 136, 166),
     };
+  } },
+  // Remitos emitidos que todavia no se facturaron. Van aparte porque la lista
+  // se reemplaza entera: cuando uno se factura tiene que desaparecer de aca y
+  // aparecer en el historico. Solo se suben los de este año; el archivo
+  // arrastra remitos sin facturar desde los 90 que ya no dicen nada.
+  { tabla: 'remitos_pendientes', archivo: 'REMITOS', h: 4, reemplaza: true,
+    clave: function (x) { return String(x.comprobante); }, fila: function (r) {
+    var comp = texto(r, 0, 6), f = fecha(r, 17);
+    if (!comp || !f || f < '2026-01-01') return null;
+    return { comprobante: Number(comp), cliente: texto(r, 6, 11), fecha: f,
+      pedido: Number(texto(r, 39, 45) || 0) || null, vendedor: texto(r, 123, 126) };
   } },
   { tabla: 'comprobantes', archivo: 'HISTPEDI', h: 4, clave: function (x) { return x.clave; }, fila: function (r) {
     var clave = r.toString('latin1', 0, 13);
@@ -257,7 +280,9 @@ function sincronizarTabla(t, dir, estado, config) {
   var cambios = [];
   Object.keys(porClave).forEach(function (k) {
     var h = huella(porClave[k]);
-    if (huellas[k] !== h) cambios.push({ k: k, h: h, fila: porClave[k] });
+    // La tabla que se reemplaza entera va completa cada vez: la base borra lo
+    // que habia y se queda con lo que llega, asi desaparece lo que ya no esta.
+    if (t.reemplaza || huellas[k] !== h) cambios.push({ k: k, h: h, fila: porClave[k] });
   });
   porClave = null;
 

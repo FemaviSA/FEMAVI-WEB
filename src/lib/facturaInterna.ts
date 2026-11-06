@@ -54,6 +54,15 @@ export interface FacturaInterna {
     comprobantes: number;
   };
   sin_costo: { articulo: string; producto: string; kg: number }[];
+  /**
+   * Remitos de este mes que todavía no se facturaron. La mercadería ya salió,
+   * así que el mes no está cerrado hasta que no quede ninguno: cuando se
+   * facturen van a entrar con la fecha del remito y van a mover el total.
+   */
+  sin_facturar?: {
+    comprobante: number; fecha: string; pedido: number | null;
+    vendedor: string | null; cliente: string | null;
+  }[];
   productos: ProductoInterno[];
   comprobantes: ComprobanteInterno[];
 }

@@ -63,6 +63,16 @@ export interface FacturaInterna {
     comprobante: number; fecha: string; pedido: number | null;
     vendedor: string | null; cliente: string | null;
   }[];
+  /**
+   * Comprobantes del mes que el sistema viejo tiene anulados. No suman en
+   * ningún total —la mercadería no salió, o salió y se anuló— pero se muestran
+   * para que no desaparezcan en silencio.
+   */
+  anulados?: {
+    comprobante: number; fecha: string; pedido: number | null;
+    vendedor: string | null; cliente: string | null;
+    total: number | null; fecha_anulacion: string | null;
+  }[];
   productos: ProductoInterno[];
   comprobantes: ComprobanteInterno[];
 }

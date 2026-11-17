@@ -347,6 +347,40 @@ export default function FacturaInterna() {
             </section>
           )}
 
+          {/* Anulados en el sistema viejo: no suman en ningún total, pero se
+              muestran para que no desaparezcan en silencio. */}
+          {(datos.anulados?.length ?? 0) > 0 && (
+            <section className="rounded-xl bg-slate-100 border border-slate-300 p-4 mb-6">
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-1">
+                <AlertTriangle className="w-4 h-4" />
+                {datos.anulados!.length === 1
+                  ? 'Un comprobante de este mes está anulado'
+                  : `${datos.anulados!.length} comprobantes de este mes están anulados`}
+              </div>
+              <p className="text-xs text-slate-600 mb-3">
+                El sistema viejo los tiene anulados, así que no son una venta: no suman ni en el
+                costo ni en lo facturado. Están acá solo para que se vean.
+              </p>
+              <ul className="space-y-1">
+                {datos.anulados!.map(a => (
+                  <li key={a.comprobante} className="text-sm text-slate-700">
+                    <span className="font-semibold line-through">{a.comprobante}</span>
+                    <span className="text-slate-500">
+                      {' · '}{new Date(a.fecha + 'T12:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}
+                      {' · '}{a.cliente ?? '—'}
+                      {a.pedido ? ` · pedido ${a.pedido}` : ''}
+                      {a.vendedor ? ` · vendedor ${a.vendedor}` : ''}
+                      {a.total != null ? ` · ${pesos(a.total)}` : ''}
+                      {a.fecha_anulacion
+                        ? ` · anulado el ${new Date(a.fecha_anulacion + 'T12:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}`
+                        : ''}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <section className="rounded-xl bg-white border border-slate-200 overflow-hidden">
             <div className="flex gap-1 p-2 border-b border-slate-100">
               {([['productos', 'Por producto'], ['comprobantes', 'Comprobantes']] as [Lista, string][]).map(([k, r]) => (

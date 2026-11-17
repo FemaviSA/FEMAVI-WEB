@@ -194,7 +194,13 @@ var TABLAS = [
       fecha_comprobante: fecha(r, 99),
       // Código de vendedor, con ceros ("055"). Es lo que reconoce una venta de
       // FemWay cuando el remito no quedó atado al número de pedido de la web.
-      vendedor: texto(r, 140, 143) };
+      vendedor: texto(r, 140, 143),
+      // Estado del comprobante: '1' = anulado, y al lado la fecha de anulación.
+      // Un anulado no es una venta: no suma en la ficha del cliente ni en la
+      // factura interna. Los registros cortos de 152 bytes no traen este bloque
+      // (son justo los 18 lugares que les faltan), así que quedan en false.
+      anulado: r.toString('latin1', 115, 116) === '1',
+      fecha_anulacion: fecha(r, 116) };
   } },
   { tabla: 'renglones', archivo: 'HISDEPED', h: 4, clave: function (x) { return x.clave + '|' + x.linea; }, fila: function (r) {
     var clave = r.toString('latin1', 0, 13), linea = Number(r.toString('latin1', 13, 15));

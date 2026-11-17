@@ -223,3 +223,46 @@ export async function resumenDelEquipo(
   if (error || !data) throw new Error('No se pudo cargar el resumen del equipo. Revisá la conexión.');
   return data as ResumenEquipo;
 }
+
+// ---------------------------------------------------------------------------
+// Pedidos a confirmar, para el gerente del proyecto.
+//
+// Son los que el vendedor cargó pero todavía tiene que confirmar con el
+// cliente: no suman facturación hasta que administración los aprueba. El
+// gerente los ve para seguirlos, no para cambiarlos.
+// ---------------------------------------------------------------------------
+
+export interface RenglonPedido {
+  product?: string;
+  quantity?: number;
+  presentation?: string;
+  unit_price?: number;
+  line_total?: number;
+}
+
+export interface PedidoAConfirmar {
+  numero: string | null;
+  fecha: string;
+  /** Días que lleva esperando, contados en hora argentina. */
+  dias: number;
+  vendedor: string;
+  vendedor_code: string;
+  comparte_con: string | null;
+  cliente: string | null;
+  codigo: string | null;
+  cuenta: string | null;
+  total: number | null;
+  /** Cuándo pidió el vendedor que salga, tal como lo escribió. */
+  entrega: string | null;
+  /** La nota del vendedor: acá suele estar el "llamar el 23/10". */
+  notas: string | null;
+  items: RenglonPedido[];
+}
+
+export async function pedidosAConfirmar(token: string): Promise<PedidoAConfirmar[]> {
+  const { data, error } = await supabase.rpc('seller_pedidos_a_confirmar', { p_token: token });
+  if (error?.message?.includes('sesion_vencida')) throw new PaseVencidoError();
+  if (error?.message?.includes('no_es_gerente')) throw new Error('Esta vista es solo para el gerente del proyecto.');
+  if (error || !Array.isArray(data)) throw new Error('No se pudieron cargar los pedidos a confirmar. Revisá la conexión.');
+  return data as PedidoAConfirmar[];
+}

@@ -9,6 +9,7 @@ import { consultarArca } from '../lib/arca';
 import { SEO, SITE_URL } from '../components/SEO';
 import MisVentas from '../components/MisVentas';
 import VentasEquipo from '../components/VentasEquipo';
+import PedidosAConfirmar from '../components/PedidosAConfirmar';
 import MisClientes from '../components/MisClientes';
 import MisClientesFemway from '../components/MisClientesFemway';
 import { NOMBRE_PROYECTO, type Proyecto } from '../lib/proyectos';
@@ -141,7 +142,7 @@ export default function SellerOrder() {
   // Si el pase vence a mitad de un pedido, se vuelve al PIN con este aviso. El
   // formulario sigue montado detrás, así que lo cargado no se pierde.
   const [avisoPin, setAvisoPin] = useState<string | null>(null);
-  const [vista, setVista] = useState<'pedido' | 'ventas' | 'clientes' | 'equipo'>('pedido');
+  const [vista, setVista] = useState<'pedido' | 'ventas' | 'clientes' | 'equipo' | 'a_confirmar'>('pedido');
   // El gerente del proyecto ve además a todo el equipo. Lo dice la base, que
   // es también la que decide qué le devuelve.
   const [esGerente, setEsGerente] = useState(false);
@@ -282,7 +283,10 @@ export default function SellerOrder() {
           }}>
             <div style={{ display: 'flex', gap: 4, background: C.bg, borderRadius: 8, padding: 3 }}>
               {([['pedido', 'Nuevo pedido'], ['ventas', 'Mis ventas'],
-                ['clientes', 'Mis clientes'], ...(esGerente ? [['equipo', 'Equipo']] : [])] as
+                ['clientes', 'Mis clientes'],
+                // El gerente ve además al equipo y los pedidos que el equipo
+                // todavía tiene que confirmar con el cliente.
+                ...(esGerente ? [['equipo', 'Equipo'], ['a_confirmar', 'A confirmar']] : [])] as
                 [typeof vista, string][]).map(([k, r]) => (
                 <button key={k} type="button" onClick={() => setVista(k)} style={{
                   padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
@@ -321,6 +325,8 @@ export default function SellerOrder() {
 
         {vista === 'equipo' && esGerente ? (
           <VentasEquipo token={seller.token} proyecto={seller.proyecto} onPaseVencido={paseVencido} />
+        ) : vista === 'a_confirmar' && esGerente ? (
+          <PedidosAConfirmar token={seller.token} proyecto={seller.proyecto} onPaseVencido={paseVencido} />
         ) : vista === 'ventas' ? (
           <MisVentas token={seller.token} proyecto={seller.proyecto} esGerente={esGerente} onPaseVencido={paseVencido} />
         ) : vista === 'clientes' ? (

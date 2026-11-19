@@ -62,6 +62,14 @@ export default function PedidoDetalle({
   const siguiente = SIGUIENTE[pedido.status];
   /** Todavía no está aprobado: recibido o esperando al cliente. */
   const sinAprobar = pedido.status === 'recibido' || pedido.status === 'a_confirmar';
+  /**
+   * El pedido se editó después de que la planilla saliera a ventas@: lo que
+   * tienen en la mano quedó viejo y hay que mandarles la corregida.
+   */
+  const editadoDespuesDelMail = pedido.status === 'aprobado'
+    && !!pedido.aprobado_notificado_at && !!pedido.updated_at
+    && new Date(pedido.updated_at).getTime() > new Date(pedido.aprobado_notificado_at).getTime();
+  const [reenviado, setReenviado] = useState(false);
 
   const hacer = async (fn: () => Promise<void>) => {
     setError(null);
@@ -127,6 +135,36 @@ export default function PedidoDetalle({
           {pedido.is_new_client && (
             <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
               <strong>Cliente nuevo.</strong> Cuando le asignen número, cargalo abajo: así sus próximos pedidos se reconocen como del mismo cliente.
+            </div>
+          )}
+
+          {/* Se editó después de que la planilla saliera a ventas@ */}
+          {editadoDespuesDelMail && !reenviado && (
+            <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
+              <strong>Se editó después de avisarle a ventas@.</strong> La planilla que tienen es
+              la del{' '}
+              {new Date(pedido.aprobado_notificado_at!).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}
+              {' '}y el pedido se tocó el{' '}
+              {new Date(pedido.updated_at!).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}.
+              <div className="mt-2">
+                <button
+                  disabled={trabajando}
+                  onClick={() => hacer(async () => {
+                    if (!(await sendOrderNotification(pedido.id, 'aprobado', true))) {
+                      throw new Error('No se pudo reenviar el mail. Probá de nuevo en un minuto.');
+                    }
+                    setReenviado(true);
+                  })}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 disabled:opacity-50">
+                  <Printer className="w-4 h-4" /> Reenviar a ventas@ con los cambios
+                </button>
+              </div>
+            </div>
+          )}
+          {reenviado && (
+            <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-900">
+              <strong>Listo.</strong> Salió de nuevo a ventas@ y a santiago@, con el asunto
+              empezando en "ACTUALIZADO" para que no lo confundan con el anterior.
             </div>
           )}
 

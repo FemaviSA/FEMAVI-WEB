@@ -52,7 +52,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { order_id, prueba, tipo } = await req.json();
+    const { order_id, prueba, tipo, reenvio } = await req.json();
     if (!order_id) throw new Error("Falta order_id");
 
     // Tres mails distintos por pedido:
@@ -84,11 +84,39 @@ Deno.serve(async (req: Request) => {
     // El de ingreso, además, solo si el pedido se cargó en la última hora; el
     // de aprobado, solo si el pedido está aprobado. Así nadie puede usar esta
     // función para reenviar pedidos y llenar de correo las casillas.
+    //
+    // Excepción: el reenvío de un pedido aprobado que se editó DESPUÉS de que
+    // saliera el mail (pasó con el 218269). Ahí ventas@ tiene en la mano una
+    // planilla vieja, así que hay que mandarles la nueva. No es un botón
+    // libre: solo sale si la edición es posterior al aviso, y una vez mandado
+    // deja de estar disponible hasta la próxima edición.
+    const reenvioAprobado = reenvio === true && aprobado;
+    // Para el reenvío la condición es "se editó después del aviso", que
+    // compara dos columnas entre sí: eso no se puede filtrar de una, así que
+    // se lee, se verifica y se pisa la marca solo si sigue siendo la leída.
+    // Si dos personas tocan el botón a la vez, el mail sale una sola vez.
+    let anterior: string | null = null;
+    if (reenvioAprobado) {
+      const { data: antes } = await supabase
+        .from("orders").select("status, updated_at, aprobado_notificado_at")
+        .eq("id", order_id).maybeSingle();
+      const sirve = antes && antes.status === "aprobado" && antes.aprobado_notificado_at &&
+        new Date(antes.updated_at).getTime() > new Date(antes.aprobado_notificado_at).getTime();
+      if (!sirve) {
+        return new Response(JSON.stringify({ ok: true, enviado: false, motivo: "sin_cambios" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      anterior = antes!.aprobado_notificado_at as string;
+    }
+
     let reclamo = supabase
       .from("orders")
       .update({ [marca]: new Date().toISOString() })
       .eq("id", order_id);
-    if (aConfirmar) {
+    if (reenvioAprobado) {
+      reclamo = reclamo.eq("aprobado_notificado_at", anterior as string);
+    } else if (aConfirmar) {
       // Este se puede volver a pedir desde el panel cuando hace falta otra
       // copia, pero no dos veces seguidas: así nadie llena la casilla.
       reclamo = reclamo
@@ -435,10 +463,14 @@ Deno.serve(async (req: Request) => {
     const html =
       '<div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto">' +
       '<div style="background:#1B3A6B;padding:18px 26px;border-radius:8px 8px 0 0">' +
-      `<h2 style="color:#fff;margin:0;font-size:19px">${aprobado ? "APROBADO · " : aConfirmar ? "A CONFIRMAR · " : ""}Pedido N° ${esc(dato(o.order_number))} · Cuenta ${esc(dato(o.account))}</h2>` +
+      `<h2 style="color:#fff;margin:0;font-size:19px">${reenvioAprobado ? "ACTUALIZADO · " : ""}${aprobado ? "APROBADO · " : aConfirmar ? "A CONFIRMAR · " : ""}Pedido N° ${esc(dato(o.order_number))} · Cuenta ${esc(dato(o.account))}</h2>` +
       `<p style="color:rgba(255,255,255,.75);margin:4px 0 0;font-size:13px">${esc(nombreProyecto)} · ${esc(vendedor)} · ${fecha}</p>` +
       "</div>" +
       '<div style="border:1px solid #e2e8ee;border-top:none;padding:20px 26px;border-radius:0 0 8px 8px">' +
+
+      (reenvioAprobado
+        ? '<div style="padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;font-size:13px;margin-bottom:6px"><strong>Este pedido se editó después del mail anterior.</strong> Vale esta planilla; tirá la que habías impreso.</div>'
+        : "") +
 
       (aprobado
         ? '<div style="padding:10px 14px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;font-size:13px;margin-bottom:6px"><strong>Pedido aprobado.</strong> La planilla va adjunta para imprimir y cargar en el sistema.</div>'
@@ -491,6 +523,7 @@ Deno.serve(async (req: Request) => {
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY no configurada");
 
     const asunto = (prueba === true ? "[PRUEBA] " : "") + (esFemway ? "[FemWay] " : "") +
+      (reenvioAprobado ? "ACTUALIZADO · " : "") +
       (aprobado ? "APROBADO · " : aConfirmar ? "A CONFIRMAR · " : "Para revisar · ") +
       "Pedido " + dato(o.order_number) + " · " + dato(o.account) +
       " · " + vendedor + " · " + dato(o.company);
@@ -510,8 +543,11 @@ Deno.serve(async (req: Request) => {
     if (!res.ok) {
       const err = await res.text();
       console.error("Resend error:", res.status, err);
-      // Si el mail no salió, se libera el pedido para poder reintentar.
-      await supabase.from("orders").update({ [marca]: null }).eq("id", order_id);
+      // Si el mail no salió, se libera el pedido para poder reintentar. En un
+      // reenvío se vuelve a la marca anterior, no a nula: el pedido ya tuvo su
+      // aviso de aprobado y no hay que dejarlo como si nunca hubiera salido.
+      await supabase.from("orders")
+        .update({ [marca]: reenvioAprobado ? anterior : null }).eq("id", order_id);
       return new Response(JSON.stringify({ error: err }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

@@ -68,6 +68,11 @@ export interface Pedido {
   notes: string | null;
   /** Cuándo salió la última planilla para imprimir y llamar al cliente. */
   confirmar_notificado_at?: string | null;
+  /** Última vez que se tocó el pedido. Si es posterior al aviso de aprobado,
+   *  lo que tiene ventas@ en la mano quedó viejo. */
+  updated_at?: string | null;
+  /** Cuándo salió el mail de aprobado a ventas@. */
+  aprobado_notificado_at?: string | null;
 }
 
 export interface Vendedor {

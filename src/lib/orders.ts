@@ -174,6 +174,12 @@ export async function sendOrderNotification(
    * segunda vez antes de que se facture.
    */
   tipo: 'ingreso' | 'a_confirmar' | 'aprobado' = 'ingreso',
+  /**
+   * Reenvío de un pedido aprobado que se editó después de que saliera el mail:
+   * ventas@ tiene una planilla vieja en la mano. Solo vale con "aprobado", y
+   * la función lo rechaza si el pedido no cambió desde el último aviso.
+   */
+  reenvio = false,
 ): Promise<boolean> {
   const url = import.meta.env.VITE_SUPABASE_URL as string;
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
@@ -183,10 +189,16 @@ export async function sendOrderNotification(
     const res = await fetch(url + '/functions/v1/send-order-notification', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: key, Authorization: 'Bearer ' + key },
-      body: JSON.stringify({ order_id: orderId, tipo }),
+      body: JSON.stringify({ order_id: orderId, tipo, reenvio }),
     });
-    if (!res.ok) console.warn('[orders] no se pudo mandar el mail:', res.status, await res.text());
-    return res.ok;
+    if (!res.ok) {
+      console.warn('[orders] no se pudo mandar el mail:', res.status, await res.text());
+      return false;
+    }
+    // La función contesta ok con enviado:false cuando no correspondía mandarlo
+    // (por ejemplo, un reenvío de un pedido que no se editó).
+    const cuerpo = await res.json().catch(() => null);
+    return cuerpo?.enviado !== false;
   } catch (e) {
     console.warn('[orders] no se pudo mandar el mail:', e);
     return false;

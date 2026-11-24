@@ -4,7 +4,7 @@ import { AdminLayout } from '../../components/AdminLayout';
 import { useProyectoAdmin } from '../../hooks/useProyectoAdmin';
 import { NOMBRE_PROYECTO, PROYECTOS, type Proyecto } from '../../lib/proyectos';
 import {
-  facturacion, listarVendedores, fmtNum, fmtPesos,
+  cicloActual, facturacion, listarVendedores, fmtNum, fmtPesos,
   type CanalVentas, type Facturacion as Datos, type Vendedor,
 } from '../../lib/adminOrders';
 
@@ -22,18 +22,40 @@ const diaAR = (d: Date) =>
 
 type Periodo = 'mes' | 'mes_pasado' | 'ultimos3' | 'anio' | 'doce' | 'personalizado';
 
-const PERIODOS: [Periodo, string][] = [
-  ['mes', 'Este mes'],
-  ['mes_pasado', 'Mes pasado'],
-  ['ultimos3', 'Últimos 3 meses'],
-  ['anio', 'Este año'],
-  ['doce', 'Últimos 12 meses'],
-  ['personalizado', 'Elegir fechas'],
-];
+// FEMAVI se mide por ciclo, no por mes del almanaque: el ciclo va adelante y
+// cada pedido cae en el que tiene escrito. FemWay sí va por mes.
+const PERIODOS: Record<'mes' | 'ciclo', [Periodo, string][]> = {
+  mes: [
+    ['mes', 'Este mes'],
+    ['mes_pasado', 'Mes pasado'],
+    ['ultimos3', 'Últimos 3 meses'],
+    ['anio', 'Este año'],
+    ['doce', 'Últimos 12 meses'],
+    ['personalizado', 'Elegir fechas'],
+  ],
+  ciclo: [
+    ['mes', 'Ciclo en curso'],
+    ['mes_pasado', 'Ciclo anterior'],
+    ['ultimos3', 'Últimos 3 ciclos'],
+    ['anio', 'Este año'],
+    ['doce', 'Últimos 12 ciclos'],
+    ['personalizado', 'Elegir ciclos'],
+  ],
+};
 
-/** Desde y hasta de cada período, en hora argentina. */
-function rango(p: Periodo): { desde: string; hasta: string } {
-  const hoy = new Date(diaAR(new Date()) + 'T12:00:00');
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio',
+  'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const nombreCiclo = (iso: string) => {
+  const [a, m] = iso.split('-').map(Number);
+  return `${MESES[m - 1]} ${a}`;
+};
+
+/**
+ * Desde y hasta de cada período, en hora argentina. `base` es el mes desde el
+ * que se cuenta (AAAA-MM-01): en FEMAVI el ciclo en curso, en FemWay el mes de hoy.
+ */
+function rango(p: Periodo, base?: string): { desde: string; hasta: string } {
+  const hoy = new Date((base ?? diaAR(new Date())) + 'T12:00:00');
   const a = hoy.getFullYear(), m = hoy.getMonth();
   const dia = (d: Date) => d.toLocaleDateString('sv-SE');
   const finDeMes = (anio: number, mes: number) => new Date(anio, mes + 1, 0);
@@ -73,13 +95,18 @@ export default function Facturacion() {
   const [proyectoElegido, setProyecto] = useState<Proyecto>('femavi');
   const proyecto = proyectoFijo ?? proyectoElegido;
 
+  const porCiclo = proyecto === 'femavi';
   const [periodo, setPeriodo] = useState<Periodo>('mes');
-  const [desde, setDesde] = useState(rango('mes').desde);
-  const [hasta, setHasta] = useState(rango('mes').hasta);
+  // Solo para "Elegir fechas" / "Elegir ciclos"; el resto sale de rango().
+  const [desdeElegido, setDesde] = useState(rango('mes').desde);
+  const [hastaElegido, setHasta] = useState(rango('mes').hasta);
   const [canal, setCanal] = useState<CanalVentas>('vendedores');
   // Vacío = todos. Si se eligen dos, se suman los dos.
   const [elegidos, setElegidos] = useState<string[]>([]);
   const [lista, setLista] = useState<Lista>('vendedores');
+  // Ciclo en curso de FEMAVI: cada vendedor cierra el suyo, así que depende de
+  // a quién se mire. null mientras se lee.
+  const [cicloLeido, setCicloLeido] = useState<{ clave: string; ciclo: string } | null>(null);
 
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [datos, setDatos] = useState<Datos | null>(null);
@@ -88,16 +115,34 @@ export default function Facturacion() {
 
   useEffect(() => { listarVendedores().then(setVendedores).catch(() => {}); }, []);
 
+  const claveElegidos = elegidos.join(',');
+  useEffect(() => {
+    if (!porCiclo) return;
+    let vigente = true;
+    cicloActual(claveElegidos ? claveElegidos.split(',') : [])
+      .then(c => { if (vigente) setCicloLeido({ clave: claveElegidos, ciclo: c }); })
+      .catch(e => { if (vigente) setError((e as Error).message); });
+    return () => { vigente = false; };
+  }, [porCiclo, claveElegidos]);
+  // El leído vale solo para los vendedores con que se pidió.
+  const cicloBase = cicloLeido?.clave === claveElegidos ? cicloLeido.ciclo : null;
+
+  const { desde, hasta } = periodo === 'personalizado'
+    ? { desde: desdeElegido, hasta: hastaElegido }
+    : rango(periodo, porCiclo ? cicloBase ?? undefined : undefined);
+
   const elegirPeriodo = (p: Periodo) => {
+    if (p === 'personalizado') {
+      // Arranca desde lo que se estaba mirando.
+      setDesde(desde);
+      setHasta(hasta);
+    }
     setPeriodo(p);
-    if (p === 'personalizado') return;
-    const r = rango(p);
-    setDesde(r.desde);
-    setHasta(r.hasta);
   };
 
+  const esperandoCiclo = porCiclo && periodo !== 'personalizado' && !cicloBase;
   useEffect(() => {
-    if (cargandoProyecto) return;
+    if (cargandoProyecto || esperandoCiclo) return;
     let vigente = true;
     setCargando(true);
     setError(null);
@@ -106,7 +151,15 @@ export default function Facturacion() {
       .catch(e => { if (vigente) setError((e as Error).message); })
       .finally(() => { if (vigente) setCargando(false); });
     return () => { vigente = false; };
-  }, [cargandoProyecto, proyecto, desde, hasta, elegidos, canal]);
+  }, [cargandoProyecto, esperandoCiclo, proyecto, desde, hasta, elegidos, canal]);
+
+  const cicloDesde = desde.slice(0, 7) + '-01';
+  const cicloHasta = hasta.slice(0, 7) + '-01';
+  const rotuloPeriodo = porCiclo
+    ? (esperandoCiclo ? '' : cicloDesde === cicloHasta
+        ? `Ciclo ${nombreCiclo(cicloDesde)}`
+        : `Ciclos ${nombreCiclo(cicloDesde)} a ${nombreCiclo(cicloHasta)}`)
+    : `${fechaCorta(desde)} al ${fechaCorta(hasta)}`;
 
   const delProyecto = useMemo(
     () => vendedores.filter(v => v.proyecto === proyecto
@@ -168,22 +221,27 @@ export default function Facturacion() {
 
       {/* Período */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        {PERIODOS.map(([k, r]) => (
+        {PERIODOS[porCiclo ? 'ciclo' : 'mes'].map(([k, r]) => (
           <button key={k} onClick={() => elegirPeriodo(k)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${periodo === k
               ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
             {r}
           </button>
         ))}
-        {periodo === 'personalizado' && (
+        {periodo === 'personalizado' && (porCiclo ? (
+          <>
+            <input type="month" value={desde.slice(0, 7)} className={campo}
+              onChange={e => e.target.value && setDesde(e.target.value + '-01')} />
+            <input type="month" value={hasta.slice(0, 7)} className={campo}
+              onChange={e => e.target.value && setHasta(e.target.value + '-01')} />
+          </>
+        ) : (
           <>
             <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className={campo} />
             <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className={campo} />
           </>
-        )}
-        <span className="text-xs text-slate-400">
-          {fechaCorta(desde)} al {fechaCorta(hasta)}
-        </span>
+        ))}
+        <span className="text-xs text-slate-400">{rotuloPeriodo}</span>
       </div>
 
       {/* Vendedores: ninguno elegido = todos; se pueden marcar varios. */}
@@ -233,7 +291,7 @@ export default function Facturacion() {
           {/* Mes a mes */}
           {datos.meses.length > 0 && (
             <section className="rounded-xl bg-white border border-slate-200 p-4 mb-6">
-              <h2 className="text-sm font-bold text-slate-700 mb-3">Mes a mes</h2>
+              <h2 className="text-sm font-bold text-slate-700 mb-3">{datos.por_ciclo ? 'Ciclo a ciclo' : 'Mes a mes'}</h2>
               <div className="space-y-2">
                 {datos.meses.map(m => (
                   <div key={m.mes} className="flex items-center gap-3">

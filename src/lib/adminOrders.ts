@@ -332,6 +332,8 @@ export type CanalVentas = 'vendedores' | 'distribucion' | 'todo';
 export interface Facturacion {
   proyecto: Proyecto;
   canal: CanalVentas;
+  /** FEMAVI cuenta por ciclo (el que tiene escrito cada pedido); FemWay por fecha. */
+  por_ciclo: boolean;
   desde: string;
   hasta: string;
   totales: { pedidos: number; clientes: number; pesos: number; volumen: number; bonificado: number };
@@ -347,6 +349,15 @@ export interface Facturacion {
     cliente: string | null; codigo: string | null; vendedor: string | null;
     pedidos: number; pesos: number; ultimo: string;
   }[];
+}
+
+/** Ciclo en curso de FEMAVI (AAAA-MM-01): el del vendedor si se eligió uno solo, si no el del equipo. */
+export async function cicloActual(vendedores: string[] = []): Promise<string> {
+  const { data, error } = await supabase.rpc('admin_ciclo_actual', {
+    p_vendedores: vendedores.length ? vendedores : null,
+  });
+  if (error || !data) throw new Error(error?.message ?? 'No se pudo leer el ciclo en curso.');
+  return data as string;
 }
 
 export async function facturacion(
